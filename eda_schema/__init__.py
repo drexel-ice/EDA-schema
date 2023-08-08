@@ -1,0 +1,1 @@
+from eda_schema.netlist import NetlistPowerProfile
