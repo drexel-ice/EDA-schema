@@ -1,22 +1,23 @@
-import jsonschema
 from typing import Dict, Any
+
+import jsonschema
 
 from eda_schema.errors import ValidationError
 
 
-class BaseSchema:
+class BaseEntity:
     """Base class for JSON schema validation and attribute setting."""
 
     def __init__(self, json_data: Dict[str, Any] = None) -> None:
         """
-        Initialize the BaseSchema instance.
+        Initialize the BaseEntity instance.
 
         Args:
             json_data (dict, optional): JSON data to validate and set as attributes.
         """
         if json_data:
             self.load(json_data)
-    
+
     def load(self, json_data: Dict[str, Any]) -> None:
         """
         Load and validate JSON data, setting attributes.
@@ -51,3 +52,9 @@ class BaseSchema:
             dict: Dictionary representation of the object attributes.
         """
         return {attr: getattr(self, attr) for attr in self.schema["items"]["properties"]}
+
+    def __repr__(self):
+        return str(self.asdict())
+    
+    def __str__(self):
+        return str(self.asdict())
