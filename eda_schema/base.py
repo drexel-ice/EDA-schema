@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 import jsonschema
+import networkx as nx
 
 from eda_schema.errors import ValidationError
 
@@ -58,3 +59,31 @@ class BaseEntity:
     
     def __str__(self):
         return str(self.asdict())
+
+
+class GraphEntity(nx.DiGraph, BaseEntity):
+    """Base class for JSON schema validation and attribute setting."""
+
+    def __init__(self, json_data: Dict[str, Any] = None) -> None:
+        """
+        Initialize the BaseEntity instance.
+
+        Args:
+            json_data (dict, optional): JSON data to validate and set as attributes.
+        """
+        super().__init__()
+        if json_data:
+            self.load(json_data)
+
+    def __repr__(self):
+        return str(self.asdict())
+    
+    def __str__(self):
+        return str(self.asdict())
+
+    def graph_dict(self):
+        return {
+            "nodes": [node for node in self.nodes],
+            "node_types": [self.nodes[node]["type"] for node in self.nodes],
+            "edges": [list(edge) for edge in self.edges],
+        }

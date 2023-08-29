@@ -2,6 +2,43 @@ import pytest
 from eda_schema import entity
 from eda_schema.errors import ValidationError
 
+NETLIST_DATA = {
+    'width': 10,
+    'height': 10,
+    "no_of_inputs": 10,
+    "no_of_outputs": 10,
+    "cell_density": 0.5,
+    "pin_density": 0.5,
+    "net_density": 0.5,
+}
+
+def test_netlist():
+    """
+    Test creating a Netlist object and accessing its attributes.
+    """
+    netlist = entity.NetlistEntity(NETLIST_DATA)
+
+    assert netlist.width == 10
+    assert netlist.cell_density == 0.5
+
+    print(netlist.asdict())
+    netlist_dict = netlist.asdict()
+    assert netlist_dict == NETLIST_DATA
+
+
+def test_netlist_validation():
+    """
+    Test validation of invalid JSON data when creating a Netlist object.
+    """
+    invalid_data = dict(NETLIST_DATA)
+    invalid_data['no_of_inputs'] = "10"
+    with pytest.raises(ValidationError):
+        entity.NetlistEntity(invalid_data)
+    
+    valid_data = dict(NETLIST_DATA)
+    valid_data['cell_density'] = None
+    assert entity.NetlistEntity(NETLIST_DATA) is not None
+
 
 POWER_DATA = {
     'internal_power': 0.0,
