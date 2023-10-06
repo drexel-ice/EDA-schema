@@ -146,7 +146,7 @@ class IOPortEntity(BaseEntity):
 
 
 class GateEntity(BaseEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Class for representing gate data using a JSON schema."""
 
     title = "gate"
     schema = {
@@ -194,7 +194,7 @@ class StandardCellEntity(BaseEntity):
 
 
 class InterconnectEntity(GraphEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Class for representing interconnect data using a JSON schema."""
 
     title = "interconnect"
     schema = {
@@ -220,9 +220,9 @@ class InterconnectEntity(GraphEntity):
 
 
 class InterconnectSegmentEntity(BaseEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Class for representing interconnect segment data using a JSON schema."""
 
-    title = "standard_cell"
+    title = "interconnect_segment"
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
@@ -246,7 +246,7 @@ class InterconnectSegmentEntity(BaseEntity):
 
 
 class TimingPathEntity(GraphEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Class for representing timing path data using a JSON schema."""
 
     title = "timing_path"
     schema = {
@@ -269,7 +269,7 @@ class TimingPathEntity(GraphEntity):
 
 
 class TimingPointEntity(BaseEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Class for representing timing path point data using a JSON schema."""
 
     title = "timing_point"
     schema = {
