@@ -1,3 +1,4 @@
+from copy import deepcopy
 from eda_schema.base import BaseEntity, GraphEntity
 
 
@@ -119,6 +120,26 @@ class CriticalPathMetricsEntity(BaseEntity):
                 "no_of_hold_violations": {"type": "number"},
                 "worst_hold_violation": {"type": "number"},
                 "total_hold_violation": {"type": "number"},
+            },
+        },
+    }
+
+
+class IOPortEntity(BaseEntity):
+    """Class for representing input/output port data using a JSON schema."""
+
+    title = "io_port"
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "direction": {"type": "string"},
+                "x": {"type": ["number", "null"]},
+                "y": {"type": ["number", "null"]},
+                "capacitance": {"type": ["number", "null"]},
             },
         },
     }
@@ -259,7 +280,61 @@ class TimingPointEntity(BaseEntity):
             "properties": {
                 "cell_delay": {"type": "number"},
                 "arrival_time": {"type": "number"},
+                "slew": {"type": "number"},
+                "is_rise_transition": {"type": "boolean"},
+                "is_fall_transition": {"type": "boolean"},
                 "node_depth": {"type": "number"},
             },
         },
     }
+
+
+class ClockTreeEntity(GraphEntity):
+    """Class for representing clock tree using a JSON schema."""
+
+    title = "clock_tree"
+
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "no_of_buffers": {"type": "number"},
+                "no_of_clock_sinks": {"type": "number"},
+            },
+        },
+    }
+
+    def load_from_netlist(self, netlist, clock_source, dffs):
+        self._netlist = netlist
+        self._dffs = dffs
+        self.source = clock_source
+
+        self._no_of_clock_sinks = 0
+        self._no_of_buffers = 0
+
+        cts_nodes = self.traverse_cts(clock_source)
+        cts_netlist_dict = deepcopy(self._netlist.subgraph(cts_nodes).__dict__)
+
+        super().__init__({
+            "no_of_clock_sinks": self._no_of_clock_sinks,
+            "no_of_buffers": self._no_of_buffers,
+        })
+        self.__dict__.update(cts_netlist_dict)
+
+    def traverse_cts(self, node):
+        traversed_nodes = [node]
+        stack = [node]
+
+        while stack:
+            current_node = stack.pop()
+            for output in self._netlist.successors(current_node):
+                if output not in traversed_nodes:
+                    traversed_nodes.append(output)
+                    if output not in self._dffs:
+                        stack.append(output)
+                    else:
+                        self._no_of_clock_sinks += 1
+
+        return traversed_nodes
