@@ -1,6 +1,9 @@
 from copy import deepcopy
 from eda_schema.base import BaseEntity, GraphEntity
 
+KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
+PHASES = ["floorplan", "place", "cts", "route"]
+
 
 class NetlistEntity(GraphEntity):
     """Class for representing netlist data using a JSON schema."""
