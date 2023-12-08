@@ -1,25 +1,51 @@
-
-
 from eda_schema import entity
-from eda_schema.db import RawDB
+from eda_schema.db import FileDB
 
 
 class StandardCellData(dict):
+    """
+    Dictionary class for storing standard cell data.
+
+    Attributes:
+        seq_cells (list): List of sequential cells.
+    """
     seq_cells = []
 
 
 class Dataset(dict):
+    """
+    Dictionary class representing an EDA dataset.
+
+    Attributes:
+        standard_cells (dict): Dictionary to store standard cell data.
+        db (FileDB): File-based database for storing EDA-related data.
+    """
     standard_cells = None
 
     def __init__(self, data_dir):
+        """
+        Initialize the Dataset object.
+
+        Args:
+            data_dir (str): Directory path where data tables and graph data are stored.
+        """
         super().__init__()
-        self.db = RawDB(data_dir)
+        self.db = FileDB(data_dir)
 
     def dump_standard_cells(self):
+        """Dump standard cell data into the database."""
         for std_cell in self.standard_cells.values():
             self.db.add_table_row("standard_cells", std_cell.asdict())
 
     def dump_netlist(self, circuit, netlist_id, phase):
+        """
+        Dump netlist data into the database.
+
+        Args:
+            circuit (str): Circuit name.
+            netlist_id (str): Netlist ID.
+            phase (str): Circuit design phase.
+        """
         netlist_key = (circuit, netlist_id, phase)
         netlist = self[netlist_key]
         netlist_key_str = "-".join(netlist_key)
@@ -86,6 +112,7 @@ class Dataset(dict):
         self.db.add_table_data("clock_trees", clock_tree_data)
 
     def dump_dataset(self):
+        """Dump the entire dataset into the database."""
         self.db.create_dataset_tables()
         self.dump_standard_cells()
 
@@ -93,6 +120,7 @@ class Dataset(dict):
             self.dump_netlist(self, *netlist_key)
 
     def load_dataset(self):
+        """Load the dataset from the database."""
         for _, data in self.db.get_table_data("netlists").iterrows():
             data_dict = data.to_dict()
             key = {k: data_dict.pop(k) for k in entity.KEY_COLUMNS}
