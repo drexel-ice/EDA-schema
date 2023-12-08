@@ -310,6 +310,14 @@ class ClockTreeEntity(GraphEntity):
     }
 
     def load_from_netlist(self, netlist, clock_source, dffs):
+        """
+        Load clock tree data from a netlist.
+
+        Args:
+            netlist: Netlist data.
+            clock_source: Clock source information.
+            dffs: D flip-flop information.
+        """
         self._netlist = netlist
         self._dffs = dffs
         self.source = clock_source
@@ -327,6 +335,15 @@ class ClockTreeEntity(GraphEntity):
         self.__dict__.update(cts_netlist_dict)
 
     def traverse_cts(self, node):
+        """
+        Traverse the clock tree structure starting from a given node.
+
+        Args:
+            node: Starting node for traversal.
+
+        Returns:
+            list: List of traversed nodes in the clock tree.
+        """
         traversed_nodes = [node]
         stack = [node]
 
