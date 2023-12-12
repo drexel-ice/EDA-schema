@@ -1,5 +1,4 @@
 from eda_schema import entity
-from eda_schema.db import FileDB
 
 
 class StandardCellData(dict):
@@ -22,15 +21,15 @@ class Dataset(dict):
     """
     standard_cells = None
 
-    def __init__(self, data_dir):
+    def __init__(self, db_obj):
         """
         Initialize the Dataset object.
 
         Args:
-            data_dir (str): Directory path where data tables and graph data are stored.
+            db_obj (FileDB): File-based database for storing EDA-related data.
         """
         super().__init__()
-        self.db = FileDB(data_dir)
+        self.db = db_obj
 
     def dump_standard_cells(self):
         """Dump standard cell data into the database."""
@@ -85,7 +84,8 @@ class Dataset(dict):
         self.db.add_table_data("ports", port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("nets", net_data)
-        self.db.add_table_data("net_segments", net_segment_data)
+        if net_segment_data:
+            self.db.add_table_data("net_segments", net_segment_data)
 
         timing_path_data = []
         timing_point_data = []
