@@ -55,30 +55,53 @@ class PynetDataLoader:
         lib_obj = {}
         library = parse_liberty(open(lib_file).read())
         for cell in library.get_groups('cell'):
-            lib_obj[cell.args[0].value] = {
-                "input_capacitance": 0,
-                "output_capacitance": 0,
-            }
+            lib_obj[cell.args[0].value] = {}
+            input_capacitance_list, output_capacitance_list, leakage_power_list = [], [], []
 
             for x in cell.__dict__["groups"]:
-                if x.group_name != "pin":
-                    continue
-                is_input, is_output = False, False
-                for attr in x.attributes:
-                    if attr.name == "direction" and attr.value=="input":
-                        is_input = True
-                    if attr.name == "direction" and attr.value=="output":
-                        is_output = True
-                    if attr.name == "capacitance":
-                        cap = attr.value
-                if is_input:
-                    lib_obj[cell.args[0].value]["input_capacitance"] += cap
-                if is_output:
-                    lib_obj[cell.args[0].value]["output_capacitance"] += cap
+                if x.group_name == "leakage_power":
+                    leakage_power_list.append(x.attributes[0].value)
+                if x.group_name == "pin":
+                    is_input, is_output = False, False
+                    for attr in x.attributes:
+                        if attr.name == "direction" and attr.value=="input":
+                            is_input = True
+                        if attr.name == "direction" and attr.value=="output":
+                            is_output = True
+                        if attr.name == "capacitance":
+                            cap = attr.value
+                    if is_input:
+                        input_capacitance_list.append(cap)
+                    if is_output:
+                        output_capacitance_list.append(cap)
 
+            if input_capacitance_list:
+                lib_obj[cell.args[0].value]["input_capacitance_min"] = min(input_capacitance_list)
+                lib_obj[cell.args[0].value]["input_capacitance_max"] = max(input_capacitance_list)
+                lib_obj[cell.args[0].value]["input_capacitance_mean"] = sum(input_capacitance_list)/len(input_capacitance_list)
+            else:
+                lib_obj[cell.args[0].value]["input_capacitance_min"] = None
+                lib_obj[cell.args[0].value]["input_capacitance_max"] = None
+                lib_obj[cell.args[0].value]["input_capacitance_mean"] = None
+
+            if output_capacitance_list:
+                lib_obj[cell.args[0].value]["output_capacitance_min"] = min(output_capacitance_list)
+                lib_obj[cell.args[0].value]["output_capacitance_max"] = max(output_capacitance_list)
+                lib_obj[cell.args[0].value]["output_capacitance_mean"] = sum(output_capacitance_list)/len(output_capacitance_list)
+            else:
+                lib_obj[cell.args[0].value]["output_capacitance_min"] = None
+                lib_obj[cell.args[0].value]["output_capacitance_max"] = None
+                lib_obj[cell.args[0].value]["output_capacitance_mean"] = None
+
+            if leakage_power_list:
+                lib_obj[cell.args[0].value]["leakage_power_min"] = min(leakage_power_list)
+                lib_obj[cell.args[0].value]["leakage_power_max"] = max(leakage_power_list)
+            else:
+                lib_obj[cell.args[0].value]["leakage_power_min"] = None
+                lib_obj[cell.args[0].value]["leakage_power_max"] = None
             for cell_attr in cell.attributes:
                 if cell_attr.name == "cell_leakage_power":
-                    lib_obj[cell.args[0].value]["leakage_power"] = cell_attr.value
+                    lib_obj[cell.args[0].value]["leakage_power_provided"] = cell_attr.value
 
         return lib_obj
 
@@ -104,9 +127,15 @@ class PynetDataLoader:
             "is_inverter": "inv" in std_cell,
             "is_buffer": "buf" in std_cell,
             "drive_strength": int(std_cell.split("_")[-1]) if std_cell[-1].isdigit() else None,
-            "leakage_power": lib_obj[std_cell]["leakage_power"] if std_cell_lib_obj else 0,
-            "input_capacitance": lib_obj[std_cell]["input_capacitance"] if std_cell_lib_obj else 0,
-            "output_capacitance": lib_obj[std_cell]["output_capacitance"] if std_cell_lib_obj else 0,
+            "input_capacitance_min": lib_obj[std_cell]["input_capacitance_min"] if std_cell_lib_obj else 0,
+            "input_capacitance_max": lib_obj[std_cell]["input_capacitance_max"] if std_cell_lib_obj else 0,
+            "input_capacitance_mean": lib_obj[std_cell]["input_capacitance_mean"] if std_cell_lib_obj else 0,
+            "output_capacitance_min": lib_obj[std_cell]["output_capacitance_min"] if std_cell_lib_obj else 0,
+            "output_capacitance_max": lib_obj[std_cell]["output_capacitance_max"] if std_cell_lib_obj else 0,
+            "output_capacitance_mean": lib_obj[std_cell]["output_capacitance_mean"] if std_cell_lib_obj else 0,
+            "leakage_power_min": lib_obj[std_cell]["leakage_power_min"] if std_cell_lib_obj else 0,
+            "leakage_power_max": lib_obj[std_cell]["leakage_power_max"] if std_cell_lib_obj else 0,
+            "leakage_power_provided": lib_obj[std_cell]["leakage_power_provided"] if std_cell_lib_obj else 0,
         })
 
     def get_standard_cell_data(self):
