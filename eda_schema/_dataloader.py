@@ -4,7 +4,7 @@ from pynet.parser.lef_parser import LEFParser
 from pynet.parser.parser import Parser, ParseModes
 
 import eda_schema.entity as entity
-from eda_schema.dataset import StandardCellData, Dataset
+from eda_schema.dataset import StandardCellData
 
 from _parsers import power_parsing, parse_timing_report
 from _liberty.parser import parse_liberty
@@ -34,8 +34,8 @@ def calculate_rudy(net_bbox):
 
 
 class PynetDataLoader:
-    def __init__(self, lef_file, lib_file, data_dir):
-        self._dataset = Dataset(data_dir)
+    def __init__(self, lef_file, lib_file, dataset):
+        self._dataset = dataset
         self._lef_file = lef_file
         self._lib_obj = self.get_lib_object(lib_file)
         self._dataset.standard_cells = self.get_standard_cell_data()
@@ -49,7 +49,7 @@ class PynetDataLoader:
             lef_obj_macro_dict[k.replace(" ", "__")] = v
         lef_obj.macro_dict = lef_obj_macro_dict
         return lef_obj
-    
+
     @staticmethod
     def get_lib_object(lib_file):
         lib_obj = {}
@@ -356,7 +356,6 @@ class PynetDataLoader:
             "path_type": None,
             "no_of_slack_violations": 0,
             "worst_slack": float("inf"),
-            "no_of_slack_violations": 0,
             "worst_negative_slack": 0,
             "total_negative_slack": 0,
             "no_of_setup_violations": 0,
@@ -388,7 +387,7 @@ class PynetDataLoader:
                     critical_path_dict["total_negative_slack"] += timing_path_entity.slack
                     if timing_path_entity.slack < critical_path_dict["worst_negative_slack"]:
                         critical_path_dict["worst_negative_slack"] += timing_path_entity.slack
-                    
+
                     critical_path_dict[f"no_of_{violation_type}_violations"] += 1
                     critical_path_dict[f"total_{violation_type}_violation"] += timing_path_entity.slack
                     if timing_path_entity.slack < critical_path_dict[f"worst_{violation_type}_violation"]:
