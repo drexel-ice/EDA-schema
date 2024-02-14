@@ -350,53 +350,37 @@ class PynetDataLoader:
         return timing_path_entity
 
     def add_timing_paths(self, netlist_entity, data_home, phase):
+        timing_dict = parse_timing_report(f"{data_home}/openroad/reports/{phase}_timing_min.rpt")
+        for (startpoint, endpoint), timing_path_info in timing_dict.items():
+            timing_path_entity = self.get_timing_path_entity(startpoint, endpoint, "min", timing_path_info)
+            netlist_entity.timing_paths[(startpoint, endpoint, "min")] = timing_path_entity
+
         critical_path_dict = {
             "startpoint": None,
             "endpoint": None,
-            "path_type": None,
-            "no_of_slack_violations": 0,
-            "worst_slack": float("inf"),
-            "worst_negative_slack": 0,
+            "no_of_timing_paths": 0,
+            "worst_slack": None,
             "total_negative_slack": 0,
-            "no_of_setup_violations": 0,
-            "worst_setup_violation": 0,
-            "total_setup_violation": 0,
-            "no_of_hold_violations": 0,
-            "worst_hold_violation": 0,
-            "total_hold_violation": 0,
+            "no_of_slack_violations": 0,
         }
+        timing_dict = parse_timing_report(f"{data_home}/openroad/reports/{phase}_timing_max.rpt")
+        for (startpoint, endpoint), timing_path_info in timing_dict.items():
+            timing_path_entity = self.get_timing_path_entity(startpoint, endpoint, "max", timing_path_info)
+            netlist_entity.timing_paths[(startpoint, endpoint, "max")] = timing_path_entity
 
-
-        for path_type in ["min", "max"]:
-            violation_type = {"max": "setup", "min": "hold"}[path_type]
-            timing_dict = parse_timing_report(
-                f"{data_home}/openroad/reports/{phase}_timing_{path_type}.rpt"
-            )
-            for (startpoint, endpoint), timing_path_info in timing_dict.items():
-                timing_path_entity = self.get_timing_path_entity(startpoint, endpoint, path_type, timing_path_info)
-                netlist_entity.timing_paths[(startpoint, endpoint, path_type)] = timing_path_entity
-
-                if timing_path_entity.slack <= critical_path_dict["worst_slack"]:
-                    critical_path_dict["worst_slack"] = timing_path_entity.slack
-                    critical_path_dict["startpoint"] = startpoint
-                    critical_path_dict["endpoint"] = endpoint
-                    critical_path_dict["path_type"] = path_type
-
-                if timing_path_entity.slack < 0:
-                    critical_path_dict["no_of_slack_violations"] += 1
-                    critical_path_dict["total_negative_slack"] += timing_path_entity.slack
-                    if timing_path_entity.slack < critical_path_dict["worst_negative_slack"]:
-                        critical_path_dict["worst_negative_slack"] += timing_path_entity.slack
-
-                    critical_path_dict[f"no_of_{violation_type}_violations"] += 1
-                    critical_path_dict[f"total_{violation_type}_violation"] += timing_path_entity.slack
-                    if timing_path_entity.slack < critical_path_dict[f"worst_{violation_type}_violation"]:
-                        critical_path_dict[f"worst_{violation_type}_violation"] += timing_path_entity.slack
+            critical_path_dict["no_of_timing_paths"] += 1
+            if timing_path_entity.slack <= critical_path_dict["worst_slack"]:
+                critical_path_dict["worst_slack"] = timing_path_entity.slack
+                critical_path_dict["startpoint"] = startpoint
+                critical_path_dict["endpoint"] = endpoint
+            if timing_path_entity.slack < 0:
+                critical_path_dict["no_of_slack_violations"] += 1
+                critical_path_dict["total_negative_slack"] += timing_path_entity.slack
 
         netlist_entity.timing_paths[(
             critical_path_dict["startpoint"],
             critical_path_dict["endpoint"],
-            critical_path_dict["path_type"],
+            "max",
         )].is_critical_path = True
         netlist_entity.critical_path_metrics = entity.CriticalPathMetricsEntity(
             critical_path_dict
