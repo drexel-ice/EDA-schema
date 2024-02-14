@@ -6,7 +6,7 @@ from pynet.parser.parser import Parser, ParseModes
 import eda_schema.entity as entity
 from eda_schema.dataset import StandardCellData
 
-from _parsers import power_parsing, parse_timing_report
+from _parsers import parse_area, parse_power, parse_timing_report
 from _liberty.parser import parse_liberty
 
 PHASE_DICT = {
@@ -254,7 +254,7 @@ class PynetDataLoader:
         return interconnect_entity
 
     @staticmethod
-    def get_cell_area_entities(standard_cells, netlist):
+    def get_cell_area_entities(standard_cells, data_home, phase, netlist):
         cell_metric_dict = {
             "no_of_combinational_cells": 0,
             "no_of_sequential_cells": 0,
@@ -271,7 +271,7 @@ class PynetDataLoader:
             "macro_area": 0,
             "cell_area": 0,
             "net_area": 0,
-            "total_area": netlist.attributes["width"] * netlist.attributes["length"],
+            "total_area": parse_area(f"{data_home}/openroad/reports/{phase}_area.rpt"),
         }
 
         for node in netlist.nodes:
@@ -302,7 +302,7 @@ class PynetDataLoader:
 
     @staticmethod
     def get_power_entity(data_home, phase):
-        power_dict = power_parsing(f"{data_home}/openroad/reports/{phase}_power.rpt")
+        power_dict = parse_power(f"{data_home}/openroad/reports/{phase}_power.rpt")
         return entity.PowerMetricsEntity({
             "sequential_power": power_dict["total_sequential"],
             "combinational_power": power_dict["total_combinational"],
@@ -428,7 +428,7 @@ class PynetDataLoader:
             netlist_entity.add_edge(*edge)
 
         netlist_cell_metrics, netlist_area_metrics = self.get_cell_area_entities(
-            self._dataset.standard_cells, netlist
+            self._dataset.standard_cells, data_home, phase, netlist
         )
         netlist_entity.cell_metrics = netlist_cell_metrics
         netlist_entity.area_metrics = netlist_area_metrics

@@ -1,7 +1,6 @@
 import re
-import os
 
-def area_parsing(report_path):
+def parse_area(report_path):
     with open(report_path) as fp:
         txt = fp.read()
     
@@ -13,7 +12,7 @@ def area_parsing(report_path):
     
     return float(design_matches[0])
 
-def count_parsing(report_path):
+def parse_count(report_path):
     with open(report_path) as fp:
         txt = fp.read()
     values = []
@@ -29,7 +28,7 @@ def count_parsing(report_path):
     
     return values
 
-def power_parsing(report_path):
+def parse_power(report_path):
     """Parse Synopsys ICC power reports
     Parameters
     ----------
@@ -126,5 +125,3 @@ def parse_timing_path(path_str):
             required_time_path.append(float(values[4]))
     
     return arrival_time_path, required_time_path
-
-parse_timing_report("/mnt/networkresearchdata/savrsch_shared/datasets/i2c/id-000001/openroad/reports/route_timing_max.rpt")
