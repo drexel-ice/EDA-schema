@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to EDA-Schema’s documentation! &mdash; EDA-Schema 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            EDA-Schema
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to EDA-Schema’s documentation!</a><ul>
+<li><a class="reference internal" href="#graph-datamodel-schema">Graph Datamodel Schema</a><ul>
+<li><a class="reference internal" href="#netlist-graph-ng">Netlist Graph (NG)</a></li>
+<li><a class="reference internal" href="#quality-metrics">Quality Metrics</a></li>
+<li><a class="reference internal" href="#clock-tree-graph-ctg">Clock Tree Graph (CTG)</a></li>
+<li><a class="reference internal" href="#interconnect-graph">Interconnect Graph</a></li>
+<li><a class="reference internal" href="#timing-path-graph">Timing Path Graph</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#open-dataset">Open Dataset</a><ul>
+<li><a class="reference internal" href="#full-dataset">Full dataset</a></li>
+<li><a class="reference internal" href="#minimal-dataset">Minimal dataset</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#getting-started">Getting Started</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#get-open-dataset">Get Open Dataset</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cite-this-work">Cite this work</a></li>
+<li><a class="reference internal" href="#contact">Contact</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">EDA-Schema</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to EDA-Schema’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-eda-schema-s-documentation">
+<h1>Welcome to EDA-Schema’s documentation!<a class="headerlink" href="#welcome-to-eda-schema-s-documentation" title="Permalink to this headline"></a></h1>
+<p>EDA-schema is a property graph datamodel schema developed to represent digital circuit designs and the associated attributes.
+The contributions of this work include:</p>
+<ol class="arabic simple">
+<li><p>A standardized set of graph structures and feature sets representing a digital circuit and corresponding subcomponents</p></li>
+<li><p>A dataset of physical designs generated from the IWLS’05 benchmark circuit suite utilizing the open-source 130 nm Process Design Kit (PDK) provided by Skywater and the open-source toolset OpenROAD</p></li>
+</ol>
+<p>NOTE: This GitHub repository is still in the development phase. We are actively working on adding new features, fixing bugs, and enhancing the overall functionality. We appreciate your patience and understanding as we work to finalize the project.</p>
+<section id="graph-datamodel-schema">
+<h2>Graph Datamodel Schema<a class="headerlink" href="#graph-datamodel-schema" title="Permalink to this headline"></a></h2>
+<p>EDA-schema is a property graph data model schema used to represent digital circuits. Netlists and performance reports are extracted from design tools after each stage of the EDA design flow. These files are utilized to derive structural information and performance metrics for each phase. While post-routing netlists and performance metrics are final and complete, earlier stages still provide incomplete yet useful structural information and estimated performance metrics. The data becomes more complete and accurate as the design flow progresses.</p>
+<p>A circuit extracted from the design flow is represented as a graph where nodes are IO pins, gates, and wires, and edges are the connections between them. This primary netlist graph representation is complemented by more granular graph representations, such as a timing path graph and an interconnect graph. Together, these representations complete the schema.</p>
+<p>Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, data is available for four states: post floorplan, post placement, post CTS, and post routing.</p>
+<a class="reference external image-reference" href="images/schema.png"><img alt="Alt text" src="_images/schema.png" /></a>
+<p>The primary graph entities of the circuit and schema include:</p>
+<section id="netlist-graph-ng">
+<h3>Netlist Graph (NG)<a class="headerlink" href="#netlist-graph-ng" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>The Netlist graph represents comprehensive structural details of digital circuits.</p></li>
+<li><p><strong>Nodes represent</strong>:</p>
+<ul>
+<li><p>Input/output ports (IO): These are the entry and exit points of the circuit for signals.</p></li>
+<li><p>Gates (G): These are logical devices that perform basic operations like AND, OR, NOT, etc.</p></li>
+<li><p>Interconnects (I): These are the wires that connect different components.</p></li>
+</ul>
+</li>
+<li><p><strong>Edges denote</strong> connections between devices and components.</p></li>
+<li><p>Gates (G) extend standard cells (SC) with design-specific structural and spatial attributes, capturing more detailed information about each gate’s role and connections in the circuit.</p></li>
+</ul>
+<a class="reference external image-reference" href="images/netlist_graph.png"><img alt="Alt text" src="_images/netlist_graph.png" /></a>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Netlist Graph (NG)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>width</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>height</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of inputs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of outputs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>pin density</p></td>
+<td><p>num</p></td>
+<td><p>μm⁻²</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>cell density</p></td>
+<td><p>num</p></td>
+<td><p>μm⁻²</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-odd"><td><p>net density</p></td>
+<td><p>num</p></td>
+<td><p>μm⁻²</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>functionality name</p></td>
+<td><p>str</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Standard Cell (SC)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>width</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>LEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>height</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>LEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of input pins</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>LEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of output pins</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>LEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>input capacitance (min, max, avg)</p></td>
+<td><p>num</p></td>
+<td><p>pF</p></td>
+<td><p>Liberty file</p></td>
+</tr>
+<tr class="row-odd"><td><p>output capacitance (min, max, avg)</p></td>
+<td><p>num</p></td>
+<td><p>pF</p></td>
+<td><p>Liberty file</p></td>
+</tr>
+<tr class="row-even"><td><p>leakage power (min, max, provided)</p></td>
+<td><p>num</p></td>
+<td><p>nW</p></td>
+<td><p>Liberty file</p></td>
+</tr>
+<tr class="row-odd"><td><p>is inverter gate</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>is buffer gate</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-odd"><td><p>is sequential gate</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>drive strength</p></td>
+<td><p>num</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Gate (G)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>name</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>standard cell</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of fan-ins</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of fan-outs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>gate co-ordinates</p></td>
+<td><p>(num, num)</p></td>
+<td><p>(μm, μm)</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>IO Port (IO)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>name</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>direction</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>co-ordinate</p></td>
+<td><p>(num, num)</p></td>
+<td><p>(μm, μm)</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>capacitance</p></td>
+<td><p>num</p></td>
+<td><p>fF</p></td>
+<td><p>DEF file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="quality-metrics">
+<h3>Quality Metrics<a class="headerlink" href="#quality-metrics" title="Permalink to this headline"></a></h3>
+<p>Quality Metrics are extracted from QoR reports to evaluate the performance and efficiency of the design.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Cell Metrics (CM)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>no. of combinational cell</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of sequential cell</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of buffer cell</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of inverter cell</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of macros</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of total cell</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Area Metrics (AM)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>combinational cell area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>sequential cell area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>buffer cell area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>inverter cell area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>macro area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>cell area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>net area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>total area</p></td>
+<td><p>num</p></td>
+<td><p>μm²</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Power Metrics (PM)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>combinational power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>sequential power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>macro power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>internal power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>switching power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p>leakage power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>total power</p></td>
+<td><p>num</p></td>
+<td><p>μW</p></td>
+<td><p>QoR reports</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Critical Path Metric (CPM)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>start point</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>end point</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>path type</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of slack violations</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>worst slack</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>worst negative slack</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>total negative slack</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of hold violations</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>worst hold violation</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>total hold violation</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="clock-tree-graph-ctg">
+<h3>Clock Tree Graph (CTG)<a class="headerlink" href="#clock-tree-graph-ctg" title="Permalink to this headline"></a></h3>
+<p>Represents the clock distribution network within the circuit, including buffers, inverters, and the connections between them.</p>
+<ul class="simple">
+<li><p>Clock networks are substructures derived from the netlist</p>
+<ul>
+<li><p>Follows the same structure</p></li>
+</ul>
+</li>
+<li><p><strong>Nodes represent</strong>:</p>
+<ul>
+<li><p>Input/output ports (IO)</p></li>
+<li><p>Gates (G)</p></li>
+<li><p>Interconnects (I)</p></li>
+</ul>
+</li>
+<li><p><strong>Edges denote</strong> connections between devices and components</p></li>
+</ul>
+<a class="reference external image-reference" href="images/clock_network_graph.png"><img alt="Alt text" src="_images/clock_network_graph.png" /></a>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Clock Tree Graph (CG)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>no. of buffers</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of inverters</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of sinks</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="interconnect-graph">
+<h3>Interconnect Graph<a class="headerlink" href="#interconnect-graph" title="Permalink to this headline"></a></h3>
+<p>Represents the physical layout of the interconnections, including segments of wires and their parasitic impedances.</p>
+<ul class="simple">
+<li><p>Captures spatial layout and connections</p>
+<ul>
+<li><p><strong>Nodes represent</strong> Interconnect Segments (IS)</p></li>
+<li><p><strong>Edges denote</strong> connections between segments</p></li>
+</ul>
+</li>
+<li><p>Spatial Graph</p>
+<ul>
+<li><p>Captures the spatial layout and connections of the circuit</p></li>
+</ul>
+</li>
+</ul>
+<a class="reference external image-reference" href="images/interconnect_graph.png"><img alt="Alt text" src="_images/interconnect_graph.png" /></a>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Interconnect Graph (IG)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>name</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of inputs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of outputs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>bounding box co-ordinates</p></td>
+<td><p>(num, num, num, num)</p></td>
+<td><p>(xmin, ymin, xmax, ymax)</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>half perimeter width length</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>RUDY</p></td>
+<td><p>num</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-odd"><td><p>resistance</p></td>
+<td><p>num</p></td>
+<td><p>fΩ</p></td>
+<td><p>SPEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>capacitance</p></td>
+<td><p>num</p></td>
+<td><p>fF</p></td>
+<td><p>SPEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Interconnect Segment (IS)</strong></p></td>
+<td></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>name</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>length</p></td>
+<td><p>num</p></td>
+<td><p>μm</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>start point co-ordinate</p></td>
+<td><p>(num, num)</p></td>
+<td><p>μm</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>end point co-ordinate</p></td>
+<td><p>(num, num)</p></td>
+<td><p>μm</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>midpoint</p></td>
+<td><p>(num, num)</p></td>
+<td><p>μm</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-odd"><td><p>RUDY</p></td>
+<td><p>num</p></td>
+<td></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>resistance</p></td>
+<td><p>num</p></td>
+<td><p>fΩ</p></td>
+<td><p>SPEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>capacitance</p></td>
+<td><p>num</p></td>
+<td><p>fF</p></td>
+<td><p>SPEF file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="timing-path-graph">
+<h3>Timing Path Graph<a class="headerlink" href="#timing-path-graph" title="Permalink to this headline"></a></h3>
+<p>Represents the critical timing paths in the circuit, capturing the timing constraints and the delays associated with each path.</p>
+<ul class="simple">
+<li><p>Static Timing Analysis (STA) Timing Path</p>
+<ul>
+<li><p>Sequence of circuit elements through which a signal travels</p></li>
+</ul>
+</li>
+<li><p>Timing Path Graphs are subgraphs of netlist graphs</p>
+<ul>
+<li><p><strong>Nodes represent</strong> Timing Path Nodes (TPN)</p></li>
+<li><p><strong>Edges denote</strong> connections between TPNs</p></li>
+</ul>
+</li>
+</ul>
+<a class="reference external image-reference" href="images/timing_path_graph.png"><img alt="Alt text" src="_images/timing_path_graph.png" /></a>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Source</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Timing Path Graph (TPG)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>start point</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>end point</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>path type</p></td>
+<td><p>str</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>arrival time</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>required time</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>slack</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>no. of gates</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>is critical path</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Timing Path Node (TPN)</strong></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>cell delay</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>arrival time</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>slew</p></td>
+<td><p>num</p></td>
+<td><p>ns</p></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-odd"><td><p>is rising transition</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+<tr class="row-even"><td><p>is falling transition</p></td>
+<td><p>boolean</p></td>
+<td></td>
+<td><p>STA reports</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="open-dataset">
+<h2>Open Dataset<a class="headerlink" href="#open-dataset" title="Permalink to this headline"></a></h2>
+<p>A comprehensive dataset for physical design is comprised of four key components:
+1) Design circuits: selected <a class="reference external" href="https://github.com/ieee-ceda-datc/RDF-2020/tree/master/benchmarks/iwls05_opencores">IWLS’05 benchmark circuits</a>
+2) Process Development Kit (PDK): <a class="reference external" href="https://skywater-pdk.readthedocs.io/en/main/">Skywater 130 nm</a>
+3) Physical Design Toolset: <a class="reference external" href="https://theopenroadproject.org/">OpenROAD</a>
+4) Design parameters and Constraints:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameters</p></th>
+<th class="head"><p>Values or Ranges</p></th>
+<th class="head"><p># of Samples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Clock periods (ns)</p></td>
+<td><p>{0.5, 1, 2, 5}</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>Aspect ratio</p></td>
+<td><p>{0.5, 0.75, 1}</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>Max utilization</p></td>
+<td><p>{0.3, 0.5}</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>Max skew (ns)</p></td>
+<td><p>{0.01 - 0.2}</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>Max fanout</p></td>
+<td><p>{50 - 250}</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>Max clock network capacitance (pF)</p></td>
+<td><p>{0.05 - 0.3}</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>Max latency (ns)</p></td>
+<td><p>{0 - 1}</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Total circuits per design</strong></p></td>
+<td></td>
+<td><p><strong>48</strong></p></td>
+</tr>
+</tbody>
+</table>
+<p>The open dataset is available <a class="reference external" href="https://drexel0.sharepoint.com/:f:/r/sites/ICETeam/Shared%20Documents/Digital%20Design%20Group/ML-AI%20CAD%20project/Datasets/EDA-schema-open-dataset?csf=1&amp;web=1&amp;e=hvFzIV">publicly</a> as a zip file of mongoDB data dump.</p>
+<p>Following are the details on the open dataset</p>
+<section id="full-dataset">
+<h3>Full dataset<a class="headerlink" href="#full-dataset" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>consists of all the generated circuits</p></li>
+<li><p>Overall circuits in dataset: 48 * 20 = 960​</p></li>
+<li><p>Number of gates in dataset: 7,468,228​</p></li>
+<li><p>Number of nets in dataset: 7,726,920​</p></li>
+<li><p>Number of timing paths in dataset: 1,561,975​</p></li>
+<li><p>Total dataset size: 82.836G​</p></li>
+</ul>
+</section>
+<section id="minimal-dataset">
+<h3>Minimal dataset<a class="headerlink" href="#minimal-dataset" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>consists of a small subset generated circuits</p></li>
+<li><p>Target parameters</p>
+<ul>
+<li><p>operating frequency: 1 GHz</p></li>
+<li><p>aspect ratio: 0.5</p></li>
+<li><p>utilizatopm: 70%</p></li>
+</ul>
+</li>
+<li><p>Overall circuits in dataset: 20</p></li>
+<li><p>Number of gates in dataset: 272,568</p></li>
+<li><p>Number of nets in dataset: 227,148</p></li>
+<li><p>Number of timing paths in dataset: 121,298</p></li>
+<li><p>Total dataset size: 1.194GB</p></li>
+</ul>
+</section>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline"></a></h2>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h3>
+<p>The key dependencies are requred by EDA-schema are the following.</p>
+<ul class="simple">
+<li><p>python3.6 or beyond</p></li>
+<li><p>pip3</p></li>
+<li><p>mongoDB</p></li>
+</ul>
+<p>Clone the <a class="reference external" href="https://github.com/drexel-ice/eda-schema">repository</a> and use <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> for installation.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:drexel-ice/eda-schema.git
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>eda-schema
+$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="get-open-dataset">
+<h3>Get Open Dataset<a class="headerlink" href="#get-open-dataset" title="Permalink to this headline"></a></h3>
+<p>To use the dataset, first download the zip file of mongoDB data dump, unzip it, and execute the follwing command.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>mongod
+$<span class="w"> </span>mongod<span class="w"> </span>--dbpath<span class="w"> </span>&lt;path_to_the_data_dump&gt;
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cite-this-work">
+<h2>Cite this work<a class="headerlink" href="#cite-this-work" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><ol class="upperalpha simple" start="16">
+<li><p>Shrestha, A. Aversa, S. Phatharodom, and I. Savidis, “<strong>EDA-schema: A graph datamodel schema and open dataset for digital design automation</strong>“, Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI), pp. 69–77, Jun. 2024.</p></li>
+</ol>
+</li>
+</ul>
+</section>
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>For any questions, support, or if you have issues accessing the dataset, please send us an email at <a class="reference external" href="mailto:ps937&#37;&#52;&#48;drexel&#46;edu">ps937<span>&#64;</span>drexel<span>&#46;</span>edu</a>, <a class="reference external" href="mailto:is338&#37;&#52;&#48;drexel&#46;edu">is338<span>&#64;</span>drexel<span>&#46;</span>edu</a>.</p></li>
+<li><p>If you encounter any bugs or have any issues, please feel free to <a class="reference external" href="https://github.com/drexel-ice/EDA-schema/issues">open an issue</a>. We appreciate your feedback and will work to address any problems as quickly as possible.</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Pratik Shrestha.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
