@@ -150,7 +150,7 @@ class FileDB(BaseDB):
         self._create_table("nets", entity.KEY_COLUMNS + self.net_columns)
         self._create_table("net_segments", entity.KEY_COLUMNS + ["net_name"] + self.net_segment_columns)
         self._create_table("timing_paths", entity.KEY_COLUMNS + self.timing_path_columns)
-        self._create_table("timing_points", entity.KEY_COLUMNS + ["startpoint", "endpoint"] + self.timing_point_columns)
+        self._create_table("timing_points", entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type"] + self.timing_point_columns)
         self._create_table("clock_trees", entity.KEY_COLUMNS + ["clock_source"] + self.clock_tree_columns)
 
     def add_graph_data(self, entity_name, graph, key):
@@ -272,7 +272,7 @@ class MongoDB(BaseDB, MongoClient):
             {"entity": "nets", "columns": entity.KEY_COLUMNS + self.net_columns},
             {"entity": "net_segments", "columns": entity.KEY_COLUMNS + ["net_name"] + self.net_segment_columns},
             {"entity": "timing_paths", "columns": entity.KEY_COLUMNS + self.timing_path_columns},
-            {"entity": "timing_points", "columns": entity.KEY_COLUMNS + ["startpoint", "endpoint"] + self.timing_point_columns},
+            {"entity": "timing_points", "columns": entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type"] + self.timing_point_columns},
             {"entity": "clock_trees", "columns": entity.KEY_COLUMNS + ["clock_source"] + self.clock_tree_columns},
         ])
 
@@ -337,7 +337,8 @@ class MongoDB(BaseDB, MongoClient):
         data = list(self.db[entity_name + "_tabular"].find(kwargs))
         for row in data:
             row.pop("_id")
-        return pd.DataFrame(data)
+        columns = self.db["metadata"].find_one({"entity": entity_name})["columns"]
+        return pd.DataFrame(data, columns=columns)
 
     def get_table_row(self, entity_name, **kwargs):
         """
@@ -351,5 +352,6 @@ class MongoDB(BaseDB, MongoClient):
             pd.Series: A specific row from the specified data table.
         """
         row = self.db[entity_name + "_tabular"].find_one(kwargs)
-        row.pop("_id")
+        if row:
+            row.pop("_id")
         return pd.Series(row)
