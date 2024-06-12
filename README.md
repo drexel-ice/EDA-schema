@@ -17,7 +17,7 @@ A circuit extracted from the design flow is represented as a graph where nodes a
 Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, data is available for four states: post floorplan, post placement, post CTS, and post routing.
 
 
-![Alt text](schema.png)
+![Alt text](docs/images/schema.png)
 
 ## Open Dataset
 A comprehensive dataset for physical design is comprised of four key components:
