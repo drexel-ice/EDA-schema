@@ -209,7 +209,7 @@ class PynetDataLoader:
             interconnect_entity.add_node(
                 interconnect_segment_entity.name,
                 type="NETSEGMENT",
-                object=interconnect_segment_entity
+                entity=interconnect_segment_entity
             )
 
             hwpl += interconnect_segment_entity.length
@@ -224,10 +224,10 @@ class PynetDataLoader:
                     y_max = point[1]
 
         for net_segment_i in interconnect_entity.nodes:
-            i_net_segment = interconnect_entity.nodes[net_segment_i]["object"]
+            i_net_segment = interconnect_entity.nodes[net_segment_i]["entity"]
             i_points = ((i_net_segment.x1, i_net_segment.y1), (i_net_segment.x2, i_net_segment.y2))
             for net_segment_j in interconnect_entity.nodes:
-                j_net_segment = interconnect_entity.nodes[net_segment_j]["object"]
+                j_net_segment = interconnect_entity.nodes[net_segment_j]["entity"]
                 j_points = ((j_net_segment.x1, j_net_segment.y1), (j_net_segment.x2, j_net_segment.y2))
                 if net_segment_i == net_segment_j:
                     continue
@@ -322,18 +322,21 @@ class PynetDataLoader:
             "arrival_time": timing_path_info["arrival_time_data"][-1][1],
             "required_time": timing_path_info["required_time_data"][-1][1],
             "slack": timing_path_info["slack"],
-            "no_of_gates": (len(timing_path_info["arrival_time_data"]) - 4) / 2,
+            "no_of_gates": 0,
             "is_critical_path": False,
         })
 
         prev_node = None
-        for i, x in enumerate(timing_path_info["arrival_time_data"]):
+        i = 0
+        for x in timing_path_info["arrival_time_data"]:
             match_obj = re.findall(r". (.*?)/.+? \((.*?)\)", x[5])
             if not match_obj:
                 continue
+            i += 1
             node = match_obj[0][0]
 
             timing_point_entity = entity.TimingPointEntity({
+                "name": node,
                 "node_depth": i,
                 "cell_delay": x[0],
                 "arrival_time": x[1],
@@ -341,11 +344,12 @@ class PynetDataLoader:
                 "is_rise_transition": x[3],
                 "is_fall_transition": x[4],
             })
-            timing_path_entity.add_node(node, type="TIMINGPOINT", object=timing_point_entity)
+            timing_path_entity.add_node(node, type="TIMINGPOINT", entity=timing_point_entity)
 
             if prev_node:
                 timing_path_entity.add_edge(prev_node, node)
             prev_node = node
+        timing_path_entity.no_of_gates = i
 
         return timing_path_entity
 
@@ -359,6 +363,7 @@ class PynetDataLoader:
             "startpoint": None,
             "endpoint": None,
             "no_of_timing_paths": 0,
+            "worst_arrival_time": None,
             "worst_slack": None,
             "total_negative_slack": 0,
             "no_of_slack_violations": 0,
@@ -369,7 +374,8 @@ class PynetDataLoader:
             netlist_entity.timing_paths[(startpoint, endpoint, "max")] = timing_path_entity
 
             critical_path_dict["no_of_timing_paths"] += 1
-            if timing_path_entity.slack <= critical_path_dict["worst_slack"]:
+            if critical_path_dict["worst_slack"] is None or timing_path_entity.slack <= critical_path_dict["worst_slack"]:
+                critical_path_dict["worst_arrival_time"] = timing_path_entity.arrival_time
                 critical_path_dict["worst_slack"] = timing_path_entity.slack
                 critical_path_dict["startpoint"] = startpoint
                 critical_path_dict["endpoint"] = endpoint
@@ -407,19 +413,19 @@ class PynetDataLoader:
         for node in netlist.nodes:
             if netlist.get_node_attribute(node, "node_type") in ["INPUT", "OUTPUT"]:
                 io_port = self.get_io_port_entity(netlist, node)
-                info_dict = {"type": "PORT", "object": io_port}
+                info_dict = {"type": "PORT", "entity": io_port}
 
             if netlist.get_node_attribute(node, "node_type") == "GATE":
                 if phase is not "floorplan" and netlist.get_node_attributes(node)["x"] is None:
                     continue
                 gate = self.get_gate_entity(netlist, node)
-                info_dict = {"type": "GATE", "object": gate}
+                info_dict = {"type": "GATE", "entity": gate}
                 no_of_pins += self._dataset.standard_cells[gate.standard_cell].no_of_input_pins
                 no_of_pins += self._dataset.standard_cells[gate.standard_cell].no_of_output_pins
 
             if netlist.get_node_attribute(node, "node_type") == "WIRE":
                 interconnect = self.get_interconnect_entity(netlist, node)
-                info_dict = {"type": "INTERCONNECT", "object": interconnect}
+                info_dict = {"type": "INTERCONNECT", "entity": interconnect}
                 no_of_nets += 1
 
             netlist_entity.add_node(node, **info_dict)

@@ -112,8 +112,8 @@ class CriticalPathMetricsEntity(BaseEntity):
             "properties": {
                 "startpoint": {"type": "string"},
                 "endpoint": {"type": "string"},
+                "worst_arrival_time": {"type": "number"},
                 "worst_slack": {"type": "number"},
-                "worst_negative_slack": {"type": "number"},
                 "total_negative_slack": {"type": "number"},
                 "no_of_timing_paths": {"type": "number"},
                 "no_of_slack_violations": {"type": "number"},
@@ -235,7 +235,7 @@ class InterconnectSegmentEntity(BaseEntity):
                 "name": {"type": "string"},
                 "length": {"type": ["number", "null"]},
                 "x1": {"type": ["number", "null"]},
-                "y2": {"type": ["number", "null"]},
+                "y1": {"type": ["number", "null"]},
                 "x2": {"type": ["number", "null"]},
                 "y2": {"type": ["number", "null"]},
                 "x": {"type": ["number", "null"]},
@@ -281,6 +281,7 @@ class TimingPointEntity(BaseEntity):
         "items": {
             "type": "object",
             "properties": {
+                "name": {"type": "string"},
                 "cell_delay": {"type": "number"},
                 "arrival_time": {"type": "number"},
                 "slew": {"type": "number"},

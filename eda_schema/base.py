@@ -56,7 +56,7 @@ class BaseEntity:
 
     def __repr__(self):
         return str(self.asdict())
-    
+
     def __str__(self):
         return str(self.asdict())
 
@@ -77,7 +77,7 @@ class GraphEntity(nx.DiGraph, BaseEntity):
 
     def __repr__(self):
         return str(self.asdict())
-    
+
     def __str__(self):
         return str(self.asdict())
 
