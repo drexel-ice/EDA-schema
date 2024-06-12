@@ -87,8 +87,7 @@ $ mongod --dbpath <path_to_the_data_dump>
 
 ## Cite this work
 
-- P. Shrestha, A. Aversa, S. Phatharodom, and I. Savidis, "**EDA-schema: A
-graph datamodel schema and open dataset for digital design automation**", Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI), pp. 1–8, Jun. 2024.
+- P. Shrestha, A. Aversa, S. Phatharodom, and I. Savidis, "**EDA-schema: A graph datamodel schema and open dataset for digital design automation**", Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI), pp. 69–77, Jun. 2024.
 
 ## Contact
 
