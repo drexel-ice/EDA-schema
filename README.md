@@ -85,6 +85,10 @@ $ sudo systemctl stop mongod
 $ mongod --dbpath <path_to_the_data_dump>
 ```
 
+### Documentation
+
+Follow the [documentation](https://github.com/drexel-ice/EDA-schema/blob/release/docs/DOC__EDA_schema.pdf) and [notebook examples](https://github.com/drexel-ice/EDA-schema/blob/release/notebooks/Getting%20Started%20with%20EDA-Schema.ipynb) for usage.
+
 ## Cite this work
 
 - P. Shrestha, A. Aversa, S. Phatharodom, and I. Savidis, "**EDA-schema: A graph datamodel schema and open dataset for digital design automation**", Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI), pp. 69–77, Jun. 2024.
