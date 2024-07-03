@@ -58,7 +58,7 @@ $ pip install -e .
 
 ### Get Open Dataset
 
-The open dataset is available [publicly](https://drexel0.sharepoint.com/:f:/r/sites/ICETeam/Shared%20Documents/Digital%20Design%20Group/ML-AI%20CAD%20project/Datasets/EDA-schema-open-dataset?csf=1&web=1&e=hvFzIV) as a zip file of mongoDB data dump.
+The open dataset is available [publicly](https://drive.google.com/drive/folders/1jj9E1zsRqhC8wLKlfgi6yES3YCRAWiwM?usp=drive_link) as a zip file of mongoDB data dump.
 
 Following are the details on the open dataset
 
