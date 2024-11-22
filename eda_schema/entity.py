@@ -26,6 +26,8 @@ class NetlistEntity(GraphEntity):
                 "height": {"type": ["number", "null"]},
                 "no_of_inputs": {"type": "number"},
                 "no_of_outputs": {"type": "number"},
+                "no_of_cells": {"type": "number"},
+                "no_of_nets": {"type": "number"},
                 "cell_density": {"type": ["number", "null"]},
                 "pin_density": {"type": ["number", "null"]},
                 "net_density": {"type": ["number", "null"]},
