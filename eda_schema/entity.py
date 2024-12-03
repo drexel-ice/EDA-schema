@@ -9,13 +9,6 @@ class NetlistEntity(GraphEntity):
     """Class for representing netlist data using a JSON schema."""
 
     title = "netlist"
-    cell_metrics = None
-    area_metrics = None
-    power_metrics = None
-    critical_path_metrics = None
-    timing_paths = {}
-    clock_trees = {}
-
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
@@ -34,6 +27,15 @@ class NetlistEntity(GraphEntity):
             },
         },
     }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cell_metrics = None
+        self.area_metrics = None
+        self.power_metrics = None
+        self.critical_path_metrics = None
+        self.timing_paths = {}
+        self.clock_trees = {}
 
 
 class CellMetricsEntity(BaseEntity):
@@ -263,6 +265,7 @@ class TimingPathEntity(GraphEntity):
                 "startpoint": {"type": "string"},
                 "endpoint": {"type": "string"},
                 "path_type": {"type": "string"},
+                "sort_index": {"type": "number"},
                 "arrival_time": {"type": "number"},
                 "required_time": {"type": "number"},
                 "slack": {"type": "number"},
