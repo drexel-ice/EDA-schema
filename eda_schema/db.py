@@ -150,7 +150,7 @@ class FileDB(BaseDB):
         self._create_table("nets", entity.KEY_COLUMNS + self.net_columns)
         self._create_table("net_segments", entity.KEY_COLUMNS + ["net_name"] + self.net_segment_columns)
         self._create_table("timing_paths", entity.KEY_COLUMNS + self.timing_path_columns)
-        self._create_table("timing_points", entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type"] + self.timing_point_columns)
+        self._create_table("timing_points", entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type", "sort_index"] + self.timing_point_columns)
         self._create_table("clock_trees", entity.KEY_COLUMNS + ["clock_source"] + self.clock_tree_columns)
 
     def add_graph_data(self, entity_name, graph, key):
@@ -272,7 +272,7 @@ class MongoDB(BaseDB, MongoClient):
             {"entity": "nets", "columns": entity.KEY_COLUMNS + self.net_columns},
             {"entity": "net_segments", "columns": entity.KEY_COLUMNS + ["net_name"] + self.net_segment_columns},
             {"entity": "timing_paths", "columns": entity.KEY_COLUMNS + self.timing_path_columns},
-            {"entity": "timing_points", "columns": entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type"] + self.timing_point_columns},
+            {"entity": "timing_points", "columns": entity.KEY_COLUMNS + ["startpoint", "endpoint", "path_type", "sort_index"] + self.timing_point_columns},
             {"entity": "clock_trees", "columns": entity.KEY_COLUMNS + ["clock_source"] + self.clock_tree_columns},
         ])
 

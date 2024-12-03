@@ -89,18 +89,20 @@ class Dataset(dict):
 
         timing_path_dict = []
         timing_point_data = []
-        for timing_path in netlist.timing_paths.values():
-            timing_path_key = f"{netlist_key_str}-{timing_path.startpoint}-{timing_path.endpoint}-{timing_path.path_type}"
-            self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
-            timing_path_dict.append({**netlist_dict, **timing_path.asdict()})
-            for timing_point in timing_path.nodes:
-                timing_point_data.append({
-                    **netlist_dict,
-                    "startpoint": timing_path.startpoint,
-                    "endpoint": timing_path.endpoint,
-                    "path_type": timing_path.path_type,
-                    **timing_path.nodes[timing_point]["entity"].asdict(),
-                })
+        for timing_path_list in netlist.timing_paths.values():
+            for timing_path in timing_path_list:
+                timing_path_key = f"{netlist_key_str}-{timing_path.startpoint}-{timing_path.endpoint}-{timing_path.path_type}-{timing_path.sort_index}"
+                self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
+                timing_path_dict.append({**netlist_dict, **timing_path.asdict()})
+                for timing_point in timing_path.nodes:
+                    timing_point_data.append({
+                        **netlist_dict,
+                        "startpoint": timing_path.startpoint,
+                        "endpoint": timing_path.endpoint,
+                        "path_type": timing_path.path_type,
+                        "sort_index": timing_path.sort_index,
+                        **timing_path.nodes[timing_point]["entity"].asdict(),
+                    })
 
         self.db.add_table_data("timing_paths", timing_path_dict)
         self.db.add_table_data("timing_points", timing_point_data)
@@ -135,7 +137,7 @@ class Dataset(dict):
 
             self[tuple(key.values())] = netlist_entity
 
-    def load_netlist(self, key, netlist_data=None):
+    def load_netlist(self, key, netlist_data=None, timing_path_sort_index=0):
         netlist_data = netlist_data or self.db.get_table_row("netlists", **key).to_dict()
         netlist_entity = entity.NetlistEntity(netlist_data)
 
@@ -189,9 +191,9 @@ class Dataset(dict):
         critical_path_metrics_data = self.db.get_table_row("critical_path_metrics", **key).to_dict()
         netlist_entity.critical_path_metrics = entity.CriticalPathMetricsEntity(critical_path_metrics_data)
 
-        timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max")
-        timing_point_df = self.db.get_table_data("timing_points", **key, path_type="max")
-        timing_point_df["index_col"] = timing_point_df["startpoint"] + timing_point_df["endpoint"] + timing_point_df["path_type"] + timing_point_df["name"]
+        timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max", sort_index=timing_path_sort_index)
+        timing_point_df = self.db.get_table_data("timing_points", **key, path_type="max", sort_index=timing_path_sort_index)
+        timing_point_df["index_col"] = timing_point_df["startpoint"] + timing_point_df["endpoint"] + timing_point_df["path_type"] + timing_point_df["sort_index"].apply(str) + timing_point_df["name"]
         timing_point_dict = timing_point_df.set_index("index_col").to_dict('index')
 
         for _, timing_path_data in timing_path_df.iterrows():
@@ -200,9 +202,10 @@ class Dataset(dict):
                 "startpoint": timing_path_data["startpoint"],
                 "endpoint": timing_path_data["endpoint"],
                 "path_type": timing_path_data["path_type"],
+                "sort_index": timing_path_sort_index,
             }
             timing_path_entity = self.load_timing_path(timing_path_key, timing_path_data, timing_point_df, timing_point_dict)
-            netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"])] = timing_path_entity
+            netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"])] = timing_path_entity
 
         return netlist_entity
 
@@ -211,15 +214,15 @@ class Dataset(dict):
             _timing_path_data = self.db.get_table_row("timing_paths", **timing_path_key)
         if _timing_point_dict is None:
             _timing_point_df = self.db.get_table_data("timing_points", **timing_path_key)
-            _timing_point_df["index_col"] = _timing_point_df["startpoint"] + _timing_point_df["endpoint"] + _timing_point_df["path_type"] + _timing_point_df["name"]
+            _timing_point_df["index_col"] = _timing_point_df["startpoint"] + _timing_point_df["endpoint"] + _timing_point_df["path_type"] + _timing_point_df["sort_index"].apply(str) + _timing_point_df["name"]
             _timing_point_dict = _timing_point_df.set_index("index_col").to_dict('index')
 
         timing_path_entity = entity.TimingPathEntity(_timing_path_data.to_dict())
-        timing_path_key_str =  "-".join(timing_path_key.values())
+        timing_path_key_str =  "-".join([str(x) for x in timing_path_key.values()])
 
         timing_path_graph = self.db.get_graph_data("timing_paths", timing_path_key_str)
         for timing_point in timing_path_graph["nodes"]:
-            timing_point_entity = entity.TimingPointEntity(_timing_point_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + timing_point])
+            timing_point_entity = entity.TimingPointEntity(_timing_point_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + str(_timing_path_data["sort_index"]) + timing_point])
             info_dict = {"type": "TIMINGPOINT", "entity": timing_point_entity}
             timing_path_entity.add_node(timing_point, **info_dict)
 
