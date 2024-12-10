@@ -7,6 +7,8 @@ NETLIST_DATA = {
     'height': 10,
     "no_of_inputs": 10,
     "no_of_outputs": 10,
+    "no_of_cells": 100,
+    "no_of_nets": 90,
     "cell_density": 0.5,
     "pin_density": 0.5,
     "net_density": 0.5,
