@@ -9,24 +9,27 @@ from eda_schema.errors import ValidationError
 class BaseEntity:
     """Base class for JSON schema validation and attribute setting."""
 
-    def __init__(self, json_data: Dict[str, Any] = None) -> None:
+    def __init__(self, json_data: Dict[str, Any] = None, validate: bool = True) -> None:
         """
         Initialize the BaseEntity instance.
 
         Args:
             json_data (dict, optional): JSON data to validate and set as attributes.
+            validate (bool, optional): Whether to validate the JSON data before setting attributes. Defaults to True.
         """
         if json_data:
-            self.load(json_data)
+            self.load(json_data, validate=validate)
 
-    def load(self, json_data: Dict[str, Any]) -> None:
+    def load(self, json_data: Dict[str, Any], validate: bool = True) -> None:
         """
         Load and validate JSON data, setting attributes.
 
         Args:
             json_data (dict): JSON data to load and validate.
+            validate (bool, optional): Whether to validate the JSON data before setting attributes. Defaults to True.
         """
-        self.validate(json_data)
+        if validate:
+            self.validate(json_data)
         for attr, value in json_data.items():
             setattr(self, attr, value)
 
