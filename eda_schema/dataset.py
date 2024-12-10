@@ -1,3 +1,4 @@
+import dill
 from eda_schema import entity
 
 
@@ -30,6 +31,25 @@ class Dataset(dict):
         """
         super().__init__()
         self.db = db_obj
+
+    def save_to_pickle(self, filepath):
+        """
+        Saves the Dataset object to a pickle file.
+        """
+        _temp_db = self.db
+        self.db = None
+        with open(filepath, 'wb') as f:
+            dill.dump(self, f)
+        self.db = _temp_db
+
+    def load_from_pickle(self, filepath):
+        """
+        Loads the Dataset object directly into the current instance.
+        """
+        with open(filepath, 'rb') as f:
+            loaded_obj = dill.load(f)
+        loaded_obj.db = self.db
+        return loaded_obj
 
     def dump_standard_cells(self):
         """Dump standard cell data into the database."""
