@@ -137,18 +137,18 @@ class Dataset(dict):
 
             self[tuple(key.values())] = netlist_entity
 
-    def load_netlist(self, key, netlist_data=None, timing_path_sort_index=0):
+    def load_netlist(self, key, netlist_data=None, timing_path_sort_index=0, validate=True):
         netlist_data = netlist_data or self.db.get_table_row("netlists", **key).to_dict()
-        netlist_entity = entity.NetlistEntity(netlist_data)
+        netlist_entity = entity.NetlistEntity(netlist_data, validate=validate)
 
         cell_metrics_data = self.db.get_table_row("cell_metrics", **key).to_dict()
-        netlist_entity.cell_metrics = entity.CellMetricsEntity(cell_metrics_data)
+        netlist_entity.cell_metrics = entity.CellMetricsEntity(cell_metrics_data, validate=validate)
 
         area_metrics_data = self.db.get_table_row("area_metrics", **key).to_dict()
-        netlist_entity.area_metrics = entity.AreaMetricsEntity(area_metrics_data)
+        netlist_entity.area_metrics = entity.AreaMetricsEntity(area_metrics_data, validate=validate)
 
         power_metrics_data = self.db.get_table_row("power_metrics", **key).to_dict()
-        netlist_entity.power_metrics = entity.PowerMetricsEntity(power_metrics_data)
+        netlist_entity.power_metrics = entity.PowerMetricsEntity(power_metrics_data, validate=validate)
 
         port_df = self.db.get_table_data("ports", **key)
         port_dict = port_df.set_index("name").to_dict('index')
@@ -167,20 +167,20 @@ class Dataset(dict):
         netlist_graph = self.db.get_graph_data("netlists", netlist_key_str)
         for node, node_type in zip(netlist_graph["nodes"], netlist_graph["node_types"]):
             if node_type == "PORT":
-                port_entity = entity.IOPortEntity({"name": node, **port_dict[node]})
+                port_entity = entity.IOPortEntity({"name": node, **port_dict[node]}, validate=validate)
                 info_dict = {"type": "PORT", "entity": port_entity}
 
             if node_type == "GATE":
-                gate_entity = entity.GateEntity({"name": node, **gate_dict[node]})
+                gate_entity = entity.GateEntity({"name": node, **gate_dict[node]}, validate=validate)
                 info_dict = {"type": "GATE", "entity": gate_entity}
 
             if node_type == "INTERCONNECT":
                 net_key ={**key, "name": node}
                 if key["phase"] != "floorplan":
                     net_segment_dict = net_segment_df[net_segment_df.net_name==node].set_index("name").to_dict('index')
-                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], net_segment_dict)
+                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], net_segment_dict, validate=validate)
                 else:
-                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], None)
+                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], None, validate=validate)
                 info_dict = {"type": "INTERCONNECT", "entity": interconnect_entity}
 
             netlist_entity.add_node(node, **info_dict)
@@ -189,7 +189,7 @@ class Dataset(dict):
             netlist_entity.add_edge(*edge)
 
         critical_path_metrics_data = self.db.get_table_row("critical_path_metrics", **key).to_dict()
-        netlist_entity.critical_path_metrics = entity.CriticalPathMetricsEntity(critical_path_metrics_data)
+        netlist_entity.critical_path_metrics = entity.CriticalPathMetricsEntity(critical_path_metrics_data, validate=validate)
 
         timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max", sort_index=timing_path_sort_index)
         timing_point_df = self.db.get_table_data("timing_points", **key, path_type="max", sort_index=timing_path_sort_index)
@@ -204,25 +204,26 @@ class Dataset(dict):
                 "path_type": timing_path_data["path_type"],
                 "sort_index": timing_path_sort_index,
             }
-            timing_path_entity = self.load_timing_path(timing_path_key, timing_path_data, timing_point_df, timing_point_dict)
+            timing_path_entity = self.load_timing_path(timing_path_key, timing_path_data, timing_point_df, timing_point_dict, validate=validate)
             netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"])] = timing_path_entity
 
         return netlist_entity
 
-    def load_timing_path(self, timing_path_key, _timing_path_data=None, _timing_point_df=None, _timing_point_dict=None):
+    def load_timing_path(self, timing_path_key, _timing_path_data=None, _timing_point_df=None, _timing_point_dict=None, validate=True):
         if _timing_path_data is None:
             _timing_path_data = self.db.get_table_row("timing_paths", **timing_path_key)
         if _timing_point_dict is None:
-            _timing_point_df = self.db.get_table_data("timing_points", **timing_path_key)
+            if _timing_point_df is None:
+                _timing_point_df = self.db.get_table_data("timing_points", **timing_path_key)
             _timing_point_df["index_col"] = _timing_point_df["startpoint"] + _timing_point_df["endpoint"] + _timing_point_df["path_type"] + _timing_point_df["sort_index"].apply(str) + _timing_point_df["name"]
             _timing_point_dict = _timing_point_df.set_index("index_col").to_dict('index')
 
-        timing_path_entity = entity.TimingPathEntity(_timing_path_data.to_dict())
+        timing_path_entity = entity.TimingPathEntity(_timing_path_data.to_dict(), validate=validate)
         timing_path_key_str =  "-".join([str(x) for x in timing_path_key.values()])
 
         timing_path_graph = self.db.get_graph_data("timing_paths", timing_path_key_str)
         for timing_point in timing_path_graph["nodes"]:
-            timing_point_entity = entity.TimingPointEntity(_timing_point_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + str(_timing_path_data["sort_index"]) + timing_point])
+            timing_point_entity = entity.TimingPointEntity(_timing_point_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + str(_timing_path_data["sort_index"]) + timing_point], validate=validate)
             info_dict = {"type": "TIMINGPOINT", "entity": timing_point_entity}
             timing_path_entity.add_node(timing_point, **info_dict)
 
@@ -231,7 +232,7 @@ class Dataset(dict):
 
         return timing_path_entity
 
-    def load_interconnect(self, net_key, _net_data=None, _net_segment_dict=None):
+    def load_interconnect(self, net_key, _net_data=None, _net_segment_dict=None, validate=True):
         if _net_data is None:
             _net_data = self.db.get_table_row("nets", **net_key).to_dict()
         if net_key["phase"] != "floorplan" and _net_segment_dict is None:
@@ -240,13 +241,13 @@ class Dataset(dict):
             net_segment_df = self.db.get_table_data("net_segments", **net_segment_key)
             _net_segment_dict = net_segment_df.set_index("name").to_dict('index')
 
-        interconnect_entity = entity.InterconnectEntity(_net_data)
+        interconnect_entity = entity.InterconnectEntity(_net_data, validate=validate)
         net_key_str =  "-".join(net_key.values())
 
         if net_key["phase"] == "route":
             net_graph = self.db.get_graph_data("nets", net_key_str)
             for net_segment in net_graph["nodes"]:
-                net_segment_entity = entity.InterconnectSegmentEntity({"name": net_segment, **_net_segment_dict[net_segment]})
+                net_segment_entity = entity.InterconnectSegmentEntity({"name": net_segment, **_net_segment_dict[net_segment]}, validate=validate)
                 info_dict = {"type": "NETSEGMENT", "entity": net_segment_entity}
                 interconnect_entity.add_node(net_segment, **info_dict)
 
