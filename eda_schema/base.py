@@ -67,7 +67,7 @@ class BaseEntity:
 class GraphEntity(nx.DiGraph, BaseEntity):
     """Base class for JSON schema validation and attribute setting."""
 
-    def __init__(self, json_data: Dict[str, Any] = None) -> None:
+    def __init__(self, json_data: Dict[str, Any] = None, validate: bool = True) -> None:
         """
         Initialize the BaseEntity instance.
 
@@ -75,6 +75,7 @@ class GraphEntity(nx.DiGraph, BaseEntity):
             json_data (dict, optional): JSON data to validate and set as attributes.
         """
         super().__init__()
+        BaseEntity().__init__(validate=validate)
         if json_data:
             self.load(json_data)
 
