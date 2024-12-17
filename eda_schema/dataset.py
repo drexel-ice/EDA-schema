@@ -56,7 +56,7 @@ class Dataset(dict):
         for std_cell in self.standard_cells.values():
             self.db.add_table_row("standard_cells", std_cell.asdict())
 
-    def dump_netlist(self, circuit, netlist_id, phase):
+    def dump_netlist(self, circuit, netlist_id, phase, dump_associated_graphs=False):
         """
         Dump netlist data into the database.
 
@@ -80,18 +80,18 @@ class Dataset(dict):
             {**netlist_dict, **netlist.critical_path_metrics.asdict()}
         )
 
-        port_data, gate_data, net_data, net_segment_data = [], [], [], []
+        io_port_data, gate_data, net_data, net_segment_data = [], [], [], []
         for node in netlist.nodes:
             node_dict = {**netlist_dict, **netlist.nodes[node]["entity"].asdict()}
-            if netlist.nodes[node]["type"] == "PORT":
-                port_data.append(node_dict)
+            if netlist.nodes[node]["type"] == "IO_PORT":
+                io_port_data.append(node_dict)
             if netlist.nodes[node]["type"] == "GATE":
                 gate_data.append(node_dict)
             if netlist.nodes[node]["type"] == "INTERCONNECT":
                 net_data.append(node_dict)
                 net = netlist.nodes[node]["entity"]
                 net_key = f"{netlist_key_str}-{net.name}"
-                if phase == "route":
+                if dump_associated_graphs and phase == "detailed_route":
                     self.db.add_graph_data("nets", net, net_key)
                 for net_segment in net.nodes:
                     net_segment_data.append({
@@ -101,7 +101,7 @@ class Dataset(dict):
                         **net.nodes[net_segment]["entity"].asdict()
                     })
 
-        self.db.add_table_data("ports", port_data)
+        self.db.add_table_data("io_ports", io_port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("nets", net_data)
         if net_segment_data:
@@ -112,7 +112,8 @@ class Dataset(dict):
         for timing_path_list in netlist.timing_paths.values():
             for timing_path in timing_path_list:
                 timing_path_key = f"{netlist_key_str}-{timing_path.startpoint}-{timing_path.endpoint}-{timing_path.path_type}-{timing_path.sort_index}"
-                self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
+                if dump_associated_graphs:
+                    self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
                 timing_path_dict.append({**netlist_dict, **timing_path.asdict()})
                 for timing_point in timing_path.nodes:
                     timing_point_data.append({
@@ -130,7 +131,8 @@ class Dataset(dict):
         clock_tree_data = []
         for clock_source, clock_tree in netlist.clock_trees.items():
             clock_tree_key = f"{netlist_key_str}-{clock_source}"
-            self.db.add_graph_data("clock_trees", clock_tree, clock_tree_key)
+            if dump_associated_graphs:
+                self.db.add_graph_data("clock_trees", clock_tree, clock_tree_key)
             clock_tree_data.append({**netlist_dict, **clock_tree.asdict()})
         self.db.add_table_data("clock_trees", clock_tree_data)
 
@@ -147,15 +149,26 @@ class Dataset(dict):
             standard_cell_entity = entity.StandardCellEntity(data.to_dict())
             self.standard_cells[standard_cell_entity.name] = standard_cell_entity
 
-
-    def load_dataset(self):
+    def load_dataset(self, circuit=None, netlist_id=None, phase=None):
         """Load the dataset from the database."""
-        for _, data in self.db.get_table_data("netlists").iterrows():
+        netlist_key = {}
+        if circuit is not None:
+            netlist_key["circuit"] = circuit
+        if netlist_id is not None:
+            netlist_key["netlist_id"] = netlist_id
+        if phase is not None:
+            netlist_key["phase"] = phase
+
+        for _, data in self.db.get_table_data("netlists", **netlist_key).iterrows():
             netlist_data = data.to_dict()
             key = {k: netlist_data.pop(k) for k in entity.KEY_COLUMNS}
-            netlist_entity = self.load_netlist(key, netlist_data)
 
+            netlist_entity = self.load_netlist_entity(key)
             self[tuple(key.values())] = netlist_entity
+
+    def load_netlist_entity(self, key):
+        netlist_key_str = "-".join(key.values())
+        return self.db.get_graph_data("netlists", netlist_key_str)
 
     def load_netlist(self, key, netlist_data=None, timing_path_sort_index=0, validate=True):
         netlist_data = netlist_data or self.db.get_table_row("netlists", **key).to_dict()
@@ -170,8 +183,8 @@ class Dataset(dict):
         power_metrics_data = self.db.get_table_row("power_metrics", **key).to_dict()
         netlist_entity.power_metrics = entity.PowerMetricsEntity(power_metrics_data, validate=validate)
 
-        port_df = self.db.get_table_data("ports", **key)
-        port_dict = port_df.set_index("name").to_dict('index')
+        io_port_df = self.db.get_table_data("io_ports", **key)
+        io_port_dict = io_port_df.set_index("name").to_dict('index')
 
         gate_df = self.db.get_table_data("gates", **key)
         gate_dict = gate_df.set_index("name").to_dict('index')
@@ -186,9 +199,9 @@ class Dataset(dict):
         netlist_key_str = "-".join(key.values())
         netlist_graph = self.db.get_graph_data("netlists", netlist_key_str)
         for node, node_type in zip(netlist_graph["nodes"], netlist_graph["node_types"]):
-            if node_type == "PORT":
-                port_entity = entity.IOPortEntity({"name": node, **port_dict[node]}, validate=validate)
-                info_dict = {"type": "PORT", "entity": port_entity}
+            if node_type == "IO_PORT":
+                io_port_entity = entity.IOPortEntity({"name": node, **io_port_dict[node]}, validate=validate)
+                info_dict = {"type": "IO_PORT", "entity": io_port_entity}
 
             if node_type == "GATE":
                 gate_entity = entity.GateEntity({"name": node, **gate_dict[node]}, validate=validate)
