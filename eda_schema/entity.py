@@ -1,4 +1,11 @@
+import re
 from copy import deepcopy
+
+import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 from eda_schema.base import BaseEntity, GraphEntity
 
 KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
@@ -37,6 +44,36 @@ class NetlistEntity(GraphEntity):
         self.critical_path_metrics = None
         self.timing_paths = {}
         self.clock_trees = {}
+    
+    def plot(self, filter_regex=None):
+        color_map = []
+        if filter_regex:
+            node_list = [node for node in self.nodes if not re.match(filter_regex, node)]
+            graph = self.subgraph(node_list)
+        else:
+            graph = self
+            
+        for node in graph.nodes:
+            entity = graph.nodes[node]["entity"]
+            entity_type = graph.nodes[node]["type"]
+            if entity_type == "IO_PORT" and entity.direction == "INPUT":
+                color_map.append("red")
+            if entity_type == "IO_PORT" and entity.direction == "OUTPUT":
+                color_map.append("blue")
+            if entity_type == "GATE":
+                color_map.append("green")
+            if entity_type == "INTERCONNECT":
+                color_map.append("yellow")
+
+        pos = graphviz_layout(graph, prog="dot")
+        LEGEND_HANDLES = [
+            mpatches.Patch(color="red", label="INPUT"),
+            mpatches.Patch(color="blue", label="OUTPUT"),
+            mpatches.Patch(color="green", label="GATE"),
+            mpatches.Patch(color="yellow", label="INTERCONNECT"),
+        ]
+        plt.legend(handles=LEGEND_HANDLES, loc="best")
+        nx.draw(graph, pos, with_labels=True, arrows=True, node_color=color_map)
 
 
 class CellMetricsEntity(BaseEntity):
@@ -276,6 +313,11 @@ class TimingPathEntity(GraphEntity):
             },
         },
     }
+
+    def plot(self):
+        pos = graphviz_layout(self, prog="dot")
+        nx.draw(self, pos, with_labels=True, arrows=False)
+
 
 
 class TimingPointEntity(BaseEntity):
