@@ -2,7 +2,7 @@ from copy import deepcopy
 from eda_schema.base import BaseEntity, GraphEntity
 
 KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
-PHASES = ["floorplan", "place", "cts", "route"]
+PHASES = ["floorplan", "global_place", "detailed_place", "cts", "global_route", "detailed_route"]
 
 
 class NetlistEntity(GraphEntity):
@@ -21,6 +21,7 @@ class NetlistEntity(GraphEntity):
                 "no_of_outputs": {"type": "number"},
                 "no_of_cells": {"type": "number"},
                 "no_of_nets": {"type": "number"},
+                "utilization": {"type": ["number", "null"]},
                 "cell_density": {"type": ["number", "null"]},
                 "pin_density": {"type": ["number", "null"]},
                 "net_density": {"type": ["number", "null"]},
@@ -217,7 +218,8 @@ class InterconnectEntity(GraphEntity):
                 "y_min": {"type": ["number", "null"]},
                 "x_max": {"type": ["number", "null"]},
                 "y_max": {"type": ["number", "null"]},
-                "hwpl": {"type": ["number", "null"]},
+                "length": {"type": ["number", "null"]},
+                "hpwl": {"type": ["number", "null"]},
                 "rudy": {"type": ["number", "null"]},
                 "resistance": {"type": ["number", "null"]},
                 "capacitance": {"type": ["number", "null"]},
@@ -287,6 +289,9 @@ class TimingPointEntity(BaseEntity):
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
+                "gate": {"type": "string"},
+                "standard_cell": {"type": ["string", "null"]},
+                "pin": {"type": ["string", "null"]},
                 "cell_delay": {"type": "number"},
                 "arrival_time": {"type": "number"},
                 "slew": {"type": "number"},
@@ -309,6 +314,7 @@ class ClockTreeEntity(GraphEntity):
         "items": {
             "type": "object",
             "properties": {
+                "clock_source": {"type": "string"},
                 "no_of_buffers": {"type": "number"},
                 "no_of_clock_sinks": {"type": "number"},
             },
@@ -335,6 +341,7 @@ class ClockTreeEntity(GraphEntity):
         cts_netlist_dict = deepcopy(self._netlist.subgraph(cts_nodes).__dict__)
 
         super().__init__({
+            "clock_source": clock_source,
             "no_of_clock_sinks": self._no_of_clock_sinks,
             "no_of_buffers": self._no_of_buffers,
         })

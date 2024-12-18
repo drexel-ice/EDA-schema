@@ -12,6 +12,7 @@ NETLIST_DATA = {
     "cell_density": 0.5,
     "pin_density": 0.5,
     "net_density": 0.5,
+    "utilization": 0.3,
 }
 
 def test_netlist():
