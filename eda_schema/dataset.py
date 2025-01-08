@@ -149,7 +149,7 @@ class Dataset(dict):
             standard_cell_entity = entity.StandardCellEntity(data.to_dict())
             self.standard_cells[standard_cell_entity.name] = standard_cell_entity
 
-    def load_dataset(self, circuit=None, netlist_id=None, phase=None):
+    def load_dataset(self, circuit=None, netlist_id=None, phase=None, load_timing_paths=True):
         """Load the dataset from the database."""
         netlist_key = {}
         if circuit is not None:
@@ -163,12 +163,15 @@ class Dataset(dict):
             netlist_data = data.to_dict()
             key = {k: netlist_data.pop(k) for k in entity.KEY_COLUMNS}
 
-            netlist_entity = self.load_netlist_entity(key)
+            netlist_entity = self.load_netlist_entity(key, load_timing_paths=load_timing_paths)
             self[tuple(key.values())] = netlist_entity
 
-    def load_netlist_entity(self, key):
+    def load_netlist_entity(self, key, load_timing_paths=True):
         netlist_key_str = "-".join(key.values())
-        return self.db.get_graph_data("netlists", netlist_key_str)
+        if load_timing_paths:
+            return self.db.get_graph_data("netlists", netlist_key_str)
+        else:
+            return self.db.get_graph_data("netlists_without_timing_paths", netlist_key_str)
 
     def load_netlist(self, key, netlist_data=None, timing_path_sort_index=0, validate=True):
         netlist_data = netlist_data or self.db.get_table_row("netlists", **key).to_dict()
