@@ -34,7 +34,7 @@ Following are the details on the open dataset
 - Target parameters
     - operating frequency: 1 GHz
     - aspect ratio: 0.5
-    - utilizatopm: 70%
+    - utilization: 70%
 - Overall circuits in dataset: 20
 - Number of gates in dataset: 272,568
 - Number of nets in dataset: 227,148

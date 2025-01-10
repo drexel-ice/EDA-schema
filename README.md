@@ -42,7 +42,7 @@ A comprehensive dataset for physical design is comprised of four key components:
 
 ### Installation
 
-The key dependencies are requred by EDA-schema are the following.
+The key dependencies that are required by EDA-schema are the following
 
 - python3.6 or beyond
 - pip3
@@ -72,14 +72,14 @@ Following are the details on the open dataset
     - Target parameters
         - operating frequency: 1 GHz
         - aspect ratio: 0.5
-        - utilizatopm: 70%
+        - utilization: 70%
     - Overall circuits in dataset: 20
     - Number of gates in dataset: 272,568
     - Number of nets in dataset: 227,148
     - Number of timing paths in dataset: 121,298
     - Total dataset size: 1.194GB
 
-To use the dataset, first download the zip file of mongoDB data dump, unzip it, and execute the follwing command.
+To use the dataset, first download the zip file of mongoDB data dump, unzip it, and execute the following command.
 ```bash
 $ sudo systemctl stop mongod
 $ mongod --dbpath <path_to_the_data_dump>
