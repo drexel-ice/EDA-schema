@@ -4,7 +4,7 @@
 
 ### Installation
 
-The key dependencies are requred by EDA-schema are the following.
+The key dependencies that are required by EDA-schema are the following
 
 - python3.6 or beyond
 - pip3
