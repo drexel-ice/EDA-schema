@@ -113,7 +113,6 @@ class AreaMetricsEntity(BaseEntity):
                 "inverter_area": {"type": "number"},
                 "macro_area": {"type": "number"},
                 "cell_area": {"type": "number"},
-                "net_area": {"type": ["number", "null"]},
                 "total_area": {"type": "number"},
             },
         },
