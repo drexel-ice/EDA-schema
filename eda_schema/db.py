@@ -41,6 +41,10 @@ class SchemaMetadata:
         return [(attr, getattr(cls, attr)) for attr in dir(cls) 
                 if not attr.startswith("__") and not callable(getattr(cls, attr))]
 
+    @classmethod
+    def get_schema(cls, name):
+        """Get the schema for a specific entity by name."""
+        return getattr(cls, name, None)
 
 
 class BaseDB:
@@ -500,6 +504,14 @@ class SQLitePickleDB(BaseDB):
             df = pd.read_sql_query(query, self.conn, params=tuple(kwargs.values()))
         else:
             df = pd.read_sql_query(query, self.conn)
+
+        schema = SchemaMetadata.get_schema(entity_name)
+        for column in df.columns:
+            if column in entity.KEY_COLUMNS:
+                continue
+            if schema[column]["type"] == "boolean" or "boolean" in schema[column]["type"]:
+                df[column] = df[column].astype(bool)
+
         return df
 
     def get_table_row(self, entity_name, **kwargs):
