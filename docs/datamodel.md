@@ -4,7 +4,13 @@ EDA-schema is a property graph data model schema used to represent digital circu
 
 A circuit extracted from the design flow is represented as a graph where nodes are IO pins, gates, and wires, and edges are the connections between them. This primary netlist graph representation is complemented by more granular graph representations, such as a timing path graph and an interconnect graph. Together, these representations complete the schema.
 
-Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, data is available for four states: post floorplan, post placement, post CTS, and post routing.
+Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver.  For each circuit, a snapshot of data is available for the following design stages/phases.
+- Post floorplan: floorplan
+- Post global placement: global_placement
+- Post detailed placement: detailed_placement
+- Post CTS: cts
+- Post global routing: global_route
+- Post detailed routing: detailed_route
 
 ![Alt text](images/schema.png)
 
@@ -29,6 +35,9 @@ The primary graph entities of the circuit and schema include:
 | height                       | num       | μm        | DEF file     |
 | no. of inputs                | num       | #         | DEF file     |
 | no. of outputs               | num       | #         | DEF file     |
+| no. of cells                 | num       | #         | DEF file     |
+| no. of nets                  | num       | #         | DEF file     |
+| utilization                  | num       | #         | Calculated   |
 | pin density                  | num       | μm⁻²      | Calculated   |
 | cell density                 | num       | μm⁻²      | Calculated   |
 | net density                  | num       | μm⁻²      | Calculated   |
@@ -91,13 +100,11 @@ Quality Metrics are extracted from QoR reports to evaluate the performance and e
 | start point                   | str       |           | STA reports  |
 | end point                     | str       |           | STA reports  |
 | path type                     | str       |           | STA reports  |
-| no. of slack violations       | num       | #         | STA reports  |
+| worst arrival time            | num       | ns        | STA reports  |
 | worst slack                   | num       | ns        | STA reports  |
-| worst negative slack          | num       | ns        | STA reports  |
 | total negative slack          | num       | ns        | STA reports  |
-| no. of hold violations        | num       | #         | STA reports  |
-| worst hold violation          | num       | ns        | STA reports  |
-| total hold violation          | num       | ns        | STA reports  |
+| no. of timing paths           | num       | #         | STA reports  |
+| no. of slack violations       | num       | #         | STA reports  |
 
 ### Clock Tree Graph (CTG)
 

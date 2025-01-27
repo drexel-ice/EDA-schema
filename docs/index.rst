@@ -22,10 +22,12 @@ NOTE: This GitHub repository is still in the development phase. We are actively 
 
 .. mdinclude:: cite.md
 
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   eda_schema
 
 Indices and tables
 ==================
