@@ -39,18 +39,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Graph Datamodel Schema</a><ul>
-<li><a class="reference internal" href="#netlist-graph-ng">Netlist Graph (NG)</a></li>
-<li><a class="reference internal" href="#quality-metrics">Quality Metrics</a></li>
-<li><a class="reference internal" href="#clock-tree-graph-ctg">Clock Tree Graph (CTG)</a></li>
-<li><a class="reference internal" href="#interconnect-graph">Interconnect Graph</a></li>
-<li><a class="reference internal" href="#timing-path-graph">Timing Path Graph</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eda_schema.html">eda_schema package</a></li>
 </ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -79,7 +72,15 @@
 <h1>Graph Datamodel Schema<a class="headerlink" href="#graph-datamodel-schema" title="Permalink to this headline"></a></h1>
 <p>EDA-schema is a property graph data model schema used to represent digital circuits. Netlists and performance reports are extracted from design tools after each stage of the EDA design flow. These files are utilized to derive structural information and performance metrics for each phase. While post-routing netlists and performance metrics are final and complete, earlier stages still provide incomplete yet useful structural information and estimated performance metrics. The data becomes more complete and accurate as the design flow progresses.</p>
 <p>A circuit extracted from the design flow is represented as a graph where nodes are IO pins, gates, and wires, and edges are the connections between them. This primary netlist graph representation is complemented by more granular graph representations, such as a timing path graph and an interconnect graph. Together, these representations complete the schema.</p>
-<p>Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, data is available for four states: post floorplan, post placement, post CTS, and post routing.</p>
+<p>Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver.  For each circuit, a snapshot of data is available for the following design stages/phases.</p>
+<ul class="simple">
+<li><p>Post floorplan: floorplan</p></li>
+<li><p>Post global placement: global_placement</p></li>
+<li><p>Post detailed placement: detailed_placement</p></li>
+<li><p>Post CTS: cts</p></li>
+<li><p>Post global routing: global_route</p></li>
+<li><p>Post detailed routing: detailed_route</p></li>
+</ul>
 <a class="reference external image-reference" href="images/schema.png"><img alt="Alt text" src="_images/schema.png" /></a>
 <p>The primary graph entities of the circuit and schema include:</p>
 <section id="netlist-graph-ng">
@@ -137,137 +138,152 @@
 <td><p>#</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>pin density</p></td>
+<tr class="row-odd"><td><p>no. of cells</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of nets</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>utilization</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>pin density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>cell density</p></td>
+<tr class="row-odd"><td><p>cell density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p>net density</p></td>
+<tr class="row-even"><td><p>net density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>functionality name</p></td>
+<tr class="row-odd"><td><p>functionality name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Standard Cell (SC)</strong></p></td>
+<tr class="row-even"><td><p><strong>Standard Cell (SC)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>width</p></td>
+<tr class="row-odd"><td><p>width</p></td>
 <td><p>num</p></td>
 <td><p>μm</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>height</p></td>
+<tr class="row-even"><td><p>height</p></td>
 <td><p>num</p></td>
 <td><p>μm</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of input pins</p></td>
+<tr class="row-odd"><td><p>no. of input pins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>no. of output pins</p></td>
+<tr class="row-even"><td><p>no. of output pins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>input capacitance (min, max, avg)</p></td>
+<tr class="row-odd"><td><p>input capacitance (min, max, avg)</p></td>
 <td><p>num</p></td>
 <td><p>pF</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-odd"><td><p>output capacitance (min, max, avg)</p></td>
+<tr class="row-even"><td><p>output capacitance (min, max, avg)</p></td>
 <td><p>num</p></td>
 <td><p>pF</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-even"><td><p>leakage power (min, max, provided)</p></td>
+<tr class="row-odd"><td><p>leakage power (min, max, provided)</p></td>
 <td><p>num</p></td>
 <td><p>nW</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-odd"><td><p>is inverter gate</p></td>
+<tr class="row-even"><td><p>is inverter gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>is buffer gate</p></td>
+<tr class="row-odd"><td><p>is buffer gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p>is sequential gate</p></td>
+<tr class="row-even"><td><p>is sequential gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>drive strength</p></td>
+<tr class="row-odd"><td><p>drive strength</p></td>
 <td><p>num</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Gate (G)</strong></p></td>
+<tr class="row-even"><td><p><strong>Gate (G)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>name</p></td>
+<tr class="row-odd"><td><p>name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>standard cell</p></td>
+<tr class="row-even"><td><p>standard cell</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of fan-ins</p></td>
-<td><p>num</p></td>
-<td><p>#</p></td>
-<td><p>DEF file</p></td>
-</tr>
-<tr class="row-odd"><td><p>no. of fan-outs</p></td>
+<tr class="row-odd"><td><p>no. of fan-ins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>gate co-ordinates</p></td>
+<tr class="row-even"><td><p>no. of fan-outs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>gate co-ordinates</p></td>
 <td><p>(num, num)</p></td>
 <td><p>(μm, μm)</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p><strong>IO Port (IO)</strong></p></td>
+<tr class="row-even"><td><p><strong>IO Port (IO)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>name</p></td>
+<tr class="row-odd"><td><p>name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>direction</p></td>
+<tr class="row-even"><td><p>direction</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>co-ordinate</p></td>
+<tr class="row-odd"><td><p>co-ordinate</p></td>
 <td><p>(num, num)</p></td>
 <td><p>(μm, μm)</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>capacitance</p></td>
+<tr class="row-even"><td><p>capacitance</p></td>
 <td><p>num</p></td>
 <td><p>fF</p></td>
 <td><p>DEF file</p></td>
@@ -433,9 +449,9 @@
 <td></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of slack violations</p></td>
+<tr class="row-even"><td><p>worst arrival time</p></td>
 <td><p>num</p></td>
-<td><p>#</p></td>
+<td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
 <tr class="row-odd"><td><p>worst slack</p></td>
@@ -443,29 +459,19 @@
 <td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-even"><td><p>worst negative slack</p></td>
+<tr class="row-even"><td><p>total negative slack</p></td>
 <td><p>num</p></td>
 <td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-odd"><td><p>total negative slack</p></td>
-<td><p>num</p></td>
-<td><p>ns</p></td>
-<td><p>STA reports</p></td>
-</tr>
-<tr class="row-even"><td><p>no. of hold violations</p></td>
+<tr class="row-odd"><td><p>no. of timing paths</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-odd"><td><p>worst hold violation</p></td>
+<tr class="row-even"><td><p>no. of slack violations</p></td>
 <td><p>num</p></td>
-<td><p>ns</p></td>
-<td><p>STA reports</p></td>
-</tr>
-<tr class="row-even"><td><p>total hold violation</p></td>
-<td><p>num</p></td>
-<td><p>ns</p></td>
+<td><p>#</p></td>
 <td><p>STA reports</p></td>
 </tr>
 </tbody>

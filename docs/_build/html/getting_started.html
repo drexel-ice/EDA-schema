@@ -39,15 +39,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Getting Started</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
-<li><a class="reference internal" href="#get-open-dataset">Get Open Dataset</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eda_schema.html">eda_schema package</a></li>
 </ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -76,11 +72,10 @@
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline"></a></h1>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
-<p>The key dependencies are requred by EDA-schema are the following.</p>
+<p>The key dependencies that are required by EDA-schema are the following</p>
 <ul class="simple">
 <li><p>python3.6 or beyond</p></li>
 <li><p>pip3</p></li>
-<li><p>mongoDB</p></li>
 </ul>
 <p>Clone the <a class="reference external" href="https://github.com/drexel-ice/eda-schema">repository</a> and use <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> for installation.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:drexel-ice/eda-schema.git
@@ -91,9 +86,12 @@ $<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </sp
 </section>
 <section id="get-open-dataset">
 <h2>Get Open Dataset<a class="headerlink" href="#get-open-dataset" title="Permalink to this headline"></a></h2>
-<p>To use the dataset, first download the zip file of mongoDB data dump, unzip it, and execute the follwing command.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>mongod
-$<span class="w"> </span>mongod<span class="w"> </span>--dbpath<span class="w"> </span>&lt;path_to_the_data_dump&gt;
+<p>To use the dataset, download the data dump and use the following commands.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eda_schema.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">eda_schema.db</span> <span class="kn">import</span> <span class="n">SQLitePickleDB</span>
+
+<span class="n">DATASET_DIR</span> <span class="o">=</span> <span class="s2">&quot;../dataset/dataset_openroad_sky130hd_iwls05_v1.1_final&quot;</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">SQLitePickleDB</span><span class="p">(</span><span class="n">DATASET_DIR</span><span class="o">&lt;</span><span class="n">path_to_the_data_dump</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 </section>

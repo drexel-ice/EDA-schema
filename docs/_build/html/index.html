@@ -17,7 +17,8 @@
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="eda_schema package" href="eda_schema.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -39,34 +40,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Welcome to EDA-Schema’s documentation!</a><ul>
-<li><a class="reference internal" href="#graph-datamodel-schema">Graph Datamodel Schema</a><ul>
-<li><a class="reference internal" href="#netlist-graph-ng">Netlist Graph (NG)</a></li>
-<li><a class="reference internal" href="#quality-metrics">Quality Metrics</a></li>
-<li><a class="reference internal" href="#clock-tree-graph-ctg">Clock Tree Graph (CTG)</a></li>
-<li><a class="reference internal" href="#interconnect-graph">Interconnect Graph</a></li>
-<li><a class="reference internal" href="#timing-path-graph">Timing Path Graph</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eda_schema.html">eda_schema package</a></li>
 </ul>
-</li>
-<li><a class="reference internal" href="#open-dataset">Open Dataset</a><ul>
-<li><a class="reference internal" href="#full-dataset">Full dataset</a></li>
-<li><a class="reference internal" href="#minimal-dataset">Minimal dataset</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#getting-started">Getting Started</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
-<li><a class="reference internal" href="#get-open-dataset">Get Open Dataset</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#cite-this-work">Cite this work</a></li>
-<li><a class="reference internal" href="#contact">Contact</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -104,7 +82,15 @@ The contributions of this work include:</p>
 <h2>Graph Datamodel Schema<a class="headerlink" href="#graph-datamodel-schema" title="Permalink to this headline"></a></h2>
 <p>EDA-schema is a property graph data model schema used to represent digital circuits. Netlists and performance reports are extracted from design tools after each stage of the EDA design flow. These files are utilized to derive structural information and performance metrics for each phase. While post-routing netlists and performance metrics are final and complete, earlier stages still provide incomplete yet useful structural information and estimated performance metrics. The data becomes more complete and accurate as the design flow progresses.</p>
 <p>A circuit extracted from the design flow is represented as a graph where nodes are IO pins, gates, and wires, and edges are the connections between them. This primary netlist graph representation is complemented by more granular graph representations, such as a timing path graph and an interconnect graph. Together, these representations complete the schema.</p>
-<p>Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, data is available for four states: post floorplan, post placement, post CTS, and post routing.</p>
+<p>Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver.  For each circuit, a snapshot of data is available for the following design stages/phases.</p>
+<ul class="simple">
+<li><p>Post floorplan: floorplan</p></li>
+<li><p>Post global placement: global_placement</p></li>
+<li><p>Post detailed placement: detailed_placement</p></li>
+<li><p>Post CTS: cts</p></li>
+<li><p>Post global routing: global_route</p></li>
+<li><p>Post detailed routing: detailed_route</p></li>
+</ul>
 <a class="reference external image-reference" href="images/schema.png"><img alt="Alt text" src="_images/schema.png" /></a>
 <p>The primary graph entities of the circuit and schema include:</p>
 <section id="netlist-graph-ng">
@@ -162,137 +148,152 @@ The contributions of this work include:</p>
 <td><p>#</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>pin density</p></td>
+<tr class="row-odd"><td><p>no. of cells</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-even"><td><p>no. of nets</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>utilization</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>Calculated</p></td>
+</tr>
+<tr class="row-even"><td><p>pin density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>cell density</p></td>
+<tr class="row-odd"><td><p>cell density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p>net density</p></td>
+<tr class="row-even"><td><p>net density</p></td>
 <td><p>num</p></td>
 <td><p>μm⁻²</p></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>functionality name</p></td>
+<tr class="row-odd"><td><p>functionality name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Standard Cell (SC)</strong></p></td>
+<tr class="row-even"><td><p><strong>Standard Cell (SC)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>width</p></td>
+<tr class="row-odd"><td><p>width</p></td>
 <td><p>num</p></td>
 <td><p>μm</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>height</p></td>
+<tr class="row-even"><td><p>height</p></td>
 <td><p>num</p></td>
 <td><p>μm</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of input pins</p></td>
+<tr class="row-odd"><td><p>no. of input pins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>no. of output pins</p></td>
+<tr class="row-even"><td><p>no. of output pins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>LEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>input capacitance (min, max, avg)</p></td>
+<tr class="row-odd"><td><p>input capacitance (min, max, avg)</p></td>
 <td><p>num</p></td>
 <td><p>pF</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-odd"><td><p>output capacitance (min, max, avg)</p></td>
+<tr class="row-even"><td><p>output capacitance (min, max, avg)</p></td>
 <td><p>num</p></td>
 <td><p>pF</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-even"><td><p>leakage power (min, max, provided)</p></td>
+<tr class="row-odd"><td><p>leakage power (min, max, provided)</p></td>
 <td><p>num</p></td>
 <td><p>nW</p></td>
 <td><p>Liberty file</p></td>
 </tr>
-<tr class="row-odd"><td><p>is inverter gate</p></td>
+<tr class="row-even"><td><p>is inverter gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>is buffer gate</p></td>
+<tr class="row-odd"><td><p>is buffer gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p>is sequential gate</p></td>
+<tr class="row-even"><td><p>is sequential gate</p></td>
 <td><p>boolean</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-even"><td><p>drive strength</p></td>
+<tr class="row-odd"><td><p>drive strength</p></td>
 <td><p>num</p></td>
 <td></td>
 <td><p>Calculated</p></td>
 </tr>
-<tr class="row-odd"><td><p><strong>Gate (G)</strong></p></td>
+<tr class="row-even"><td><p><strong>Gate (G)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>name</p></td>
+<tr class="row-odd"><td><p>name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>standard cell</p></td>
+<tr class="row-even"><td><p>standard cell</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of fan-ins</p></td>
-<td><p>num</p></td>
-<td><p>#</p></td>
-<td><p>DEF file</p></td>
-</tr>
-<tr class="row-odd"><td><p>no. of fan-outs</p></td>
+<tr class="row-odd"><td><p>no. of fan-ins</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>gate co-ordinates</p></td>
+<tr class="row-even"><td><p>no. of fan-outs</p></td>
+<td><p>num</p></td>
+<td><p>#</p></td>
+<td><p>DEF file</p></td>
+</tr>
+<tr class="row-odd"><td><p>gate co-ordinates</p></td>
 <td><p>(num, num)</p></td>
 <td><p>(μm, μm)</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p><strong>IO Port (IO)</strong></p></td>
+<tr class="row-even"><td><p><strong>IO Port (IO)</strong></p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>name</p></td>
+<tr class="row-odd"><td><p>name</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>direction</p></td>
+<tr class="row-even"><td><p>direction</p></td>
 <td><p>str</p></td>
 <td></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-even"><td><p>co-ordinate</p></td>
+<tr class="row-odd"><td><p>co-ordinate</p></td>
 <td><p>(num, num)</p></td>
 <td><p>(μm, μm)</p></td>
 <td><p>DEF file</p></td>
 </tr>
-<tr class="row-odd"><td><p>capacitance</p></td>
+<tr class="row-even"><td><p>capacitance</p></td>
 <td><p>num</p></td>
 <td><p>fF</p></td>
 <td><p>DEF file</p></td>
@@ -458,9 +459,9 @@ The contributions of this work include:</p>
 <td></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-even"><td><p>no. of slack violations</p></td>
+<tr class="row-even"><td><p>worst arrival time</p></td>
 <td><p>num</p></td>
-<td><p>#</p></td>
+<td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
 <tr class="row-odd"><td><p>worst slack</p></td>
@@ -468,29 +469,19 @@ The contributions of this work include:</p>
 <td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-even"><td><p>worst negative slack</p></td>
+<tr class="row-even"><td><p>total negative slack</p></td>
 <td><p>num</p></td>
 <td><p>ns</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-odd"><td><p>total negative slack</p></td>
-<td><p>num</p></td>
-<td><p>ns</p></td>
-<td><p>STA reports</p></td>
-</tr>
-<tr class="row-even"><td><p>no. of hold violations</p></td>
+<tr class="row-odd"><td><p>no. of timing paths</p></td>
 <td><p>num</p></td>
 <td><p>#</p></td>
 <td><p>STA reports</p></td>
 </tr>
-<tr class="row-odd"><td><p>worst hold violation</p></td>
+<tr class="row-even"><td><p>no. of slack violations</p></td>
 <td><p>num</p></td>
-<td><p>ns</p></td>
-<td><p>STA reports</p></td>
-</tr>
-<tr class="row-even"><td><p>total hold violation</p></td>
-<td><p>num</p></td>
-<td><p>ns</p></td>
+<td><p>#</p></td>
 <td><p>STA reports</p></td>
 </tr>
 </tbody>
@@ -796,94 +787,154 @@ The contributions of this work include:</p>
 2) Process Development Kit (PDK): <a class="reference external" href="https://skywater-pdk.readthedocs.io/en/main/">Skywater 130 nm</a>
 3) Physical Design Toolset: <a class="reference external" href="https://theopenroadproject.org/">OpenROAD</a>
 4) Design parameters and Constraints:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">clock</span> <span class="n">latency</span><span class="p">:</span> <span class="mf">0.01</span> <span class="n">ns</span>
+<span class="o">-</span> <span class="n">clock</span> <span class="nb">input</span> <span class="n">delay</span><span class="p">:</span> <span class="mf">0.01</span>
+<span class="o">-</span> <span class="n">clock</span> <span class="n">output</span> <span class="n">delay</span><span class="p">:</span> <span class="mf">0.01</span>
+<span class="o">-</span> <span class="n">utilization</span><span class="p">:</span> <span class="mi">30</span><span class="o">%</span>
+<span class="o">-</span> <span class="n">aspect</span> <span class="n">ratio</span><span class="p">:</span> <span class="mf">1.0</span>
+<span class="o">-</span> <span class="n">clock</span> <span class="n">uncertainty</span> <span class="p">(</span><span class="n">setup</span><span class="o">/</span><span class="n">hold</span><span class="p">):</span> <span class="mf">0.2</span><span class="n">ns</span>
+</pre></div>
+</div>
+<p>Following circuits are used under target clock to meet/barely miss timing.</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>Parameters</p></th>
-<th class="head"><p>Values or Ranges</p></th>
-<th class="head"><p># of Samples</p></th>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Barely Fail (id=000001)</p></th>
+<th class="head"></th>
+<th class="head"><p>Barely Pass (id=000002)</p></th>
+<th class="head"></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Clock periods (ns)</p></td>
-<td><p>{0.5, 1, 2, 5}</p></td>
-<td><p>4</p></td>
+<tr class="row-even"><td><p><strong>Circuit</strong></p></td>
+<td><p><strong>Target Clock Period (ns)</strong></p></td>
+<td><p><strong>Worst Slack (ns)</strong></p></td>
+<td><p><strong>Target Clock Period (ns)</strong></p></td>
+<td><p><strong>Worst Slack (ns)</strong></p></td>
 </tr>
-<tr class="row-odd"><td><p>Aspect ratio</p></td>
-<td><p>{0.5, 0.75, 1}</p></td>
+<tr class="row-odd"><td><p>ac97_ctrl</p></td>
 <td><p>3</p></td>
+<td><p>-0.1823</p></td>
+<td><p>3.25</p></td>
+<td><p>0.1333</p></td>
 </tr>
-<tr class="row-even"><td><p>Max utilization</p></td>
-<td><p>{0.3, 0.5}</p></td>
+<tr class="row-even"><td><p>aes_core</p></td>
+<td><p>3.5</p></td>
+<td><p>-0.1999</p></td>
+<td><p>3.75</p></td>
+<td><p>0.0458</p></td>
+</tr>
+<tr class="row-odd"><td><p>des3_area</p></td>
+<td><p>3.75</p></td>
+<td><p>-0.0119</p></td>
+<td><p>4</p></td>
+<td><p>0.1823</p></td>
+</tr>
+<tr class="row-even"><td><p>i2c</p></td>
+<td><p>2.25</p></td>
+<td><p>-0.1594</p></td>
+<td><p>2.5</p></td>
+<td><p>0.0658</p></td>
+</tr>
+<tr class="row-odd"><td><p>mem_ctrl</p></td>
+<td><p>5</p></td>
+<td><p>-0.0863</p></td>
+<td><p>5.25</p></td>
+<td><p>0.1420</p></td>
+</tr>
+<tr class="row-even"><td><p>pci</p></td>
+<td><p>3.75</p></td>
+<td><p>-0.1326</p></td>
+<td><p>4</p></td>
+<td><p>0.1548</p></td>
+</tr>
+<tr class="row-odd"><td><p>sasc</p></td>
+<td><p>1.75</p></td>
+<td><p>-0.0992</p></td>
 <td><p>2</p></td>
+<td><p>0.1752</p></td>
 </tr>
-<tr class="row-odd"><td><p>Max skew (ns)</p></td>
-<td><p>{0.01 - 0.2}</p></td>
+<tr class="row-even"><td><p>simple_spi</p></td>
 <td><p>2</p></td>
+<td><p>-0.1452</p></td>
+<td><p>2.25</p></td>
+<td><p>0.1232</p></td>
 </tr>
-<tr class="row-even"><td><p>Max fanout</p></td>
-<td><p>{50 - 250}</p></td>
+<tr class="row-odd"><td><p>spi</p></td>
+<td><p>4.25</p></td>
+<td><p>-0.1739</p></td>
+<td><p>4.5</p></td>
+<td><p>0.2488</p></td>
+</tr>
+<tr class="row-even"><td><p>ss_pcm</p></td>
+<td><p>1.625</p></td>
+<td><p>-0.0144</p></td>
+<td><p>1.75</p></td>
+<td><p>0.1107</p></td>
+</tr>
+<tr class="row-odd"><td><p>systemcaes</p></td>
+<td><p>4.75</p></td>
+<td><p>-0.1644</p></td>
+<td><p>5</p></td>
+<td><p>0.0050</p></td>
+</tr>
+<tr class="row-even"><td><p>systemcdes</p></td>
+<td><p>4</p></td>
+<td><p>-0.0069</p></td>
+<td><p>4.25</p></td>
+<td><p>0.3052</p></td>
+</tr>
+<tr class="row-odd"><td><p>tv80</p></td>
+<td><p>7</p></td>
+<td><p>-0.0294</p></td>
+<td><p>7.25</p></td>
+<td><p>0.1227</p></td>
+</tr>
+<tr class="row-even"><td><p>usb_funct</p></td>
+<td><p>2.5</p></td>
+<td><p>-0.0917</p></td>
+<td><p>2.75</p></td>
+<td><p>0.1018</p></td>
+</tr>
+<tr class="row-odd"><td><p>usb_phy</p></td>
+<td><p>1.75</p></td>
+<td><p>-0.0449</p></td>
 <td><p>2</p></td>
+<td><p>0.1821</p></td>
 </tr>
-<tr class="row-odd"><td><p>Max clock network capacitance (pF)</p></td>
-<td><p>{0.05 - 0.3}</p></td>
-<td><p>2</p></td>
-</tr>
-<tr class="row-even"><td><p>Max latency (ns)</p></td>
-<td><p>{0 - 1}</p></td>
-<td><p>2</p></td>
-</tr>
-<tr class="row-odd"><td><p><strong>Total circuits per design</strong></p></td>
-<td></td>
-<td><p><strong>48</strong></p></td>
+<tr class="row-even"><td><p>wb_dma</p></td>
+<td><p>3</p></td>
+<td><p>-0.0746</p></td>
+<td><p>3.25</p></td>
+<td><p>0.0708</p></td>
 </tr>
 </tbody>
 </table>
-<p>The open dataset is available <a class="reference external" href="https://drexel0.sharepoint.com/:f:/r/sites/ICETeam/Shared%20Documents/Digital%20Design%20Group/ML-AI%20CAD%20project/Datasets/EDA-schema-open-dataset?csf=1&amp;web=1&amp;e=hvFzIV">publicly</a> as a zip file of mongoDB data dump.</p>
-<p>Following are the details on the open dataset</p>
-<section id="full-dataset">
-<h3>Full dataset<a class="headerlink" href="#full-dataset" title="Permalink to this headline"></a></h3>
+<p>The open dataset is available <a class="reference external" href="https://drive.google.com/drive/folders/1B3rBvbnviBrKw1aLRpv7e1pEXSCy_vLQ?usp=sharing">publicly</a>.</p>
+<p>Following are the details on the post routed designs in the open dataset</p>
 <ul class="simple">
-<li><p>consists of all the generated circuits</p></li>
-<li><p>Overall circuits in dataset: 48 * 20 = 960​</p></li>
-<li><p>Number of gates in dataset: 7,468,228​</p></li>
-<li><p>Number of nets in dataset: 7,726,920​</p></li>
-<li><p>Number of timing paths in dataset: 1,561,975​</p></li>
-<li><p>Total dataset size: 82.836G​</p></li>
+<li><p>Overall circuits in dataset: 16 * 2 = 32</p></li>
+<li><p>Number of gates in dataset: 757,495</p></li>
+<li><p>Number of nets in dataset: 148,337</p></li>
+<li><p>Number of timing paths in dataset: 125,256</p></li>
+<li><p>Total dataset size: 23GB​</p></li>
 </ul>
-</section>
-<section id="minimal-dataset">
-<h3>Minimal dataset<a class="headerlink" href="#minimal-dataset" title="Permalink to this headline"></a></h3>
-<ul class="simple">
-<li><p>consists of a small subset generated circuits</p></li>
-<li><p>Target parameters</p>
-<ul>
-<li><p>operating frequency: 1 GHz</p></li>
-<li><p>aspect ratio: 0.5</p></li>
-<li><p>utilizatopm: 70%</p></li>
-</ul>
-</li>
-<li><p>Overall circuits in dataset: 20</p></li>
-<li><p>Number of gates in dataset: 272,568</p></li>
-<li><p>Number of nets in dataset: 227,148</p></li>
-<li><p>Number of timing paths in dataset: 121,298</p></li>
-<li><p>Total dataset size: 1.194GB</p></li>
-</ul>
-</section>
 </section>
 <section id="getting-started">
 <h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline"></a></h2>
 <section id="installation">
 <h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h3>
-<p>The key dependencies are requred by EDA-schema are the following.</p>
+<p>The key dependencies that are required by EDA-schema are the following</p>
 <ul class="simple">
 <li><p>python3.6 or beyond</p></li>
 <li><p>pip3</p></li>
-<li><p>mongoDB</p></li>
 </ul>
 <p>Clone the <a class="reference external" href="https://github.com/drexel-ice/eda-schema">repository</a> and use <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> for installation.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:drexel-ice/eda-schema.git
@@ -894,9 +945,12 @@ $<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </sp
 </section>
 <section id="get-open-dataset">
 <h3>Get Open Dataset<a class="headerlink" href="#get-open-dataset" title="Permalink to this headline"></a></h3>
-<p>To use the dataset, first download the zip file of mongoDB data dump, unzip it, and execute the follwing command.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>mongod
-$<span class="w"> </span>mongod<span class="w"> </span>--dbpath<span class="w"> </span>&lt;path_to_the_data_dump&gt;
+<p>To use the dataset, download the data dump and use the following commands.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">eda_schema.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">eda_schema.db</span> <span class="kn">import</span> <span class="n">SQLitePickleDB</span>
+
+<span class="n">DATASET_DIR</span> <span class="o">=</span> <span class="s2">&quot;../dataset/dataset_openroad_sky130hd_iwls05_v1.1_final&quot;</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">SQLitePickleDB</span><span class="p">(</span><span class="n">DATASET_DIR</span><span class="o">&lt;</span><span class="n">path_to_the_data_dump</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 </section>
@@ -917,6 +971,20 @@ $<span class="w"> </span>mongod<span class="w"> </span>--dbpath<span class="w"> 
 <li><p>If you encounter any bugs or have any issues, please feel free to <a class="reference external" href="https://github.com/drexel-ice/EDA-schema/issues">open an issue</a>. We appreciate your feedback and will work to address any problems as quickly as possible.</p></li>
 </ul>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eda_schema.html">eda_schema package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.base">eda_schema.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.dataset">eda_schema.dataset module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.db">eda_schema.db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.entity">eda_schema.entity module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.errors">eda_schema.errors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema.json_utils">eda_schema.json_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="eda_schema.html#module-eda_schema">Module contents</a></li>
+</ul>
+</li>
+</ul>
 </div>
 </section>
 </section>
@@ -932,7 +1000,9 @@ $<span class="w"> </span>mongod<span class="w"> </span>--dbpath<span class="w"> 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="eda_schema.html" class="btn btn-neutral float-right" title="eda_schema package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

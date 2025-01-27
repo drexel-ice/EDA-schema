@@ -38,8 +38,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"></div>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eda_schema.html">eda_schema package</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -94,6 +97,8 @@
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.add_graph_data">(eda_schema.db.MongoDB method)</a>
 </li>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.add_graph_data">(eda_schema.db.SQLitePickleDB method)</a>
+</li>
       </ul></li>
       <li><a href="eda_schema.html#eda_schema.db.BaseDB.add_table_data">add_table_data() (eda_schema.db.BaseDB method)</a>
 
@@ -101,6 +106,8 @@
         <li><a href="eda_schema.html#eda_schema.db.FileDB.add_table_data">(eda_schema.db.FileDB method)</a>
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.add_table_data">(eda_schema.db.MongoDB method)</a>
+</li>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.add_table_data">(eda_schema.db.SQLitePickleDB method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -112,10 +119,10 @@
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.add_table_row">(eda_schema.db.MongoDB method)</a>
 </li>
-      </ul></li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.area_metric_columns">area_metric_columns (eda_schema.db.BaseDB attribute)</a>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.add_table_row">(eda_schema.db.SQLitePickleDB method)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.area_metrics">area_metrics (eda_schema.entity.NetlistEntity attribute)</a>
+      </ul></li>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.area_metrics">area_metrics (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.AreaMetricsEntity">AreaMetricsEntity (class in eda_schema.entity)</a>
 </li>
@@ -139,20 +146,14 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.cell_metric_columns">cell_metric_columns (eda_schema.db.BaseDB attribute)</a>
-</li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.cell_metrics">cell_metrics (eda_schema.entity.NetlistEntity attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.cell_metrics">cell_metrics (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.CellMetricsEntity">CellMetricsEntity (class in eda_schema.entity)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.clock_tree_columns">clock_tree_columns (eda_schema.db.BaseDB attribute)</a>
-</li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.clock_trees">clock_trees (eda_schema.entity.NetlistEntity attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.clock_trees">clock_trees (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.ClockTreeEntity">ClockTreeEntity (class in eda_schema.entity)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="eda_schema.html#eda_schema.db.BaseDB.create_dataset_tables">create_dataset_tables() (eda_schema.db.BaseDB method)</a>
 
       <ul>
@@ -160,10 +161,12 @@
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.create_dataset_tables">(eda_schema.db.MongoDB method)</a>
 </li>
-      </ul></li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.critical_path_metric_columns">critical_path_metric_columns (eda_schema.db.BaseDB attribute)</a>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.create_dataset_tables">(eda_schema.db.SQLitePickleDB method)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.critical_path_metrics">critical_path_metrics (eda_schema.entity.NetlistEntity attribute)</a>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.critical_path_metrics">critical_path_metrics (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.CriticalPathMetricsEntity">CriticalPathMetricsEntity (class in eda_schema.entity)</a>
 </li>
@@ -173,6 +176,8 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eda_schema.html#eda_schema.errors.DataNotFoundError">DataNotFoundError</a>
+</li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset">Dataset (class in eda_schema.dataset)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset.dump_dataset">dump_dataset() (eda_schema.dataset.Dataset method)</a>
@@ -258,9 +263,9 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.gate_columns">gate_columns (eda_schema.db.BaseDB attribute)</a>
-</li>
       <li><a href="eda_schema.html#eda_schema.entity.GateEntity">GateEntity (class in eda_schema.entity)</a>
+</li>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.gates">gates (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.db.BaseDB.get_graph_data">get_graph_data() (eda_schema.db.BaseDB method)</a>
 
@@ -269,13 +274,19 @@
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.get_graph_data">(eda_schema.db.MongoDB method)</a>
 </li>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.get_graph_data">(eda_schema.db.SQLitePickleDB method)</a>
+</li>
       </ul></li>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.get_schema">get_schema() (eda_schema.db.SchemaMetadata class method)</a>
+</li>
       <li><a href="eda_schema.html#eda_schema.db.BaseDB.get_table_data">get_table_data() (eda_schema.db.BaseDB method)</a>
 
       <ul>
         <li><a href="eda_schema.html#eda_schema.db.FileDB.get_table_data">(eda_schema.db.FileDB method)</a>
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.get_table_data">(eda_schema.db.MongoDB method)</a>
+</li>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.get_table_data">(eda_schema.db.SQLitePickleDB method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -286,6 +297,8 @@
         <li><a href="eda_schema.html#eda_schema.db.FileDB.get_table_row">(eda_schema.db.FileDB method)</a>
 </li>
         <li><a href="eda_schema.html#eda_schema.db.MongoDB.get_table_row">(eda_schema.db.MongoDB method)</a>
+</li>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.get_table_row">(eda_schema.db.SQLitePickleDB method)</a>
 </li>
       </ul></li>
       <li><a href="eda_schema.html#eda_schema.base.GraphEntity.graph_dict">graph_dict() (eda_schema.base.GraphEntity method)</a>
@@ -304,9 +317,11 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.io_port_columns">io_port_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.io_ports">io_ports (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.IOPortEntity">IOPortEntity (class in eda_schema.entity)</a>
+</li>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.items">items() (eda_schema.db.SchemaMetadata class method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -320,6 +335,8 @@
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.ClockTreeEntity.load_from_netlist">load_from_netlist() (eda_schema.entity.ClockTreeEntity method)</a>
 </li>
+      <li><a href="eda_schema.html#eda_schema.dataset.Dataset.load_from_pickle">load_from_pickle() (eda_schema.dataset.Dataset method)</a>
+</li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset.load_interconnect">load_interconnect() (eda_schema.dataset.Dataset method)</a>
 </li>
   </ul></td>
@@ -327,6 +344,12 @@
       <li><a href="eda_schema.html#eda_schema.json_utils.load_json">load_json() (in module eda_schema.json_utils)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset.load_netlist">load_netlist() (eda_schema.dataset.Dataset method)</a>
+
+      <ul>
+        <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB.load_netlist">(eda_schema.db.SQLitePickleDB method)</a>
+</li>
+      </ul></li>
+      <li><a href="eda_schema.html#eda_schema.dataset.Dataset.load_netlist_entity">load_netlist_entity() (eda_schema.dataset.Dataset method)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset.load_standard_cells">load_standard_cells() (eda_schema.dataset.Dataset method)</a>
 </li>
@@ -367,15 +390,15 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.net_columns">net_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.net_segments">net_segments (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.net_segment_columns">net_segment_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity">NetlistEntity (class in eda_schema.entity)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.netlist_columns">netlist_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.netlists">netlists (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity">NetlistEntity (class in eda_schema.entity)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.nets">nets (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -383,11 +406,15 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.power_metric_columns">power_metric_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.plot">plot() (eda_schema.entity.NetlistEntity method)</a>
+
+      <ul>
+        <li><a href="eda_schema.html#eda_schema.entity.TimingPathEntity.plot">(eda_schema.entity.TimingPathEntity method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.power_metrics">power_metrics (eda_schema.entity.NetlistEntity attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.power_metrics">power_metrics (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.PowerMetricsEntity">PowerMetricsEntity (class in eda_schema.entity)</a>
 </li>
@@ -397,6 +424,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eda_schema.html#eda_schema.dataset.Dataset.save_to_pickle">save_to_pickle() (eda_schema.dataset.Dataset method)</a>
+</li>
       <li><a href="eda_schema.html#eda_schema.entity.AreaMetricsEntity.schema">schema (eda_schema.entity.AreaMetricsEntity attribute)</a>
 
       <ul>
@@ -427,12 +456,18 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata">SchemaMetadata (class in eda_schema.db)</a>
+</li>
       <li><a href="eda_schema.html#eda_schema.dataset.StandardCellData.seq_cells">seq_cells (eda_schema.dataset.StandardCellData attribute)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.standard_cell_columns">standard_cell_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SQLitePickleDB">SQLitePickleDB (class in eda_schema.db)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.dataset.Dataset.standard_cells">standard_cells (eda_schema.dataset.Dataset attribute)</a>
+
+      <ul>
+        <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.standard_cells">(eda_schema.db.SchemaMetadata attribute)</a>
 </li>
+      </ul></li>
       <li><a href="eda_schema.html#eda_schema.dataset.StandardCellData">StandardCellData (class in eda_schema.dataset)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.StandardCellEntity">StandardCellEntity (class in eda_schema.entity)</a>
@@ -443,11 +478,9 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.timing_path_columns">timing_path_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.timing_paths">timing_paths (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
-      <li><a href="eda_schema.html#eda_schema.entity.NetlistEntity.timing_paths">timing_paths (eda_schema.entity.NetlistEntity attribute)</a>
-</li>
-      <li><a href="eda_schema.html#eda_schema.db.BaseDB.timing_point_columns">timing_point_columns (eda_schema.db.BaseDB attribute)</a>
+      <li><a href="eda_schema.html#eda_schema.db.SchemaMetadata.timing_points">timing_points (eda_schema.db.SchemaMetadata attribute)</a>
 </li>
       <li><a href="eda_schema.html#eda_schema.entity.TimingPathEntity">TimingPathEntity (class in eda_schema.entity)</a>
 </li>
