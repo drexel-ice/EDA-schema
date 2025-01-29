@@ -61,7 +61,7 @@
 
 
 \title{EDA\sphinxhyphen{}Schema}
-\date{Jan 27, 2025}
+\date{Jan 29, 2025}
 \release{1.0.0}
 \author{Pratik Shrestha}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -717,6 +717,45 @@ QoR reports
 \\
 \hline
 \sphinxAtStartPar
+no. of fillers
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+\#
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
+no. of tap cells
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+\#
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
+no. of diodes
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+\#
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
 no. of macros
 &
 \sphinxAtStartPar
@@ -787,6 +826,45 @@ QoR reports
 \hline
 \sphinxAtStartPar
 inverter cell area
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+μm\(\sp{\text{2}}\)
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
+filler cell   area
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+μm\(\sp{\text{2}}\)
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
+tap cell area
+&
+\sphinxAtStartPar
+num
+&
+\sphinxAtStartPar
+μm\(\sp{\text{2}}\)
+&
+\sphinxAtStartPar
+QoR reports
+\\
+\hline
+\sphinxAtStartPar
+diode area
 &
 \sphinxAtStartPar
 num
@@ -2993,7 +3071,7 @@ Bases: \sphinxcode{\sphinxupquote{object}}
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{eda_schema:eda_schema.db.SchemaMetadata.area_metrics}}
 \pysigstartsignatures
-\pysigline{\sphinxbfcode{\sphinxupquote{area\_metrics}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}buffer\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}combinational\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}inverter\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}macro\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}sequential\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}total\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}}}}
+\pysigline{\sphinxbfcode{\sphinxupquote{area\_metrics}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}buffer\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}combinational\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}diode\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}filler\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}inverter\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}macro\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}sequential\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}tap\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}total\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}}}}
 \pysigstopsignatures
 \end{fulllineitems}
 
@@ -3002,7 +3080,7 @@ Bases: \sphinxcode{\sphinxupquote{object}}
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{eda_schema:eda_schema.db.SchemaMetadata.cell_metrics}}
 \pysigstartsignatures
-\pysigline{\sphinxbfcode{\sphinxupquote{cell\_metrics}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}no\_of\_buffers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_combinational\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_inverters\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_macros\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_sequential\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_total\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}}}}
+\pysigline{\sphinxbfcode{\sphinxupquote{cell\_metrics}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}no\_of\_buffers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_combinational\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_diodes\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_fillers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_inverters\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_macros\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_sequential\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_tap\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_total\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}}}}
 \pysigstopsignatures
 \end{fulllineitems}
 
@@ -3152,7 +3230,7 @@ Class for representing area metric data using a JSON schema.
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{eda_schema:eda_schema.entity.AreaMetricsEntity.schema}}
 \pysigstartsignatures
-\pysigline{\sphinxbfcode{\sphinxupquote{schema}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}\$schema\textquotesingle{}: \textquotesingle{}http://json\sphinxhyphen{}schema.org/draft\sphinxhyphen{}04/schema\#\textquotesingle{}, \textquotesingle{}items\textquotesingle{}: \{\textquotesingle{}properties\textquotesingle{}: \{\textquotesingle{}buffer\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}combinational\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}inverter\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}macro\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}sequential\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}total\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}object\textquotesingle{}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}array\textquotesingle{}\}}}}
+\pysigline{\sphinxbfcode{\sphinxupquote{schema}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}\$schema\textquotesingle{}: \textquotesingle{}http://json\sphinxhyphen{}schema.org/draft\sphinxhyphen{}04/schema\#\textquotesingle{}, \textquotesingle{}items\textquotesingle{}: \{\textquotesingle{}properties\textquotesingle{}: \{\textquotesingle{}buffer\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}combinational\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}diode\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}filler\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}inverter\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}macro\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}sequential\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}tap\_cell\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}total\_area\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}object\textquotesingle{}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}array\textquotesingle{}\}}}}
 \pysigstopsignatures
 \end{fulllineitems}
 
@@ -3185,7 +3263,7 @@ Class for representing cell metric data using a JSON schema.
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{eda_schema:eda_schema.entity.CellMetricsEntity.schema}}
 \pysigstartsignatures
-\pysigline{\sphinxbfcode{\sphinxupquote{schema}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}\$schema\textquotesingle{}: \textquotesingle{}http://json\sphinxhyphen{}schema.org/draft\sphinxhyphen{}04/schema\#\textquotesingle{}, \textquotesingle{}items\textquotesingle{}: \{\textquotesingle{}properties\textquotesingle{}: \{\textquotesingle{}no\_of\_buffers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_combinational\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_inverters\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_macros\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_sequential\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_total\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}object\textquotesingle{}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}array\textquotesingle{}\}}}}
+\pysigline{\sphinxbfcode{\sphinxupquote{schema}}\sphinxbfcode{\sphinxupquote{\DUrole{w}{  }\DUrole{p}{=}\DUrole{w}{  }\{\textquotesingle{}\$schema\textquotesingle{}: \textquotesingle{}http://json\sphinxhyphen{}schema.org/draft\sphinxhyphen{}04/schema\#\textquotesingle{}, \textquotesingle{}items\textquotesingle{}: \{\textquotesingle{}properties\textquotesingle{}: \{\textquotesingle{}no\_of\_buffers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_combinational\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_diodes\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_fillers\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_inverters\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_macros\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_sequential\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_tap\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}, \textquotesingle{}no\_of\_total\_cells\textquotesingle{}: \{\textquotesingle{}type\textquotesingle{}: \textquotesingle{}number\textquotesingle{}\}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}object\textquotesingle{}\}, \textquotesingle{}type\textquotesingle{}: \textquotesingle{}array\textquotesingle{}\}}}}
 \pysigstopsignatures
 \end{fulllineitems}
 

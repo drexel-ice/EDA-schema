@@ -16,8 +16,8 @@ A circuit extracted from the design flow is represented as a graph where nodes a
 
 Presented is the entity relationship diagram (ERD) of EDA-schema. The primary graph entities—netlist, clock tree, timing path, and interconnect graphs—are highlighted in gold. Additional tabular entities associated with each graph are shown in silver. For each circuit, a snapshot of data is available for the following design stages/phases.
 - Post floorplan: floorplan
-- Post global placement: global_placement
-- Post detailed placement: detailed_placement
+- Post global placement: global_place
+- Post detailed placement: detailed_place
 - Post CTS: cts
 - Post global routing: global_route
 - Post detailed routing: detailed_route
