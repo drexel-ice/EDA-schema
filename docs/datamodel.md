@@ -77,6 +77,9 @@ Quality Metrics are extracted from QoR reports to evaluate the performance and e
 | no. of sequential cell        | num       | #         | QoR reports  |
 | no. of buffer cell            | num       | #         | QoR reports  |
 | no. of inverter cell          | num       | #         | QoR reports  |
+| no. of fillers                | num       | #         | QoR reports  |
+| no. of tap cells              | num       | #         | QoR reports  |
+| no. of diodes                 | num       | #         | QoR reports  |
 | no. of macros                 | num       | #         | QoR reports  |
 | no. of total cell             | num       | #         | QoR reports  |
 | **Area Metrics (AM)**         |           |           |              |
@@ -84,6 +87,9 @@ Quality Metrics are extracted from QoR reports to evaluate the performance and e
 | sequential cell area          | num       | μm²       | QoR reports  |
 | buffer cell area              | num       | μm²       | QoR reports  |
 | inverter cell area            | num       | μm²       | QoR reports  |
+| filler cell   area            | num       | μm²       | QoR reports  |
+| tap cell area                 | num       | μm²       | QoR reports  |
+| diode area                    | num       | μm²       | QoR reports  |
 | macro area                    | num       | μm²       | QoR reports  |
 | cell area                     | num       | μm²       | QoR reports  |
 | net area                      | num       | μm²       | QoR reports  |
