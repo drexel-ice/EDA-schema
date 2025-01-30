@@ -84,7 +84,7 @@ The open dataset is available [publicly](https://drive.google.com/drive/folders/
 
 Following are the details on the post routed designs in the open dataset
 - Overall circuits in dataset: 16 * 2 = 32
-- Number of gates in dataset: 757,495
+- Number of gates in dataset: 148,687 (excluding fillers, tap cells)
 - Number of nets in dataset: 148,337
 - Number of timing paths in dataset: 125,256
 - Total dataset size: 23GB​
