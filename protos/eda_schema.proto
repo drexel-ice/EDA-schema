@@ -12,95 +12,98 @@ message EdgeEntity {
 
 // Standard Cell Entity
 message StandardCellEntity {
-    string functionality_name = 1;
-    float width = 2;                   // µm
-    float height = 3;                  // µm
-    int32 num_input_pins = 4;
-    int32 num_output_pins = 5;
-    float input_capacitance_min = 6;   // pF
-    float input_capacitance_max = 7;   // pF
-    float output_capacitance_min = 8;  // pF
-    float output_capacitance_max = 9;  // pF
-    float leakage_power_min = 10;      // nW
-    float leakage_power_max = 11;      // nW
-    bool is_inverter = 12;
-    bool is_buffer = 13;
-    bool is_sequential = 14;
-    float drive_strength = 15;
+    string name = 1;
+    float width = 2;
+    float height = 3;
+    int32 no_of_input_pins = 4;
+    int32 no_of_output_pins = 5;
+    bool is_sequential = 6;
+    bool is_inverter = 7;
+    bool is_buffer = 8;
+    float drive_strength = 9;
+    float input_capacitance_min = 10;
+    float input_capacitance_max = 11;
+    float output_capacitance_min = 12;
+    float output_capacitance_max = 13;
+    float leakage_power_min = 14;
+    float leakage_power_max = 15;
 }
 
 // Gate Entity
 message GateEntity {
     string name = 1;
     StandardCellEntity standard_cell = 2;
-    int32 num_fan_ins = 3;
-    int32 num_fan_outs = 4;
-    float x_coordinate = 5;
-    float y_coordinate = 6;
+    int32 no_of_fanins = 3;
+    int32 no_of_fanouts = 4;
+    float x = 5;
+    float y = 6;
 }
 
 // IO Port Entity
 message IOPortEntity {
     string name = 1;
-    string direction = 2;   // "input" or "output"
-    float x_coordinate = 3; // µm
-    float y_coordinate = 4; // µm
-    float capacitance = 5;  // fF
+    string direction = 2;
+    float x = 3;
+    float y = 4;
+    float capacitance = 5;
 }
 
 // Interconnect Segment Entity
 message InterconnectSegmentEntity {
     string name = 1;
-    float length = 2;          // µm
-    float x1 = 3;              // Start X-coordinate
-    float y1 = 4;              // Start Y-coordinate
-    float x2 = 5;              // End X-coordinate
-    float y2 = 6;              // End Y-coordinate
-    float midpoint_x = 7;      // Midpoint X-coordinate
-    float midpoint_y = 8;      // Midpoint Y-coordinate
-    float rudy = 9;            // Rectangular Uniform Density
-    float resistance = 10;     // Ω
-    float capacitance = 11;    // fF
+    float length = 2;
+    float x1 = 3;
+    float y1 = 4;
+    float x2 = 5;
+    float y2 = 6;
+    float midpoint_x = 7;
+    float midpoint_y = 8;
+    float rudy = 9;
+    float resistance = 10;
+    float capacitance = 11;
 }
 
 // Interconnect Graph Entity
 message InterconnectGraphEntity {
     string name = 1;
-    int32 num_inputs = 2;
-    int32 num_outputs = 3;
-    float xmin = 4;
-    float ymin = 5;
-    float xmax = 6;
-    float ymax = 7;
-    float hpwl = 8;            // Half Perimeter Wire Length
-    float rudy = 9;            // Rectangular Uniform Wire Density
-    float resistance = 10;     // Ω
-    float capacitance = 11;    // fF
-
-    repeated InterconnectSegmentEntity interconnect_segments = 12;
-    repeated EdgeEntity edges = 13;
+    int32 no_of_inputs = 2;
+    int32 no_of_outputs = 3;
+    float x_min = 4;
+    float y_min = 5;
+    float x_max = 6;
+    float y_max = 7;
+    float length = 8;
+    float hpwl = 9;
+    float rudy = 10;
+    float resistance = 11;
+    float capacitance = 12;
+    repeated InterconnectSegmentEntity interconnect_segments = 13;
+    repeated EdgeEntity edges = 14;
 }
 
 // Timing Path Node Entity
 message TimingPathNodeEntity {
-    string id = 1;               // Unique identifier
-    float cell_delay = 2;        // ns
-    float arrival_time = 3;      // ns
-    float slew = 4;              // ns
-    bool is_rise_transition = 5; // True if rising
-    bool is_fall_transition = 6; // True if falling
-    int32 node_depth = 7;        // Depth of the node in the path
+    string name = 1;
+    string gate = 2;
+    string standard_cell = 3;
+    string pin = 4;
+    float cell_delay = 5;
+    float arrival_time = 6;
+    float slew = 7;
+    bool is_rise_transition = 8;
+    bool is_fall_transition = 9;
+    int32 node_depth = 10;
 }
 
 // Timing Path Graph Entity
 message TimingPathGraphEntity {
-    string start_point = 1;
-    string end_point = 2;
-    string path_type = 3;        // "min" or "max"
-    float arrival_time = 4;      // ns
-    float required_time = 5;     // ns
-    float slack = 6;             // ns
-    int32 num_gates = 7;
+    string startpoint = 1;
+    string endpoint = 2;
+    string path_type = 3;
+    float arrival_time = 4;
+    float required_time = 5;
+    float slack = 6;
+    int32 no_of_gates = 7;
     bool is_critical_path = 8;
 
     repeated TimingPathNodeEntity timing_nodes = 9;
@@ -109,83 +112,87 @@ message TimingPathGraphEntity {
 
 // Cell Metrics Entity
 message CellMetricsEntity {
-    int32 num_combinational_cells = 1;
-    int32 num_sequential_cells = 2;
-    int32 num_buffer_cells = 3;
-    int32 num_inverter_cells = 4;
-    int32 num_macros = 5;
-    int32 num_total_cells = 6;
+    int32 no_of_combinational_cells = 1;
+    int32 no_of_sequential_cells = 2;
+    int32 no_of_buffers = 3;
+    int32 no_of_inverters = 4;
+    int32 no_of_fillers = 5;
+    int32 no_of_tap_cells = 6;
+    int32 no_of_diodes = 7;
+    int32 no_of_macros = 8;
+    int32 no_of_total_cells = 9;
 }
 
 // Area Metrics Entity
 message AreaMetricsEntity {
-    float combinational_area = 1; // µm²
-    float sequential_area = 2;    // µm²
-    float buffer_area = 3;        // µm²
-    float inverter_area = 4;      // µm²
-    float macro_area = 5;         // µm²
-    float total_cell_area = 6;    // µm²
-    float net_area = 7;           // µm²
-    float total_area = 8;         // µm²
+    float combinational_cell_area = 1;
+    float sequential_cell_area = 2;
+    float buffer_area = 3;
+    float inverter_area = 4;
+    float filler_area = 5;
+    float tap_cell_area = 6;
+    float diode_area = 7;
+    float macro_area = 8;
+    float cell_area = 9;
+    float total_area = 10;
 }
 
 // Power Metrics Entity
 message PowerMetricsEntity {
-    float combinational_power = 1; // µW
-    float sequential_power = 2;    // µW
-    float macro_power = 3;         // µW
-    float internal_power = 4;      // µW
-    float switching_power = 5;     // µW
-    float leakage_power = 6;       // µW
-    float total_power = 7;         // µW
+    float combinational_power = 1;
+    float sequential_power = 2;
+    float macro_power = 3;
+    float internal_power = 4;
+    float switching_power = 5;
+    float leakage_power = 6;
+    float total_power = 7;
 }
 
 // Critical Path Metrics Entity
 message CriticalPathMetricsEntity {
-    string start_point = 1;
-    string end_point = 2;
-    string path_type = 3;           // "min" or "max"
-    int32 num_slack_violations = 4;
-    float worst_slack = 5;          // ns
-    float worst_negative_slack = 6; // ns
-    float total_negative_slack = 7; // ns
-    int32 num_hold_violations = 8;
-    float worst_hold_violation = 9; // ns
-    float total_hold_violation = 10;// ns
+    string startpoint = 1;
+    string endpoint = 2;
+    float worst_arrival_time = 3;
+    float worst_slack = 4;
+    float total_negative_slack = 5;
+    int32 no_of_timing_paths = 6;
+    int32 no_of_slack_violations = 7;
 }
 
 // Clock Tree Entity
 message ClockTreeEntity {
-    int32 num_buffers = 1;
-    int32 num_clock_sinks = 2;
+    string clock_source = 1;
+    int32 no_of_buffers = 2;
+    int32 no_of_clock_sinks = 3;
 
-    repeated IOPortEntity io_ports = 3;
-    repeated GateEntity gates = 4;
-    repeated InterconnectGraphEntity interconnects = 5;
-    repeated EdgeEntity edges = 6;
+    repeated IOPortEntity io_ports = 4;
+    repeated GateEntity gates = 5;
+    repeated InterconnectGraphEntity interconnects = 6;
+    repeated EdgeEntity edges = 7;
 }
 
 // Netlist Graph Entity
 message NetlistGraphEntity {
-    float width = 1;                // µm
-    float height = 2;               // µm
-    int32 num_inputs = 3;           // #
-    int32 num_outputs = 4;          // #
-    float pin_density = 5;          // pins/µm²
-    float cell_density = 6;         // cells/µm²
-    float net_density = 7;          // nets/µm²
+    float width = 1;
+    float height = 2;
+    int32 no_of_inputs = 3;
+    int32 no_of_outputs = 4;
+    float utilization = 5;
+    float cell_density = 6;
+    float pin_density = 7;
+    float net_density = 8;
 
-    CellMetricsEntity cell_metrics = 8;
-    AreaMetricsEntity area_metrics = 9;
-    PowerMetricsEntity power_metrics = 10;
-    CriticalPathMetricsEntity critical_path_metrics = 11;
+    CellMetricsEntity cell_metrics = 9;
+    AreaMetricsEntity area_metrics = 10;
+    PowerMetricsEntity power_metrics = 11;
+    CriticalPathMetricsEntity critical_path_metrics = 12;
 
-    repeated TimingPathGraphEntity timing_paths = 12;
-    repeated ClockTreeEntity clock_trees = 13;
-    repeated IOPortEntity io_ports = 14;
-    repeated GateEntity gates = 15;
-    repeated InterconnectGraphEntity interconnects = 16;
-    repeated EdgeEntity edges = 17;
+    repeated TimingPathEntity timing_paths = 13;
+    repeated ClockTreeEntity clock_trees = 14;
+    repeated IOPortEntity io_ports = 15;
+    repeated GateEntity gates = 16;
+    repeated InterconnectGraphEntity interconnects = 17;
+    repeated EdgeEntity edges = 18;
 }
 
 // EDA-Schema Service
