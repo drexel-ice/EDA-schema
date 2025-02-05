@@ -1,7 +1,11 @@
-from typing import Dict, Any
+import re
+from typing import List, Optional, Dict, Any
 
 import jsonschema
 import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 from eda_schema.errors import ValidationError
 
@@ -91,3 +95,155 @@ class GraphEntity(nx.DiGraph, BaseEntity):
             "node_types": [self.nodes[node]["type"] for node in self.nodes],
             "edges": [list(edge) for edge in self.edges],
         }
+
+    def get_node_inputs(self, node: str) -> List[str]:
+        """Get all netlist inputs.
+
+        Args:
+            node (str): Name of netlist node.
+
+        Returns:
+            list: All inputs of netlist.
+        """
+        return list(self.predecessors(node))
+
+    def get_node_outputs(self, node: str) -> List[str]:
+        """
+        Get all netlist outputs.
+
+        Args:
+            node (str): Name of netlist node.
+
+        Returns:
+            list: All outputs of netlist.
+        """
+        return list(self.successors(node))
+
+    def bfs_traverse(
+        self,
+        node: str,
+        fanin: bool = True,
+        fanout: bool = True,
+        breadth_limit: int = -1,
+        _traversed_node: Optional[List[str]] = None,
+        _current_level: int = 0,
+    ) -> List[str]:
+        """Breadth first traversal of netlist graph
+
+        Args:
+            node (str):  Name of netlist node to set as root node.
+            fanin (bool): Traverse through inputs if true.
+            fanout (bool): Traverse through outputs if true.
+            breadth_limit (int, optional): Limit level of breadth travesal. -1 signifies no limit.
+
+        Returns:
+            list: All traversed nodes.
+        """
+        if breadth_limit == _current_level:
+            return []
+        traversed_node = _traversed_node or [node]
+
+        node_list = []
+        if fanin:
+            node_list += self.get_node_inputs(node)
+        if fanout:
+            node_list += self.get_node_outputs(node)
+
+        neighbor_nodes = []
+        for neighbor_node in node_list:
+            if neighbor_node not in traversed_node:
+                neighbor_nodes.append(neighbor_node)
+
+        traversed_node += neighbor_nodes
+
+        for neighbor_node in neighbor_nodes:
+            self.bfs_traverse(
+                neighbor_node,
+                fanin=fanin,
+                fanout=fanout,
+                breadth_limit=breadth_limit,
+                _traversed_node=traversed_node,
+                _current_level=_current_level + 1,
+            )
+
+        return traversed_node
+
+    def dfs_traverse(
+        self,
+        node: str,
+        fanin: bool = True,
+        fanout: bool = True,
+        depth_limit: int = -1,
+        _traversed_node: Optional[List[str]] = None,
+        _current_level: int = 0,
+    ) -> List[str]:
+        """Depth first traversal of netlist graph
+
+        Args:
+            node (str):  Name of netlist node to set as root node.
+            fanin (bool): Traverse through inputs if true.
+            fanout (bool): Traverse through outputs if true.
+            depth_limit (int, optional): Limit level of depth travesal. -1 signifies no limit.
+
+        Returns:
+            list: All traversed nodes.
+        """
+        if depth_limit == _current_level:
+            return []
+        traversed_node = _traversed_node or [node]
+
+        node_list = []
+        if fanin:
+            node_list += self.get_node_inputs(node)
+        if fanout:
+            node_list += self.get_node_outputs(node)
+
+        for neighbor_node in node_list:
+            if neighbor_node in traversed_node:
+                continue
+            traversed_node.append(neighbor_node)
+            self.dfs_traverse(
+                neighbor_node,
+                fanin=fanin,
+                fanout=fanout,
+                depth_limit=depth_limit,
+                _traversed_node=traversed_node,
+                _current_level=_current_level + 1,
+            )
+
+        return traversed_node
+
+    def plot(self, figpath=None, show=True, filter_regex=None):
+        color_map = []
+        if filter_regex:
+            node_list = [node for node in self.nodes if not re.match(filter_regex, node)]
+            graph = self.subgraph(node_list)
+        else:
+            graph = self
+            
+        for node in graph.nodes:
+            entity = graph.nodes[node]["entity"]
+            entity_type = graph.nodes[node]["type"]
+            if entity_type == "IO_PORT" and entity.direction == "INPUT":
+                color_map.append("red")
+            if entity_type == "IO_PORT" and entity.direction == "OUTPUT":
+                color_map.append("blue")
+            if entity_type == "GATE":
+                color_map.append("green")
+            if entity_type == "INTERCONNECT":
+                color_map.append("yellow")
+
+        pos = graphviz_layout(graph, prog="dot")
+        LEGEND_HANDLES = [
+            mpatches.Patch(color="red", label="INPUT"),
+            mpatches.Patch(color="blue", label="OUTPUT"),
+            mpatches.Patch(color="green", label="GATE"),
+            mpatches.Patch(color="yellow", label="INTERCONNECT"),
+        ]
+        plt.legend(handles=LEGEND_HANDLES, loc="best")
+        nx.draw(graph, pos, with_labels=True, arrows=True, node_color=color_map)
+
+        if figpath:
+            plt.savefig(figpath)
+        if show:
+            plt.show()
