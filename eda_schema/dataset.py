@@ -56,7 +56,7 @@ class Dataset(dict):
         for std_cell in self.standard_cells.values():
             self.db.add_table_row("standard_cells", std_cell.asdict())
 
-    def dump_netlist(self, circuit, netlist_id, phase, dump_associated_graphs=False):
+    def dump_netlist(self, circuit, netlist_id, phase):
         """
         Dump netlist data into the database.
 
@@ -69,7 +69,6 @@ class Dataset(dict):
         netlist = self[netlist_key]
         netlist_key_str = "-".join(netlist_key)
         netlist_dict = dict(zip(entity.KEY_COLUMNS, netlist_key))
-        self.db.add_graph_data("netlists", netlist, netlist_key_str)
 
         self.db.add_table_row("netlists", {**netlist_dict, **netlist.asdict()})
         self.db.add_table_row("cell_metrics", {**netlist_dict, **netlist.cell_metrics.asdict()})
@@ -91,8 +90,6 @@ class Dataset(dict):
                 net_data.append(node_dict)
                 net = netlist.nodes[node]["entity"]
                 net_key = f"{netlist_key_str}-{net.name}"
-                if dump_associated_graphs and phase == "detailed_route":
-                    self.db.add_graph_data("nets", net, net_key)
                 for net_segment in net.nodes:
                     net_segment_data.append({
                         **netlist_dict,
@@ -112,8 +109,6 @@ class Dataset(dict):
         for timing_path_list in netlist.timing_paths.values():
             for timing_path in timing_path_list:
                 timing_path_key = f"{netlist_key_str}-{timing_path.startpoint}-{timing_path.endpoint}-{timing_path.path_type}-{timing_path.sort_index}"
-                if dump_associated_graphs:
-                    self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
                 timing_path_dict.append({**netlist_dict, **timing_path.asdict()})
                 for timing_point in timing_path.nodes:
                     timing_point_data.append({
@@ -131,10 +126,10 @@ class Dataset(dict):
         clock_tree_data = []
         for clock_source, clock_tree in netlist.clock_trees.items():
             clock_tree_key = f"{netlist_key_str}-{clock_source}"
-            if dump_associated_graphs:
-                self.db.add_graph_data("clock_trees", clock_tree, clock_tree_key)
             clock_tree_data.append({**netlist_dict, **clock_tree.asdict()})
         self.db.add_table_data("clock_trees", clock_tree_data)
+
+        self.db.save_netlist(netlist, circuit, netlist_id, phase)
 
     def dump_dataset(self):
         """Dump the entire dataset into the database."""
@@ -163,7 +158,7 @@ class Dataset(dict):
             netlist_data = data.to_dict()
             key = {k: netlist_data.pop(k) for k in entity.KEY_COLUMNS}
 
-            netlist_entity = self.load_netlist_entity(key, load_timing_paths=load_timing_paths)
+            netlist_entity = self.db.load_netlist(**key, load_timing_paths=load_timing_paths)
             self[tuple(key.values())] = netlist_entity
 
     def load_netlist_entity(self, key, load_timing_paths=True):

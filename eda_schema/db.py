@@ -528,10 +528,25 @@ class SQLitePickleDB(BaseDB):
         df = self.get_table_data(entity_name, **kwargs)
         return df.iloc[0] if not df.empty else None
 
-    def load_netlist(self, circuit, netlist_id, phase):
+    def save_netlist(self, netlist, circuit, netlist_id, phase):
+        key_str = f"{circuit}-{netlist_id}-{phase}"
+        timing_paths = netlist.timing_paths
+        netlist.timing_paths = []
+        self.add_graph_data("netlists", netlist, key_str)
+
+        filepath = os.path.join(self.graph_dir, f"timing_paths_{key_str}.pkl")
+        with open(filepath, "wb") as f:
+            dill.dump(timing_paths, f)
+        netlist.timing_paths = timing_paths
+
+    def load_netlist(self, circuit, netlist_id, phase, load_timing_paths=True):
         key_str = f"{circuit}-{netlist_id}-{phase}"
         try:
             netlist_entity = self.get_graph_data("netlists", key_str)
+            if load_timing_paths:
+                filepath = os.path.join(self.graph_dir, f"timing_paths_{key_str}.pkl")
+                with open(filepath, 'rb') as f:
+                    netlist_entity.timing_paths = dill.load(f)
         except FileNotFoundError:
             raise DataNotFoundError(entity_name=key_str)
         return netlist_entity

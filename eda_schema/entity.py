@@ -9,7 +9,7 @@ import matplotlib.patches as mpatches
 from eda_schema.base import BaseEntity, GraphEntity
 
 KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
-PHASES = ["floorplan", "global_place", "detailed_place", "cts", "global_route", "detailed_route"]
+PHASES = ["floorplan", "global_place", "place_resized", "detailed_place", "cts", "global_route", "detailed_route"]
 
 
 class NetlistEntity(GraphEntity):
@@ -334,23 +334,23 @@ class ClockTreeEntity(GraphEntity):
         },
     }
 
-    def load_from_netlist(self, netlist, clock_source, dffs):
+    def load_from_netlist(self, netlist, clock_source, dff_cells):
         """
         Load clock tree data from a netlist.
 
         Args:
             netlist: Netlist data.
             clock_source: Clock source information.
-            dffs: D flip-flop information.
+            dff_cells: D flip-flop information.
         """
         self._netlist = netlist
-        self._dffs = dffs
+        self._dff_cells = dff_cells
         self.source = clock_source
 
         self._no_of_clock_sinks = 0
         self._no_of_buffers = 0
 
-        cts_nodes = self.traverse_cts(clock_source)
+        cts_nodes = self._traverse_cts(clock_source)
         cts_netlist_dict = deepcopy(self._netlist.subgraph(cts_nodes).__dict__)
 
         super().__init__({
@@ -360,7 +360,7 @@ class ClockTreeEntity(GraphEntity):
         })
         self.__dict__.update(cts_netlist_dict)
 
-    def traverse_cts(self, node):
+    def _traverse_cts(self, node):
         """
         Traverse the clock tree structure starting from a given node.
 
@@ -378,9 +378,10 @@ class ClockTreeEntity(GraphEntity):
             for output in self._netlist.successors(current_node):
                 if output not in traversed_nodes:
                     traversed_nodes.append(output)
-                    if output not in self._dffs:
-                        stack.append(output)
-                    else:
+                    output_node_data = self._netlist.nodes[output]
+                    if output_node_data["type"] == "GATE" and output_node_data["entity"].standard_cell in self._dff_cells:
                         self._no_of_clock_sinks += 1
+                        continue
+                    stack.append(output)
 
         return traversed_nodes
