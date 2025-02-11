@@ -98,6 +98,13 @@ DATASET_DIR = "../dataset/dataset_openroad_sky130hd_iwls05_v1.1_final"
 dataset = Dataset(SQLitePickleDB(DATASET_DIR<path_to_the_data_dump>
 ```
 
+### Generate docs
+
+To generate the documentation run:
+```bash
+$ pdm docs
+```
+
 ## Cite this work
 
 - P. Shrestha, A. Aversa, S. Phatharodom, and I. Savidis, "**EDA-schema: A graph datamodel schema and open dataset for digital design automation**", Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI), pp. 69–77, Jun. 2024.
