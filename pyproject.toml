@@ -1,0 +1,35 @@
+[project]
+name = "eda_schema"
+version = "1.0.0"
+description = "Datamodel Schema for Electronic Design Automation"
+authors = [
+    {name = "Rob Taylor", email = "rob.taylor@chipflow.io"},
+]
+dependencies = [
+    "jsonschema>=4.23.0",
+    "networkx>=3.4.2",
+    "dill>=0.3.9",
+    "pandas>=2.2.3",
+    "pymongo>=4.11.1",
+    "matplotlib>=3.10.0",
+]
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "CC-BY-NC-SA-4.0"}
+
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+docs.cmd = "sphinx-build docs/ docs/_build/ -W --keep-going"
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pytest>=8.3.4",
+    "pytest-cov",
+    "sphinx-autoapi>=3.5.0",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinx-mdinclude>=0.5.4",
+]

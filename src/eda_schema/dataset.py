@@ -5,11 +5,10 @@ from eda_schema import entity
 class StandardCellData(dict):
     """
     Dictionary class for storing standard cell data.
-
-    Attributes:
-        seq_cells (list): List of sequential cells.
     """
+
     seq_cells = []
+    """seq_cells (list): List of sequential cells."""
 
 
 class Dataset(dict):
@@ -17,10 +16,10 @@ class Dataset(dict):
     Dictionary class representing an EDA dataset.
 
     Attributes:
-        standard_cells (dict): Dictionary to store standard cell data.
         db (FileDB): File-based database for storing EDA-related data.
     """
     standard_cells = {}
+    """standard_cells (dict): Dictionary to store standard cell data."""
 
     def __init__(self, db_obj):
         """

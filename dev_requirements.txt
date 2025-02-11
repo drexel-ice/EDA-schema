@@ -1,3 +1,0 @@
-jsonschema==3.2.0
-pylint==2.13.9
-pytest==7.0.1
