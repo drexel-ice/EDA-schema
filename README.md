@@ -67,15 +67,15 @@ Following circuits are used under target clock to meet/barely miss timing.
 
 The key dependencies that are required by EDA-schema are the following
 
-- python3.6 or beyond
-- pip3
+ - [Python 3.10](https://www.python.org/) or later
+ - [PDM](https://pdm-project.org/)
 
-Clone the [repository](https://github.com/drexel-ice/eda-schema) and use [pip](https://pip.pypa.io/en/stable/) for installation.
+Clone the [repository](https://github.com/drexel-ice/eda-schema) then prepare its environment:
 
 ```bash
 $ git clone git@github.com:drexel-ice/eda-schema.git
 $ cd eda-schema
-$ pip install -e .
+$ pdm install
 ```
 
 ### Get Open Dataset
