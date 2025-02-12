@@ -98,6 +98,12 @@ DATASET_DIR = "../dataset/dataset_openroad_sky130hd_iwls05_v1.1_final"
 dataset = Dataset(SQLitePickleDB(DATASET_DIR<path_to_the_data_dump>
 ```
 
+### Run Jupyter Lab
+
+```bash
+$ pdm jupyter
+```
+
 ### Generate docs
 
 To generate the documentation run:
