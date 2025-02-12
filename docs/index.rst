@@ -27,7 +27,12 @@ NOTE: This GitHub repository is still in the development phase. We are actively 
    :maxdepth: 2
    :caption: Contents:
 
+   getting_started
    eda_schema
+   datamodel
+   open_dataset
+   cite
+   
 
 Indices and tables
 ==================
