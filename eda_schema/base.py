@@ -10,6 +10,13 @@ import matplotlib.patches as mpatches
 from eda_schema.errors import ValidationError
 
 
+LEGEND_HANDLES = [
+    mpatches.Patch(color="red", label="INPUT"),
+    mpatches.Patch(color="blue", label="OUTPUT"),
+    mpatches.Patch(color="green", label="GATE"),
+    mpatches.Patch(color="yellow", label="INTERCONNECT"),
+]
+
 class BaseEntity:
     """Base class for JSON schema validation and attribute setting."""
 
@@ -124,7 +131,7 @@ class GraphEntity(nx.DiGraph, BaseEntity):
         node: str,
         fanin: bool = True,
         fanout: bool = True,
-        breadth_limit: int = -1,
+        depth_limit: int = -1,
         _traversed_node: Optional[List[str]] = None,
         _current_level: int = 0,
     ) -> List[str]:
@@ -134,12 +141,20 @@ class GraphEntity(nx.DiGraph, BaseEntity):
             node (str):  Name of netlist node to set as root node.
             fanin (bool): Traverse through inputs if true.
             fanout (bool): Traverse through outputs if true.
-            breadth_limit (int, optional): Limit level of breadth travesal. -1 signifies no limit.
+            depth_limit (int, optional): Limit level of travesal. -1 signifies no limit.
 
         Returns:
             list: All traversed nodes.
+
+        Complexity:
+            - Time Complexity:
+                - O(V + E) in the worst case, where V is the number of nodes and E is the number of edges.
+                - If `depth_limit = d`, then the traversal may explore up to O(b^d) nodes, where `b` is the branching factor (average no. of neighbors).
+            - Space Complexity:
+                - O(V) in the worst case (when all nodes are stored in the queue).
+                - If `depth_limit = d`, then space complexity is at most O(b^d).
         """
-        if breadth_limit == _current_level:
+        if depth_limit == _current_level:
             return []
         traversed_node = _traversed_node or [node]
 
@@ -161,7 +176,7 @@ class GraphEntity(nx.DiGraph, BaseEntity):
                 neighbor_node,
                 fanin=fanin,
                 fanout=fanout,
-                breadth_limit=breadth_limit,
+                depth_limit=depth_limit,
                 _traversed_node=traversed_node,
                 _current_level=_current_level + 1,
             )
@@ -177,16 +192,24 @@ class GraphEntity(nx.DiGraph, BaseEntity):
         _traversed_node: Optional[List[str]] = None,
         _current_level: int = 0,
     ) -> List[str]:
-        """Depth first traversal of netlist graph
+        """Depth-first traversal of a netlist graph.
 
         Args:
-            node (str):  Name of netlist node to set as root node.
+            node (str): Name of the netlist node to set as the root node.
             fanin (bool): Traverse through inputs if true.
             fanout (bool): Traverse through outputs if true.
-            depth_limit (int, optional): Limit level of depth travesal. -1 signifies no limit.
+            depth_limit (int, optional): Limit level of traversal. -1 signifies no limit.
 
         Returns:
             list: All traversed nodes.
+
+        Complexity:
+            - Time Complexity:
+                - O(V + E) in the worst case, where V is the number of nodes and E is the number of edges.
+                - If `depth_limit = d`, then the traversal may explore up to O(b^d) nodes, where `b` is the branching factor (average no. of neighbors).
+            - Space Complexity:
+                - O(V) in the worst case due to recursion depth (stack space).
+                - If `depth_limit = d`, then space complexity is at most O(d) due to recursive calls.
         """
         if depth_limit == _current_level:
             return []
@@ -220,7 +243,7 @@ class GraphEntity(nx.DiGraph, BaseEntity):
             graph = self.subgraph(node_list)
         else:
             graph = self
-            
+
         for node in graph.nodes:
             entity = graph.nodes[node]["entity"]
             entity_type = graph.nodes[node]["type"]
@@ -234,12 +257,6 @@ class GraphEntity(nx.DiGraph, BaseEntity):
                 color_map.append("yellow")
 
         pos = graphviz_layout(graph, prog="dot")
-        LEGEND_HANDLES = [
-            mpatches.Patch(color="red", label="INPUT"),
-            mpatches.Patch(color="blue", label="OUTPUT"),
-            mpatches.Patch(color="green", label="GATE"),
-            mpatches.Patch(color="yellow", label="INTERCONNECT"),
-        ]
         plt.legend(handles=LEGEND_HANDLES, loc="best")
         nx.draw(graph, pos, with_labels=True, arrows=True, node_color=color_map)
 

@@ -1,10 +1,4 @@
-import re
 from copy import deepcopy
-
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
 from eda_schema.base import BaseEntity, GraphEntity
 

@@ -38,7 +38,7 @@ class SchemaMetadata:
     @classmethod
     def items(cls):
         """Returns an iterable of (name, schema) tuples for all defined schemas."""
-        return [(attr, getattr(cls, attr)) for attr in dir(cls) 
+        return [(attr, getattr(cls, attr)) for attr in dir(cls)
                 if not attr.startswith("__") and not callable(getattr(cls, attr))]
 
     @classmethod

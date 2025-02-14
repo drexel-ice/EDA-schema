@@ -24,7 +24,6 @@ def test_netlist():
     assert netlist.width == 10
     assert netlist.cell_density == 0.5
 
-    print(netlist.asdict())
     netlist_dict = netlist.asdict()
     assert netlist_dict == NETLIST_DATA
 

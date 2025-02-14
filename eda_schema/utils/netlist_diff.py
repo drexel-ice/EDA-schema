@@ -42,6 +42,16 @@ def compare_netlists_by_cells(phase1_netlist, phase2_netlist):
     """
     Compares two netlists and categorizes nodes into matching, resized, buffered, filler, or
     remaining categories.
+
+    Args:
+        phase1_netlist (eda_schema.entity.NetlistEntity): The netlist of the first phase.
+        phase2_netlist (eda_schema.entity.NetlistEntity): The netlist of the second phase.
+
+    Returns:
+        tuple:
+            - phase1_df (DataFrame): DataFrame containing the removed cells in phase 1.
+            - phase2_df (DataFrame): DataFrame containing the new or modified cells in phase 2.
+            - result_summary (dict): Summary dictionary of categorized changes.
     """
     # Extract node data from both netlists
     phase1_cells = NetlistCellMapper(phase1_netlist)
@@ -164,6 +174,10 @@ class NetlistNetMapper(dict):
 class NetlistBufferChecker:
     """
     Analyzes buffering in netlists between two phases.
+    
+    Args:
+        netlist1 (eda_schema.entity.NetlistEntity): The netlist of the first phase.
+        netlist2 (eda_schema.entity.NetlistEntity): The netlist of the second phase.
     """
     def __init__(self, netlist1, netlist2):
         self.netlist1 = netlist1
@@ -172,6 +186,17 @@ class NetlistBufferChecker:
         self.phase2_cells = NetlistCellMapper(netlist2)
 
     def net_is_buffered(self, net):
+        """
+        Determines if a given net was buffered between two netlist phases.
+        
+        Args:
+            net (str): Name of the net to check.
+        
+        Returns:
+            tuple:
+                - bool: True if buffering was added, False otherwise.
+                - list: List of added buffering nodes, if any.
+        """
         fanout_df = pd.DataFrame([
             self.netlist1.nodes[node]["entity"].asdict()
             for node in sorted(self.netlist1.successors(net))
@@ -197,6 +222,17 @@ class NetlistBufferChecker:
         )
 
     def net_is_buffered_at_output(self, net):
+        """
+        Checks if a net is buffered specifically at its output.
+        
+        Args:
+            net (str): Name of the net to check.
+        
+        Returns:
+            tuple:
+                - bool: True if buffering was added at the output, False otherwise.
+                - str: Name of the buffered net, if applicable.
+        """
         net_driving_gate = list(self.netlist2.predecessors(net))[0]
 
         net_driving_gate_fanout_nets2 = list(self.netlist2.successors(net_driving_gate))
@@ -223,6 +259,17 @@ class NetlistBufferChecker:
 
     @staticmethod
     def _get_node_data(nodes, netlist, phase_cells):
+        """
+        Extracts relevant node data for comparison.
+        
+        Args:
+            nodes (list): List of nodes to extract data from.
+            netlist (eda_schema.entity.NetlistEntity): The netlist containing the nodes.
+            phase_cells (NetlistCellMapper): Mapper to extract cell information.
+        
+        Returns:
+            set: A set containing tuples of (node, stripped cell information).
+        """
         data = set()
         for node in nodes:
             node_data = netlist.nodes[node]
@@ -233,6 +280,18 @@ class NetlistBufferChecker:
         return data
 
     def _compare_for_buffer_insertion(self, phase1_data, phase2_data):
+        """
+        Compares two sets of node data to detect buffer insertions.
+        
+        Args:
+            phase1_data (set): Data from the first phase.
+            phase2_data (set): Data from the second phase.
+        
+        Returns:
+            tuple:
+                - bool: True if buffering was detected, False otherwise.
+                - list: List of added nets related to buffering.
+        """
         is_buffered = True
         if len(phase1_data.difference(phase2_data)) > 0:
             is_buffered = False
@@ -246,9 +305,20 @@ class NetlistBufferChecker:
                 added_nets.append(node)
         return [is_buffered, added_nets]
 
+
 def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
     """
     Compares two netlists and categorizes nodes into matching, resized, buffered, filler, or remaining categories.
+
+    Args:
+        phase1_netlist (eda_schema.entity.NetlistEntity): The netlist of the first phase.
+        phase2_netlist (eda_schema.entity.NetlistEntity): The netlist of the second phase.
+    
+    Returns:
+        tuple:
+            - phase1_df (DataFrame): DataFrame of removed nets from phase 1.
+            - phase2_df (DataFrame): DataFrame of new or modified nets in phase 2.
+            - result_summary (dict): Summary dictionary of categorized changes.
     """
     phase1_nets, phase2_nets = NetlistNetMapper(phase1_netlist), NetlistNetMapper(phase2_netlist)
     phase2_cells = NetlistCellMapper(phase2_netlist)
