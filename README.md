@@ -78,6 +78,12 @@ $ cd eda-schema
 $ pip install -e .
 ```
 
+### Running Tests
+To run tests, use the following command:
+```bash
+$ pytest
+```
+
 ### Get Open Dataset
 
 The open dataset is available [publicly](https://drive.google.com/drive/folders/1B3rBvbnviBrKw1aLRpv7e1pEXSCy_vLQ?usp=sharing).
@@ -95,7 +101,7 @@ from eda_schema.dataset import Dataset
 from eda_schema.db import SQLitePickleDB
 
 DATASET_DIR = "../dataset/dataset_openroad_sky130hd_iwls05_v1.1_final"
-dataset = Dataset(SQLitePickleDB(DATASET_DIR<path_to_the_data_dump>
+dataset = Dataset(SQLitePickleDB(DATASET_DIR<path_to_the_data_dump>))
 ```
 
 ## Cite this work
