@@ -75,6 +75,16 @@ Clone the [repository](https://github.com/drexel-ice/eda-schema) and use [pip](h
 ```bash
 $ git clone git@github.com:drexel-ice/eda-schema.git
 $ cd eda-schema
+# On Intel Macs and Linux 
+export CFLAGS="-I$(brew --prefix graphviz)/include"
+export LDFLAGS="-L$(brew --prefix graphviz)/lib"
+pip install pygraphviz
+# On Apple Silicon Mac
+$ pip install --no-cache-dir \
+    --global-option=build_ext \
+    --global-option="-I/opt/homebrew/include" \
+    --global-option="-L/opt/homebrew/lib" \
+    pygraphviz
 $ pip install -e .
 ```
 

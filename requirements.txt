@@ -44,7 +44,7 @@ lazy-object-proxy==1.7.1
 m2r==0.3.1
 markdown-it-py==2.0.1
 MarkupSafe==2.0.1
-matplotlib
+matplotlib==3.7.2
 mccabe==0.7.0
 mdit-py-plugins==0.3.0
 mdurl==0.1.0
@@ -60,7 +60,7 @@ networkx==2.5.1
 notebook==6.4.10
 numpy<2.0
 packaging==21.3
-pandas
+pandas==2.1.1
 pandocfilters==1.5.0
 parso==0.7.1
 pathspec==0.9.0
