@@ -64,7 +64,7 @@ message InterconnectSegmentEntity {
 }
 
 // Interconnect Graph Entity
-message InterconnectGraphEntity {
+message InterconnectEntity {
     string name = 1;
     int32 no_of_inputs = 2;
     int32 no_of_outputs = 3;
@@ -96,7 +96,7 @@ message TimingPathNodeEntity {
 }
 
 // Timing Path Graph Entity
-message TimingPathGraphEntity {
+message TimingPathEntity {
     string startpoint = 1;
     string endpoint = 2;
     string path_type = 3;
@@ -167,12 +167,12 @@ message ClockTreeEntity {
 
     repeated IOPortEntity io_ports = 4;
     repeated GateEntity gates = 5;
-    repeated InterconnectGraphEntity interconnects = 6;
+    repeated InterconnectEntity interconnects = 6;
     repeated EdgeEntity edges = 7;
 }
 
 // Netlist Graph Entity
-message NetlistGraphEntity {
+message NetlistEntity {
     float width = 1;
     float height = 2;
     int32 no_of_inputs = 3;
@@ -191,13 +191,13 @@ message NetlistGraphEntity {
     repeated ClockTreeEntity clock_trees = 14;
     repeated IOPortEntity io_ports = 15;
     repeated GateEntity gates = 16;
-    repeated InterconnectGraphEntity interconnects = 17;
+    repeated InterconnectEntity interconnects = 17;
     repeated EdgeEntity edges = 18;
 }
 
 // EDA-Schema Service
 service EdaSchemaService {
-    rpc GetNetlistGraph (Empty) returns (NetlistGraphEntity);
+    rpc GetNetlistGraph (Empty) returns (NetlistEntity);
     rpc GetCellMetrics (Empty) returns (CellMetricsEntity);
     rpc GetAreaMetrics (Empty) returns (AreaMetricsEntity);
     rpc GetPowerMetrics (Empty) returns (PowerMetricsEntity);
@@ -205,6 +205,6 @@ service EdaSchemaService {
     rpc GetStandardCell (Empty) returns (StandardCellEntity);
     rpc GetGate (Empty) returns (GateEntity);
     rpc GetIOPort (Empty) returns (IOPortEntity);
-    rpc GetInterconnectGraph (Empty) returns (InterconnectGraphEntity);
-    rpc GetTimingPathGraph (Empty) returns (TimingPathGraphEntity);
+    rpc GetInterconnectGraph (Empty) returns (InterconnectEntity);
+    rpc GetTimingPathGraph (Empty) returns (TimingPathEntity);
 }
