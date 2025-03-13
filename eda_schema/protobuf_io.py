@@ -1,3 +1,11 @@
+"""
+This module provides functions to load and save EDA-schema entities from/to Protobuf files.
+It includes mapping between gRPC Protobuf messages and EDA-schema entities.
+
+Author: Amit
+Date: YYYY-MM-DD
+"""
+
 import eda_schema.eda_schema_pb2 as pb2
 from eda_schema.entity import NetlistEntity, PowerMetricsEntity, StandardCellEntity
 from eda_schema.errors import ValidationError
