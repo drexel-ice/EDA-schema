@@ -1,3 +1,5 @@
 venv
 *.egg-info
 *__pycache__*
+*.code-workspace
+.DS_Store

@@ -1,7 +1,7 @@
 import pytest
 import os
 from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
-import eda_schema_pb2 as pb2
+from eda_schema import eda_schema_pb2 as pb2
 
 class TestProtobufIO:
 

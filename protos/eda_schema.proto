@@ -208,3 +208,31 @@ service EdaSchemaService {
     rpc GetInterconnectGraph (Empty) returns (InterconnectEntity);
     rpc GetTimingPathGraph (Empty) returns (TimingPathEntity);
 }
+
+message EntityMessage {
+    string name = 1;
+    int32 id = 2;
+}
+
+message ImportRequest {
+    string filename = 1;
+}
+
+message ImportResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ExportRequest {
+    string filename = 1;
+}
+
+message ExportResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+service EDAService {
+    rpc ImportMethod (ImportRequest) returns (ImportResponse);
+    rpc ExportMethod (ExportRequest) returns (ExportResponse);
+}
