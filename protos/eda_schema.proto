@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package edaschema;
 
 message Empty {}
@@ -212,6 +211,7 @@ service EdaSchemaService {
 message EntityMessage {
     string name = 1;
     int32 id = 2;
+    string type = 3; 
 }
 
 message ImportRequest {
@@ -230,6 +230,8 @@ message ExportRequest {
 message ExportResponse {
     bool success = 1;
     string message = 2;
+    string status = 3; // <-- ADD THIS
+   
 }
 
 service EDAService {
