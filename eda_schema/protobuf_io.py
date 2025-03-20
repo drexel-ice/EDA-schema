@@ -3,7 +3,7 @@ This module provides functions to load and save EDA-schema entities from/to Prot
 It includes mapping between gRPC Protobuf messages and EDA-schema entities.
 
 Changes:
-- Updated `save_protobuf_file` to remove the dynamic `setattr` loop and assign only valid proto fields.
+- Updated `save_protobuf_file` to dynamically set fields based on the Protobuf `DESCRIPTOR` instead of hardcoding field assignments.
 - Updated `map_grpc_to_eda` to ensure proper field mapping for `NetlistEntity` and other entity types.
 """
 
@@ -18,24 +18,47 @@ def load_protobuf_file(file_path):
         entity_message.ParseFromString(f.read())
     return map_grpc_to_eda(entity_message)
 
-def save_protobuf_file(entity, file_path):
+
+# TODO: Remove this function - Keeping this in for code review.
+def x_save_protobuf_file(entity, file_path):
     """Converts an EDA-schema entity to Protobuf and writes it to a file."""
     entity_message = pb2.EntityMessage()
-    # TODO: CHANGE - Remove dynamic setattr loop, assign only valid proto fields
     entity_message.name = entity.name
     entity_message.id = entity.id
     entity_message.type = entity.type
     with open(file_path, "wb") as f:
         f.write(entity_message.SerializeToString())
         
-# def save_protobuf_file(entity, file_path):
-#     """Converts an EDA-schema entity to Protobuf and writes it to a file."""
-#     entity_message = pb2.EntityMessage()
-#     entity_message.type = entity.__class__.__name__
-#     for field in entity.__dict__:
-#         setattr(entity_message, field, getattr(entity, field))
-#     with open(file_path, "wb") as f:
-#         f.write(entity_message.SerializeToString())
+
+def save_protobuf_file(entity, file_path, entity_class="EntityMessage"):
+    """
+    Converts an EDA-schema entity to Protobuf and writes it to a file.
+
+    Args:
+        entity: An instance of the entity (with attributes matching proto fields).
+        file_path: Path to save serialized protobuf.
+        entity_class: String name of the pb2 message class (default = "EntityMessage").
+    """
+    entity_cls = getattr(pb2, entity_class)
+    entity_message = entity_cls()
+
+    # Dynamically set fields based on DESCRIPTOR
+    for field in entity_message.DESCRIPTOR.fields:
+        value = getattr(entity, field.name)
+        
+        if field.label == field.LABEL_REPEATED:  # Repeated field (list of messages or scalars)
+            repeated_container = getattr(entity_message, field.name)
+            repeated_container.extend(value)
+        
+        elif field.message_type:  # Single nested message type
+            getattr(entity_message, field.name).CopyFrom(value)
+        
+        else:  # Scalar field (int, string, etc.)
+            setattr(entity_message, field.name, value)
+
+    # Write serialized protobuf to file
+    with open(file_path, "wb") as f:
+        f.write(entity_message.SerializeToString())
 
 def fetch_from_eda_schema(entity_id):
     """Dummy implementation for testing."""
