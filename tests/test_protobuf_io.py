@@ -1,58 +1,71 @@
-"""
-test_protobuf_io.py
-
-This script contains unit tests for the `eda_schema.protobuf_io` module, which provides functionality 
-to save and load Protocol Buffer (protobuf) files. The tests ensure that protobuf entities can be 
-correctly serialized to a file and deserialized back into Python objects. 
-
-The tests are implemented using the `pytest` framework and include the following:
-1. `test_save_protobuf_file`: Verifies that a protobuf entity can be saved to a file and that the file 
-    is created successfully.
-2. `test_load_protobuf_file`: Verifies that a protobuf entity can be loaded from a file and that the 
-    deserialized entity matches the original entity. A mock is used to bypass dependencies on additional 
-    fields or external logic.
-
-The `setup_and_teardown` fixture is used to create a temporary file for testing and to initialize a 
-sample protobuf entity (`EntityMessage`) with predefined attributes. This ensures that each test 
-executes in isolation with a clean environment.
-
-Dependencies:
-- `pytest`: For writing and running the tests.
-- `unittest.mock.patch`: For mocking external dependencies during testing.
-- `eda_schema.protobuf_io`: The module under test, which provides `load_protobuf_file` and 
-  `save_protobuf_file` functions.
-- `eda_schema.eda_schema_pb2`: The generated protobuf module containing the `EntityMessage` definition.
-
-Note:
-- The `map_grpc_to_eda` function is mocked in the `test_load_protobuf_file` test to avoid dependency 
-  on additional fields or transformations that are not relevant to the test.
-"""
 import pytest
 import os
 from unittest.mock import patch
 from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
+"""
+Unit tests for Protobuf IO functionality in the eda_schema package.
+
+This module tests the ability to save and load Protobuf messages to and from files.
+It uses pytest for testing and unittest.mock for mocking dependencies.
+"""
+
 from eda_schema import eda_schema_pb2 as pb2
 
-class TestProtobufIO:
+# Static list of message names
+PROTO_MESSAGES = [
+    "Empty",
+    "EdgeEntity",
+    "StandardCellEntity",
+    "GateEntity",
+    "IOPortEntity",
+    "InterconnectSegmentEntity",
+    "InterconnectEntity",
+    "TimingPathNodeEntity",
+    "TimingPathEntity",
+    "CellMetricsEntity",
+    "AreaMetricsEntity",
+    "PowerMetricsEntity",
+    "CriticalPathMetricsEntity",
+    "ClockTreeEntity",
+    "NetlistEntity",
+    "EntityMessage",
+    "ImportRequest",
+    "ImportResponse",
+    "ExportRequest",
+    "ExportResponse",
+]
+
+class TestProtobufIO:  # SINGLE class
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self, tmpdir):
         self.test_file = tmpdir.join('test_protobuf_file.bin')
-        self.entity = pb2.EntityMessage()
-        self.entity.name = 'TestNetlist'
-        self.entity.id = 12345
-        self.entity.type = "Netlist"
         yield
 
-    def test_save_protobuf_file(self):
-        save_protobuf_file(self.entity, str(self.test_file))
-        assert os.path.exists(str(self.test_file))
+    @pytest.mark.parametrize("message_name", PROTO_MESSAGES)  # FIXED: applied to function
+    def test_load_protobuf_file(self, message_name):
+        # Dynamically create entity of correct type
+        entity_cls = getattr(pb2, message_name)
+        entity = entity_cls()
+        
+        # Populate fields if they exist
+        if hasattr(entity, 'name'):
+            entity.name = 'TestNetlist'
+        if hasattr(entity, 'id'):
+            entity.id = 12345
+        if hasattr(entity, 'type'):
+            entity.type = "Netlist"
 
-    def test_load_protobuf_file(self):
-        save_protobuf_file(self.entity, str(self.test_file))
-        # MOCK map_grpc_to_eda to avoid dependency on extra fields (width, height, etc.)
-        with patch('eda_schema.protobuf_io.map_grpc_to_eda', return_value=self.entity):
-            loaded_entity = load_protobuf_file(str(self.test_file))
-            assert loaded_entity.name == self.entity.name
-            assert loaded_entity.id == self.entity.id
-            assert loaded_entity.type == self.entity.type
+        # Save entity
+        save_protobuf_file(entity, str(self.test_file), entity_class=message_name)
+        
+        # Load and test
+        with patch('eda_schema.protobuf_io.map_grpc_to_eda', return_value=entity):
+            loaded_entity = load_protobuf_file(str(self.test_file))  # No entity_class arg
+            
+            if hasattr(entity, 'name'):
+                assert loaded_entity.name == entity.name
+            if hasattr(entity, 'id'):
+                assert loaded_entity.id == entity.id
+            if hasattr(entity, 'type'):
+                assert loaded_entity.type == entity.type

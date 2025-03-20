@@ -5,5 +5,5 @@ venv/
 .DS_Store
 temp_requirements.txt
 .backup_requirements.txt/
-tree.out
-pytest.out
+*.out
+scratch.py
