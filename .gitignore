@@ -6,4 +6,3 @@ venv/
 temp_requirements.txt
 .backup_requirements.txt/
 *.out
-scratch.py
