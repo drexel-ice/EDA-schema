@@ -1,7 +1,6 @@
 import pytest
 import os
 from unittest.mock import patch
-from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
 """
 Unit tests for Protobuf IO functionality in the eda_schema package.
 
@@ -10,6 +9,7 @@ It uses pytest for testing and unittest.mock for mocking dependencies.
 """
 
 from eda_schema import eda_schema_pb2 as pb2
+from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
 
 # Static list of message names
 PROTO_MESSAGES = [
@@ -43,7 +43,7 @@ class TestProtobufIO:  # SINGLE class
         yield
 
     @pytest.mark.parametrize("message_name", PROTO_MESSAGES)  # FIXED: applied to function
-    def test_load_protobuf_file(self, message_name):
+    def test_save_and_load_protobuf_file(self, message_name):
         # Dynamically create entity of correct type
         entity_cls = getattr(pb2, message_name)
         entity = entity_cls()
@@ -57,15 +57,17 @@ class TestProtobufIO:  # SINGLE class
             entity.type = "Netlist"
 
         # Save entity
-        save_protobuf_file(entity, str(self.test_file), entity_class=message_name)
+        save_protobuf_file(entity, str(self.test_file))
         
-        # Load and test
-        with patch('eda_schema.protobuf_io.map_grpc_to_eda', return_value=entity):
-            loaded_entity = load_protobuf_file(str(self.test_file))  # No entity_class arg
-            
-            if hasattr(entity, 'name'):
-                assert loaded_entity.name == entity.name
-            if hasattr(entity, 'id'):
-                assert loaded_entity.id == entity.id
-            if hasattr(entity, 'type'):
-                assert loaded_entity.type == entity.type
+        # Load and test - directly using load_protobuf_file without mocking
+        loaded_entity = load_protobuf_file(str(self.test_file))
+        
+        # Verify the loaded entity has the same type and content
+        assert type(loaded_entity) == type(entity)
+        
+        if hasattr(entity, 'name'):
+            assert loaded_entity.name == entity.name
+        if hasattr(entity, 'id'):
+            assert loaded_entity.id == entity.id
+        if hasattr(entity, 'type'):
+            assert loaded_entity.type == entity.type
