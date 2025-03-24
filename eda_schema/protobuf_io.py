@@ -232,6 +232,16 @@ def dataset_to_protobuf(netlist):
                 if 'is_critical_path' in path and path['is_critical_path'] is not None:
                     path_proto.is_critical_path = bool(path['is_critical_path'])
     
+    for node in list(netlist.nodes):
+        if netlist.nodes[node]['type'] == "IO_PORT":
+            io_port_entity = netlist.nodes[node]['entity']
+            io_port_proto = netlist_proto.io_ports.add()
+
+            io_port_proto.direction = io_port_entity.direction
+            io_port_proto.x = io_port_entity.x
+            io_port_proto.y = io_port_entity.y
+            io_port_proto.capacitance = io_port_entity.capacitance or 0
+
     return netlist_proto
 
 def load_protobuf_file(filename, type_name="NetlistEntity"):
