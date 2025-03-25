@@ -6,3 +6,5 @@ venv/
 temp_requirements.txt
 .backup_requirements.txt/
 *.out
+.vscode/settings.json
+/out
