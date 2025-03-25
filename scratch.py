@@ -8,68 +8,52 @@ from eda_schema.protobuf_io import save_protobuf_file, dataset_to_protobuf, load
 """
 scratch.py: A utility script for testing and exploring EDA schema functionality
 
-This script loads a dataset from a specified directory using a netlist ID, 
-displays the dataset's contents, and then converts the dataset into a Protocol 
-Buffers (protobuf) format. It saves the protobuf data to a file, reads the file 
-back, displays its size and contents, and finally compares the original dataset 
-with the deserialized protobuf data to ensure data integrity.
+This script demonstrates the process of loading a dataset from a specified 
+directory using a netlist ID, displaying the dataset's contents, converting 
+the dataset into a Protocol Buffers (protobuf) format, and verifying the 
+integrity of the conversion process.
+
+Key Features:
+1. Dataset Loading:
+    - Loads standard cells and a netlist dataset from a SQLite database.
+    - Displays detailed information about the dataset, including standard cells 
+      and netlist attributes.
+
+2. Protobuf Conversion:
+    - Converts the dataset into a protobuf format.
+    - Saves the serialized protobuf data to a file.
+    - Ensures the output directory exists before saving.
+
+3. Protobuf Verification:
+    - Reads back the protobuf file and displays its contents.
+    - Compares the original dataset with the deserialized protobuf data to 
+      ensure data integrity.
 
 Usage:
-    python scratch.py
+     python scratch.py
 
-Files Read and Written by scratch.py
-Files Read:
-SQLite Database:
-    Location: dataset/test
-    The code uses SQLitePickleDB to load a netlist dataset from this location.
-    Specifically loads standard cells and netlist with ID id-000001.
-Protobuf Schema Definition (indirectly):
-    The code imports eda_schema.eda_schema_pb2 which is generated from the 
-    Protocol Buffer schema file (eda_schema.proto).
-Protobuf File (for verification):
-    Location: out/id-000001_netlist.pb
-    After writing this file, the code reads it back to verify the data integrity.
+Files Read and Written:
+- Input:
+  1. SQLite Database:
+      - Location: dataset/test
+      - Loads standard cells and netlist with ID id-000001.
+  2. Protobuf Schema Definition:
+      - Indirectly uses eda_schema.eda_schema_pb2 generated from eda_schema.proto.
 
-Files Written:
-Protobuf File:
-    Location: out/id-000001_netlist.pb
-    Contains the serialized netlist data in Protocol Buffer format.
-    The code creates the output directory if it doesn't exist.
-    Size: 1208 bytes as reported in the output.
+- Output:
+  1. Protobuf File:
+      - Location: out/id-000001_netlist.pb
+      - Contains the serialized netlist data in protobuf format.
+      - Creates the output directory if it doesn't exist.
 
-Dataset Loading (First section):
-    Successfully loaded netlist id-000001 from test dataset.
-    Displays all the standard cells in the dataset (sky130 cells).
-    Shows the 7 different versions of the GCD netlist that were loaded, 
-    representing different stages of the ASIC design flow (floorplan, 
-    global_place, etc.).
+Validation:
+- Compares attributes such as dimensions, density metrics, cell metrics, area 
+  metrics, power metrics, critical path metrics, and timing paths count.
+- Ensures 100% match percentage, validating the correctness of the 
+  serialization/deserialization process.
 
-Protobuf Conversion (Second section):
-    Converts the 'floorplan' version of the GCD netlist to protobuf format.
-    Writes the data directly to the output file.
-    Reports success with 1208 bytes written.
-
-Protobuf Reading (Third section):
-    Successfully reads back the protobuf file.
-    The detailed content of the protobuf was supposed to be printed but 
-    appears truncated in the output.
-
-Data Verification (Fourth section):
-    Performs a comprehensive comparison between the original dataset and the 
-    loaded protobuf data.
-    Compares:
-        Basic attributes (dimensions, density metrics).
-        Cell metrics (cell counts by type).
-        Area metrics (area measurements by cell type).
-        Power metrics (power consumption by type).
-        Critical path metrics (timing information).
-        Timing paths count.
-    All 42 comparisons showed exact matches within floating-point precision.
-    100% match percentage confirms data integrity in the conversion process.
-
-This demonstrates that the EDA schema protobuf format correctly captures and 
-preserves all the relevant metrics and properties of the netlist, validating 
-the serialization/deserialization implementation.
+This script serves as a comprehensive utility for testing and validating the 
+EDA schema protobuf implementation.
 """
 
 # Start with this:
@@ -121,6 +105,10 @@ def print_dataset(dataset):
         if hasattr(netlist, 'nodes'):
             print(f"  Node Count: {len(netlist.nodes)}")
             print(f"  Node Types: {set(node['type'] for node in netlist.nodes.values() if 'type' in node)}")
+            # New addition: print out details for each node
+            print("  Nodes:")
+            for node_key, node in netlist.nodes.items():
+                print(f"    {node_key}: {node}")
         
         # Print timing paths if available
         if hasattr(netlist, 'timing_paths'):
