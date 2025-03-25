@@ -6,11 +6,81 @@ Changes:
 - Updated `save_protobuf_file` to dynamically set fields based on the Protobuf `DESCRIPTOR` instead of hardcoding field assignments.
 - Updated `map_grpc_to_eda` to ensure proper field mapping for `NetlistEntity` and other entity types.
 - Added `load_pb` function to directly load protobuf files into specific object types.
+- Refactored type conversion utilities into module-level functions.
+- Added schema-based approach for dataset_to_protobuf to improve maintainability.
 """
 
 import eda_schema.eda_schema_pb2 as pb2
 from eda_schema.entity import NetlistEntity, PowerMetricsEntity, StandardCellEntity
 from eda_schema.errors import ValidationError
+
+# Type conversion utility functions - moved from inside dataset_to_protobuf to module level
+# for reusability and better code organization. These can be used by other functions
+# in the module that need safe type conversion.
+def safe_float(value, default=0.0):
+    """Convert a value to float with error handling.
+    
+    Args:
+        value: Value to convert
+        default: Default value to use if conversion fails
+        
+    Returns:
+        float: Converted value or default
+    """
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+        
+def safe_int(value, default=0):
+    """Convert a value to int with error handling.
+    
+    Args:
+        value: Value to convert
+        default: Default value to use if conversion fails
+        
+    Returns:
+        int: Converted value or default
+    """
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+        
+def safe_str(value, default=""):
+    """Convert a value to string with error handling.
+    
+    Args:
+        value: Value to convert
+        default: Default value to use if conversion fails
+        
+    Returns:
+        str: Converted value or default
+    """
+    if value is None:
+        return default
+    return str(value)
+        
+def safe_bool(value, default=False):
+    """Convert a value to bool with error handling.
+    
+    Args:
+        value: Value to convert
+        default: Default value to use if conversion fails
+        
+    Returns:
+        bool: Converted value or default
+    """
+    if value is None:
+        return default
+    try:
+        return bool(value)
+    except (ValueError, TypeError):
+        return default
 
 def x_load_protobuf_file(file_path):
     """Reads a Protobuf file and converts it to an EDA-schema entity."""
@@ -110,37 +180,9 @@ def dataset_to_protobuf(netlist):
     # Create a new NetlistEntity protobuf message
     netlist_proto = pb2.NetlistEntity()
     
-    # Helper functions for safe type conversions
-    def safe_float(value, default=0.0):
-        if value is None:
-            return default
-        try:
-            return float(value)
-        except (ValueError, TypeError):
-            return default
-            
-    def safe_int(value, default=0):
-        if value is None:
-            return default
-        try:
-            return int(value)
-        except (ValueError, TypeError):
-            return default
-            
-    def safe_str(value, default=""):
-        if value is None:
-            return default
-        return str(value)
-            
-    def safe_bool(value, default=False):
-        if value is None:
-            return default
-        try:
-            return bool(value)
-        except (ValueError, TypeError):
-            return default
-    
     # Map type names to converter functions
+    # This provides a central registry of converters that the schema can reference
+    # making it easy to add new conversion types
     converters = {
         'float': safe_float,
         'int': safe_int,
@@ -148,7 +190,9 @@ def dataset_to_protobuf(netlist):
         'bool': safe_bool
     }
     
-    # Define schema mappings
+    # Schema-driven approach: Using declarative dictionaries to define the mapping 
+    # between netlist attributes and protobuf fields. This makes the code more
+    # maintainable and self-documenting compared to numerous if-hasattr statements.
     schema = {
         # Top-level properties
         'basic_fields': {
@@ -261,7 +305,7 @@ def dataset_to_protobuf(netlist):
                 converter = converters[field_info['type']]
                 setattr(netlist_proto, field, converter(value))
     
-    # Process nested objects
+    # Process nested objects - automatically handles deep field setting
     for obj_name, obj_fields in schema['nested_objects'].items():
         if hasattr(netlist, obj_name):
             obj = getattr(netlist, obj_name)
@@ -273,7 +317,7 @@ def dataset_to_protobuf(netlist):
                             converter = converters[field_info['type']]
                             setattr(getattr(netlist_proto, obj_name), field, converter(value))
     
-    # Process timing paths
+    # Process timing paths - handles special case of repeated message fields
     if hasattr(netlist, 'timing_paths'):
         for path_type, paths in netlist.timing_paths.items():
             for path in paths:
@@ -287,9 +331,11 @@ def dataset_to_protobuf(netlist):
     if hasattr(netlist, 'nodes'):
         # Create a mapping from node types to protobuf field names and creation functions
         # Only include node types that have corresponding protobuf classes
+        # This ensures we don't try to use protobuf classes that don't exist
         node_type_mapping = {}
         
-        # Safely add node type mappings only if the protobuf class exists
+        # Defensive programming: Only map node types if the corresponding protobuf 
+        # classes actually exist, preventing AttributeError exceptions
         if hasattr(pb2, 'IOPortEntity'):
             node_type_mapping['IO_PORT'] = ('io_ports', pb2.IOPortEntity)
             
@@ -303,7 +349,7 @@ def dataset_to_protobuf(netlist):
         if hasattr(pb2, 'StandardCellEntity'):
             node_type_mapping['STANDARD_CELL'] = ('standard_cells', pb2.StandardCellEntity)
         
-        # Group nodes by type
+        # Group nodes by type for more efficient processing
         nodes_by_type = {}
         for node_name, node_data in netlist.nodes.items():
             if 'type' in node_data and 'entity' in node_data:
@@ -325,7 +371,8 @@ def dataset_to_protobuf(netlist):
                         proto_obj = proto_class()
                         proto_obj.name = safe_str(node_name)
                         
-                        # Apply field schema
+                        # Apply field schema using the same pattern as for other objects
+                        # This makes the code consistent and easier to maintain
                         for field, field_info in schema['node_types'][node_type].items():
                             if hasattr(entity, field):
                                 value = getattr(entity, field)
@@ -335,9 +382,10 @@ def dataset_to_protobuf(netlist):
                         
                         proto_objects.append(proto_obj)
                     except Exception as e:
+                        # Error handling ensures one bad node doesn't break the whole process
                         print(f"Error processing {node_type} {node_name}: {str(e)}")
                 
-                # Add all objects of this type to the appropriate protobuf field
+                # Batch addition of objects is more efficient than adding them one by one
                 if proto_objects:
                     getattr(netlist_proto, proto_field_name).extend(proto_objects)
     
