@@ -6,5 +6,6 @@ venv/
 temp_requirements.txt
 .backup_requirements.txt/
 *.out
-.vscode/settings.json
-/out
+.vscode/*
+out/*
+out/id-000001_netlist.pb
