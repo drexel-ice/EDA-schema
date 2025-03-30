@@ -35,7 +35,7 @@ import tempfile
 from eda_schema.entity import PHASES, NetlistEntity
 from eda_schema.dataset import Dataset
 from eda_schema.db import SQLitePickleDB
-from eda_schema.protobuf_io import save_protobuf_file, dataset_to_protobuf, load_protobuf_file
+from eda_schema.protobuf_io import save_protobuf_file, dataset_to_protobuf, load_protobuf_file, protobuf_to_dataset
 
 # Constants
 DATASET_DIR = "dataset/test"
@@ -347,3 +347,70 @@ def test_end_to_end_conversion(test_dataset, first_netlist, temp_protobuf_file):
             loaded_proto.power_metrics.total_power,
             "power_metrics.total_power"
         )
+
+def test_protobuf_to_dataset(test_dataset, first_netlist, temp_protobuf_file):
+    """Test converting protobuf back to dataset."""
+    netlist_key, netlist = first_netlist
+    
+    # Manually add circuit, netlist_id and phase for testing purposes
+    if not hasattr(netlist, 'circuit'):
+        netlist.circuit = netlist_key[0]
+    if not hasattr(netlist, 'netlist_id'):
+        netlist.netlist_id = netlist_key[1]
+    if not hasattr(netlist, 'phase'):
+        netlist.phase = netlist_key[2]
+
+    # Convert netlist to protobuf
+    netlist_proto = dataset_to_protobuf(netlist)
+    
+    # Save protobuf to file
+    with open(temp_protobuf_file, 'wb') as f:
+        f.write(netlist_proto.SerializeToString())
+    
+    # Load protobuf from file
+    loaded_proto = load_protobuf_file(temp_protobuf_file)
+    
+    # Convert protobuf back to dataset
+    reconstructed_dataset = protobuf_to_dataset(loaded_proto, test_dataset.db)
+
+    # Verify the reconstructed dataset contains the original netlist key
+    assert netlist_key in reconstructed_dataset, "Reconstructed dataset is missing the original netlist key"
+
+    reconstructed_netlist = reconstructed_dataset[netlist_key]
+
+    # Verify basic attributes
+    for attr in ['width', 'height', 'no_of_inputs', 'no_of_outputs', 'utilization']:
+        if attr in netlist:
+            original_value = netlist[attr]
+            reconstructed_value = reconstructed_netlist[attr]
+            verify_attribute_equality(original_value, reconstructed_value, attr)
+
+    # Verify cell metrics
+    if 'cell_metrics' in netlist:
+        for attr in ['no_of_combinational_cells', 'no_of_sequential_cells', 'no_of_total_cells']:
+            if attr in netlist['cell_metrics']:
+                original_value = netlist['cell_metrics'][attr]
+                reconstructed_value = reconstructed_netlist['cell_metrics'][attr]
+                verify_attribute_equality(original_value, reconstructed_value, f"cell_metrics.{attr}")
+
+    # Verify area metrics
+    if 'area_metrics' in netlist:
+        for attr in ['total_area', 'cell_area']:
+            if attr in netlist['area_metrics']:
+                original_value = netlist['area_metrics'][attr]
+                reconstructed_value = reconstructed_netlist['area_metrics'][attr]
+                verify_attribute_equality(original_value, reconstructed_value, f"area_metrics.{attr}")
+
+    # Verify power metrics
+    if 'power_metrics' in netlist:
+        for attr in ['total_power', 'internal_power']:
+            if attr in netlist['power_metrics']:
+                original_value = netlist['power_metrics'][attr]
+                reconstructed_value = reconstructed_netlist['power_metrics'][attr]
+                verify_attribute_equality(original_value, reconstructed_value, f"power_metrics.{attr}")
+
+    # Verify timing paths count
+    if 'timing_paths' in netlist:
+        original_count = sum(len(paths) for paths in netlist['timing_paths'].values())
+        reconstructed_count = sum(len(paths) for paths in reconstructed_netlist['timing_paths'].values())
+        assert original_count == reconstructed_count, "Timing paths count mismatch"
