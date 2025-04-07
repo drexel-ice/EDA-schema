@@ -4,17 +4,15 @@ from unittest.mock import patch
 """
 Unit tests for Protobuf IO functionality in the eda_schema package.
 
-This module tests the ability to save and load Protobuf messages to and from files.
+This module tests the ability to save and load Protobuf entitys to and from files.
 It uses pytest for testing and unittest.mock for mocking dependencies.
 """
 
 from eda_schema import eda_schema_pb2 as pb2
 from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
 
-# Static list of message names
-PROTO_MESSAGES = [
-    "Empty",
-    "EdgeEntity",
+# Static list of entity names
+PROTO_ENTITIES = [
     "StandardCellEntity",
     "GateEntity",
     "IOPortEntity",
@@ -28,12 +26,33 @@ PROTO_MESSAGES = [
     "CriticalPathMetricsEntity",
     "ClockTreeEntity",
     "NetlistEntity",
-    "EntityMessage",
-    "ImportRequest",
-    "ImportResponse",
-    "ExportRequest",
-    "ExportResponse",
 ]
+
+def get_test_protobuf(entity_name):
+    """
+    Return a populated protobuf object for the given entity name.
+
+    Args:
+        entity_name (str): Name of the Protobuf message class.
+
+    Returns:
+        protobuf.Message: An instance of the corresponding Protobuf message, populated with test data.
+    """
+    raise NotImplementedError("Return a populated protobuf object for the given entity name.")
+
+def compare_protobufs(expected, actual):
+    """
+    Compare two protobuf messages for equality.
+
+    Args:
+        expected (protobuf.Message): The expected Protobuf message.
+        actual (protobuf.Message): The actual Protobuf message to compare.
+
+    Returns:
+        bool: True if the messages are equal, False otherwise.
+    """
+    raise NotImplementedError("Compare two protobuf objects for equality.")
+
 
 class TestProtobufIO:  # SINGLE class
 
@@ -42,30 +61,16 @@ class TestProtobufIO:  # SINGLE class
         self.test_file = tmpdir.join('test_protobuf_file.bin')
         yield
 
-    @pytest.mark.parametrize("message_name", PROTO_MESSAGES)  # FIXED: applied to function
-    def test_save_and_load_protobuf_file(self, message_name):
+    @pytest.mark.parametrize("entity_name", PROTO_ENTITIES)  # FIXED: applied to function
+    def test_save_and_load_protobuf_file(self, entity_name):
+        expected_protobuf = get_test_protobuf(entity_name)
         # Dynamically create entity of correct type
-        entity_cls = getattr(pb2, message_name)
-        entity = entity_cls()
-        
-        # Populate fields if they exist
-        if hasattr(entity, 'name'):
-            entity.name = 'TestNetlist'
-        if hasattr(entity, 'id'):
-            entity.id = 12345
-        if hasattr(entity, 'type'):
-            entity.type = "Netlist"
+        protobuf_cls = getattr(pb2, entity_name)
+        protobuf = protobuf_cls()
 
-        # Save entity - pass the correct message_name as entity_class
-        save_protobuf_file(entity, str(self.test_file), entity_class=message_name)
+        # Save protobuf - pass the correct entity_name as entity_class
+        save_protobuf_file(protobuf, str(self.test_file), entity_class=entity_name)
         
         # Load entity (load always returns an EntityMessage)
-        loaded_entity = load_protobuf_file(str(self.test_file))
-        
-        # Compare common fields only if they exist on loaded_entity
-        if hasattr(entity, 'name') and hasattr(loaded_entity, 'name'):
-            assert loaded_entity.name == entity.name
-        if hasattr(entity, 'id') and hasattr(loaded_entity, 'id'):
-            assert loaded_entity.id == entity.id
-        if hasattr(entity, 'type') and hasattr(loaded_entity, 'type'):
-            assert loaded_entity.type == entity.type
+        loaded_protobuf = load_protobuf_file(str(self.test_file))
+        assert compare_protobufs(expected_protobuf, loaded_protobuf)
