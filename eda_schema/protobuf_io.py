@@ -1,14 +1,13 @@
 """
 This module provides functions to load and save EDA-schema entities from/to Protobuf files.
-It includes mapping between gRPC Protobuf messages and EDA-schema entities.
 
 Changes:
 - Updated `save_protobuf_file` to dynamically set fields based on the Protobuf `DESCRIPTOR` instead of hardcoding field assignments.
-- Updated `map_grpc_to_eda` to ensure proper field mapping for `NetlistEntity` and other entity types.
 - Added `load_pb` function to directly load protobuf files into specific object types.
 - Refactored type conversion utilities into module-level functions.
 - Added schema-based approach for dataset_to_protobuf to improve maintainability.
 - Added `protobuf_to_dataset` function to convert a protobuf object back into a Dataset object.
+- Replaced hardcoded schema with dynamic schema generation from proto definitions.
 """
 
 import eda_schema.eda_schema_pb2 as pb2
@@ -115,53 +114,86 @@ def save_protobuf_file(entity, file_path, entity_class="EntityMessage"):
     with open(file_path, "wb") as f:
         f.write(entity_message.SerializeToString())
 
-def fetch_from_eda_schema(entity_id):
-    """Dummy implementation for testing."""
-    entity = pb2.EntityMessage()
-    entity.name = "DummyEntity"
-    entity.id = int(entity_id)
-    entity.type = "Netlist"
-    return entity
+def build_schema_from_proto():
+    """
+    Dynamically builds the schema dictionary from protobuf message descriptors.
+    
+    Returns:
+        dict: Schema with field mappings for various entity types
+    """
+    schema = {
+        'basic_fields': {},
+        'nested_objects': {},
+        'node_types': {},
+        'timing_path_fields': {}
+    }
+    
+    # Map protobuf field types to our converter types
+    type_mapping = {
+        1: 'float',  # TYPE_DOUBLE
+        2: 'float',  # TYPE_FLOAT
+        3: 'int',    # TYPE_INT64
+        4: 'int',    # TYPE_UINT64
+        5: 'int',    # TYPE_INT32
+        6: 'float',  # TYPE_FIXED64
+        7: 'float',  # TYPE_FIXED32
+        8: 'bool',   # TYPE_BOOL
+        9: 'str',    # TYPE_STRING
+        12: 'str',   # TYPE_BYTES
+        13: 'int',   # TYPE_UINT32
+        15: 'int',   # TYPE_SFIXED32
+        16: 'int',   # TYPE_SFIXED64
+        17: 'int',   # TYPE_SINT32
+        18: 'int',   # TYPE_SINT64
+    }
+    
+    # Extract basic fields from NetlistEntity
+    netlist_descriptor = pb2.NetlistEntity.DESCRIPTOR
+    for field in netlist_descriptor.fields:
+        if not field.message_type and field.label != field.LABEL_REPEATED:
+            if field.type in type_mapping:
+                schema['basic_fields'][field.name] = {'type': type_mapping[field.type]}
+    
+    # Extract nested objects
+    for field in netlist_descriptor.fields:
+        if field.message_type and field.label != field.LABEL_REPEATED:
+            nested_obj_name = field.name
+            nested_descriptor = field.message_type
+            schema['nested_objects'][nested_obj_name] = {}
+            
+            for nested_field in nested_descriptor.fields:
+                if not nested_field.message_type and nested_field.label != nested_field.LABEL_REPEATED:
+                    if nested_field.type in type_mapping:
+                        schema['nested_objects'][nested_obj_name][nested_field.name] = {'type': type_mapping[nested_field.type]}
+    
+    # Node types mapping
+    node_type_classes = {
+        'IO_PORT': 'IOPortEntity',
+        'GATE': 'GateEntity', 
+        'STANDARD_CELL': 'StandardCellEntity',
+        # 'TP_NODE': 'TimingPathNodeEntity',  # Uncomment if this becomes supported
+    }
+    
+    for node_type, class_name in node_type_classes.items():
+        if hasattr(pb2, class_name):
+            entity_descriptor = getattr(pb2, class_name).DESCRIPTOR
+            schema['node_types'][node_type] = {}
+            
+            for field in entity_descriptor.fields:
+                if not field.message_type and field.label != field.LABEL_REPEATED:
+                    if field.type in type_mapping:
+                        schema['node_types'][node_type][field.name] = {'type': type_mapping[field.type]}
+    
+    # For timing paths
+    if hasattr(pb2, 'TimingPathEntity'):
+        timing_path_descriptor = pb2.TimingPathEntity.DESCRIPTOR
+        for field in timing_path_descriptor.fields:
+            if not field.message_type and field.label != field.LABEL_REPEATED:
+                if field.type in type_mapping:
+                    schema['timing_path_fields'][field.name] = {'type': type_mapping[field.type]}
+    
+    return schema
 
-def map_grpc_to_eda(grpc_message):
-    """Converts a gRPC Protobuf message to an EDA-schema entity with proper field mapping."""
-    if grpc_message.type == "Netlist":
-        return NetlistEntity({
-            "width": grpc_message.width,  # TODO: CHANGE - Ensure these fields exist in .proto
-            "height": grpc_message.height,
-            "no_of_inputs": grpc_message.no_of_inputs,
-            "no_of_outputs": grpc_message.no_of_outputs,
-            "no_of_cells": grpc_message.no_of_cells,
-            "no_of_nets": grpc_message.no_of_nets,
-            "cell_density": grpc_message.cell_density,
-            "pin_density": grpc_message.pin_density,
-            "net_density": grpc_message.net_density,
-            "utilization": grpc_message.utilization,
-        })
-    elif grpc_message.type == "PowerMetrics":
-        return PowerMetricsEntity({
-            "internal_power": grpc_message.internal_power,
-            "switching_power": grpc_message.switching_power,
-            "leakage_power": grpc_message.leakage_power,
-            "combinational_power": grpc_message.combinational_power,
-            "sequential_power": grpc_message.sequential_power,
-            "macro_power": grpc_message.macro_power,
-            "total_power": grpc_message.total_power,
-        })
-    elif grpc_message.type == "StandardCell":
-        return StandardCellEntity({
-            "name": grpc_message.name,
-            "width": grpc_message.width,
-            "height": grpc_message.height,
-            "no_of_input_pins": grpc_message.no_of_input_pins,
-            "no_of_output_pins": grpc_message.no_of_output_pins,
-            "is_sequential": grpc_message.is_sequential,
-            "is_inverter": grpc_message.is_inverter,
-            "is_buffer": grpc_message.is_buffer,
-            "drive_strength": grpc_message.drive_strength,
-        })
-    else:
-        raise ValidationError(f"Unknown entity type: {grpc_message.type}")
 
 def dataset_to_protobuf(netlist):
     """
@@ -186,112 +218,8 @@ def dataset_to_protobuf(netlist):
         'bool': safe_bool
     }
     
-    # Schema-driven approach: Using declarative dictionaries to define the mapping 
-    # between netlist attributes and protobuf fields. This makes the code more
-    # maintainable and self-documenting compared to numerous if-hasattr statements.
-    schema = {
-        # Top-level properties
-        'basic_fields': {
-            'width': {'type': 'float'},
-            'height': {'type': 'float'},
-            'no_of_inputs': {'type': 'int'},
-            'no_of_outputs': {'type': 'int'},
-            'utilization': {'type': 'float'},
-            'cell_density': {'type': 'float'},
-            'pin_density': {'type': 'float'},
-            'net_density': {'type': 'float'}
-        },
-        # Nested objects with their fields
-        'nested_objects': {
-            'cell_metrics': {
-                'no_of_combinational_cells': {'type': 'int'},
-                'no_of_sequential_cells': {'type': 'int'},
-                'no_of_buffers': {'type': 'int'},
-                'no_of_inverters': {'type': 'int'},
-                'no_of_fillers': {'type': 'int'},
-                'no_of_tap_cells': {'type': 'int'},
-                'no_of_diodes': {'type': 'int'},
-                'no_of_macros': {'type': 'int'},
-                'no_of_total_cells': {'type': 'int'}
-            },
-            'area_metrics': {
-                'combinational_cell_area': {'type': 'float'},
-                'sequential_cell_area': {'type': 'float'},
-                'buffer_area': {'type': 'float'},
-                'inverter_area': {'type': 'float'},
-                'filler_area': {'type': 'float'},
-                'tap_cell_area': {'type': 'float'},
-                'diode_area': {'type': 'float'},
-                'macro_area': {'type': 'float'},
-                'cell_area': {'type': 'float'},
-                'total_area': {'type': 'float'}
-            },
-            'power_metrics': {
-                'combinational_power': {'type': 'float'},
-                'sequential_power': {'type': 'float'},
-                'macro_power': {'type': 'float'},
-                'internal_power': {'type': 'float'},
-                'switching_power': {'type': 'float'},
-                'leakage_power': {'type': 'float'},
-                'total_power': {'type': 'float'}
-            },
-            'critical_path_metrics': {
-                'startpoint': {'type': 'str'},
-                'endpoint': {'type': 'str'},
-                'worst_arrival_time': {'type': 'float'},
-                'worst_slack': {'type': 'float'},
-                'total_negative_slack': {'type': 'float'},
-                'no_of_timing_paths': {'type': 'int'},
-                'no_of_slack_violations': {'type': 'int'}
-            }
-        },
-        # Dictionary defining node types and their field mappings
-        'node_types': {
-            'IO_PORT': {
-                'direction': {'type': 'str'},
-                'x': {'type': 'float'},
-                'y': {'type': 'float'},
-                'capacitance': {'type': 'float'}
-            },
-            'TP_NODE': {
-                'arrival_time': {'type': 'float'},
-                'required_time': {'type': 'float'},
-                'slack': {'type': 'float'},
-                'clock': {'type': 'str'},
-                'is_startpoint': {'type': 'bool'},
-                'is_endpoint': {'type': 'bool'}
-            },
-            'GATE': {
-                'cell_type': {'type': 'str'},
-                'x': {'type': 'float'},
-                'y': {'type': 'float'},
-                'width': {'type': 'float'},
-                'height': {'type': 'float'},
-                'orientation': {'type': 'str'}
-            },
-            'STANDARD_CELL': {
-                'width': {'type': 'float'},
-                'height': {'type': 'float'},
-                'no_of_input_pins': {'type': 'int'},
-                'no_of_output_pins': {'type': 'int'},
-                'is_sequential': {'type': 'bool'},
-                'is_inverter': {'type': 'bool'},
-                'is_buffer': {'type': 'bool'},
-                'drive_strength': {'type': 'float'}
-            }
-        },
-        # Path field mappings
-        'timing_path_fields': {
-            'startpoint': {'type': 'str'},
-            'endpoint': {'type': 'str'},
-            'path_type': {'type': 'str'},
-            'arrival_time': {'type': 'float'},
-            'required_time': {'type': 'float'},
-            'slack': {'type': 'float'},
-            'no_of_gates': {'type': 'int'},
-            'is_critical_path': {'type': 'bool'}
-        }
-    }
+    # Dynamically build schema from proto definitions
+    schema = build_schema_from_proto()
     
     # Process basic fields
     for field, field_info in schema['basic_fields'].items():
