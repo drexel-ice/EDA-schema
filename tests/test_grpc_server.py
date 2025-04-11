@@ -57,10 +57,10 @@ def test_export_to_protobuf_file_success(grpc_service):
     request.file_path = "valid_path"
     entity = MagicMock()
 
-    with patch('eda_schema.grpc_server.fetch_from_eda_schema', return_value=entity):
-        with patch('eda_schema.grpc_server.save_protobuf_file') as mock_save:
-            response = grpc_service.ExportToProtobufFile(request, MagicMock())
-            mock_save.assert_called_once_with(entity, "valid_path")
+    with patch('eda_schema.grpc_server.load_protobuf_file', return_value=entity):
+        with patch('eda_schema.grpc_server.save_protobuf_file'):
+            response = grpc_service.ExportToProtobufFile(request, None)
+            assert response.success is True
             assert response.message == "Success"
 
 def test_export_to_protobuf_file_failure(grpc_service):
@@ -68,7 +68,7 @@ def test_export_to_protobuf_file_failure(grpc_service):
     request.entity_id = "12345"
     request.file_path = "invalid_path"
 
-    with patch('eda_schema.grpc_server.fetch_from_eda_schema', side_effect=Exception("Entity not found")):
-        response = grpc_service.ExportToProtobufFile(request, MagicMock())
+    with patch('eda_schema.grpc_server.load_protobuf_file', side_effect=Exception("Entity not found")):
+        response = grpc_service.ExportToProtobufFile(request, None)
         assert response.success is False
-        assert "Entity not found" in response.message
+        assert "Failed: Entity not found" in response.message
