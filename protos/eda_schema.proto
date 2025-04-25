@@ -176,22 +176,24 @@ message NetlistEntity {
     float height = 2;
     int32 no_of_inputs = 3;
     int32 no_of_outputs = 4;
-    float utilization = 5;
-    float cell_density = 6;
-    float pin_density = 7;
-    float net_density = 8;
+    int32 no_of_cells = 5;
+    int32 no_of_nets = 6;
+    float utilization = 7;
+    float cell_density = 8;
+    float pin_density = 9;
+    float net_density = 10;
 
-    CellMetricsEntity cell_metrics = 9;
-    AreaMetricsEntity area_metrics = 10;
-    PowerMetricsEntity power_metrics = 11;
-    CriticalPathMetricsEntity critical_path_metrics = 12;
+    CellMetricsEntity cell_metrics = 11;
+    AreaMetricsEntity area_metrics = 12;
+    PowerMetricsEntity power_metrics = 13;
+    CriticalPathMetricsEntity critical_path_metrics = 14;
 
-    repeated TimingPathEntity timing_paths = 13;
-    repeated ClockTreeEntity clock_trees = 14;
-    repeated IOPortEntity io_ports = 15;
-    repeated GateEntity gates = 16;
-    repeated InterconnectEntity interconnects = 17;
-    repeated EdgeEntity edges = 18;
+    repeated TimingPathEntity timing_paths = 15;
+    repeated ClockTreeEntity clock_trees = 16;
+    repeated IOPortEntity io_ports = 17;
+    repeated GateEntity gates = 18;
+    repeated InterconnectEntity interconnects = 19;
+    repeated EdgeEntity edges = 20;
 }
 
 // EDA-Schema Service
