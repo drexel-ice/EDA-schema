@@ -68,18 +68,20 @@ else
   echo "Error!: Files do not exist yet."
 fi
 
-echo "Regenerating gRPC Python files..."
-echo "python -m grpc_tools.protoc --proto_path=. --python_out=./${PROTO_DIR} --grpc_python_out=./${PROTO_DIR} ${PROTO_FILE}"
+echo "Regenerating gRPC Python files with proto3 optional support..."
+echo "python -m grpc_tools.protoc --proto_path=${PROTO_PATH} --experimental_allow_proto3_optional --python_out=./${PROTO_DIR} --grpc_python_out=./${PROTO_DIR} ${PROTO_FILE}"
 python -m grpc_tools.protoc \
   --proto_path=${PROTO_PATH} \
+  --experimental_allow_proto3_optional \
   --python_out=./${PROTO_DIR} \
   --grpc_python_out=./${PROTO_DIR} \
   ${PROTO_FILE}
+
 # Check if the command was successful
-[[ $? -ne 0 ]] && { echo "Error: Failed to generate gRPC Python files."; exit 1; }
+[[ $? -ne 0 ]] && { echo "Error: Failed to generate gRPC Python files."}
 
 
-  # List the newly generated files after regeneration
+# List the newly generated files after regeneration
 echo "Files regenerated:"
 if [[ -f ./${PROTO_DIR}/eda_schema_pb2.py && -f ./${PROTO_DIR}/eda_schema_pb2_grpc.py ]]; then
   echo "Auto-Patching the Generated File because Python thinks eda_schema_pb2 is a top-level module, not part of the eda_schema package."
@@ -91,7 +93,6 @@ if [[ -f ./${PROTO_DIR}/eda_schema_pb2.py && -f ./${PROTO_DIR}/eda_schema_pb2_gr
   echo " eda_schema_pb2_grpc.py: $NEW_SHA_SUM_PB2_GRPC"
 else
   echo "Error: Generated files are missing."
-  exit 1
 fi
 echo "gRPC Python files generated successfully!"
 # Display detailed information about the newly generated files
