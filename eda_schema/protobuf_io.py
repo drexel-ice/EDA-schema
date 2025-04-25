@@ -10,10 +10,36 @@ Changes:
 - Replaced hardcoded schema with dynamic schema generation from proto definitions.
 """
 
+from google.protobuf.descriptor import FieldDescriptor
+
 import eda_schema.eda_schema_pb2 as pb2
 from eda_schema.entity import NetlistEntity, PowerMetricsEntity, StandardCellEntity
 from eda_schema.errors import ValidationError
 from eda_schema.dataset import Dataset
+
+
+FIELD_TYPE_MAP = {
+    1: "float",   # TYPE_DOUBLE
+    2: "float",   # TYPE_FLOAT
+    3: "int",     # TYPE_INT64
+    4: "int",     # TYPE_UINT64
+    5: "int",     # TYPE_INT32
+    6: "int",     # TYPE_FIXED64
+    7: "int",     # TYPE_FIXED32
+    8: "bool",    # TYPE_BOOL
+    9: "string",  # TYPE_STRING
+    # 10: "group",   # TYPE_GROUP (deprecated, rarely used)
+    # 11: "message", # TYPE_MESSAGE
+    # 12: "bytes",   # TYPE_BYTES
+    13: "int",     # TYPE_UINT32
+    # 14: "enum",    # TYPE_ENUM
+    15: "int",     # TYPE_SFIXED32
+    16: "int",     # TYPE_SFIXED64
+    17: "int",     # TYPE_SINT32
+    18: "int",     # TYPE_SINT64
+}
+
+
 
 # Type conversion utility functions - moved from inside dataset_to_protobuf to module level
 # for reusability and better code organization. These can be used by other functions
@@ -194,8 +220,46 @@ def build_schema_from_proto():
     
     return schema
 
+CONVERTER = {
+    'float': safe_float,
+    'int': safe_int,
+    'string': safe_str,
+    'bool': safe_bool
+}
 
-def dataset_to_protobuf(netlist):
+def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
+    """
+    Convert an EDA-schema entity to a Protobuf object.
+
+    Args:
+        pb2_entity: An instance of the Protobuf message to populate.
+        edaschema_entity: The EDA-schema entity containing source data.
+    """
+    # Loop through each field defined in the Protobuf descriptor
+    for field in pb2_entity.DESCRIPTOR.fields:
+        # Map Protobuf field type to a Python-friendly type name
+        field_type = FIELD_TYPE_MAP.get(field.type)
+        if not field_type:
+            # Skip unsupported or complex types
+            continue
+
+        # Ensure the EDA-schema entity has the corresponding attribute
+        try:
+            assert hasattr(edaschema_entity, field.name)
+        except AssertionError:
+            print(f"Warning: {field.name} not found in EDA-schema entity {type(edaschema_entity).__name__}")
+            raise ValidationError(f"Field {field.name} not found in EDA-schema entity {type(edaschema_entity).__name__}")
+
+        # Get the value from the EDA-schema entity
+        value = getattr(edaschema_entity, field.name)
+
+        # Convert and assign the value if it's not None
+        if value is not None:
+            converter = CONVERTER[field_type]
+            setattr(pb2_entity, field.name, converter(value))
+
+
+def dataset_to_protobuf(test_dataset, netlist):
     """
     Convert a netlist from the dataset into a protobuf object.
     
@@ -206,138 +270,45 @@ def dataset_to_protobuf(netlist):
         pb2.NetlistEntity: The populated protobuf object
     """
     # Create a new NetlistEntity protobuf message
+    # This is the main protobuf message that will hold the netlist data
     netlist_proto = pb2.NetlistEntity()
+    eda_schema_to_protobuf(netlist_proto, netlist)
+    eda_schema_to_protobuf(netlist_proto.cell_metrics, netlist.cell_metrics)
+    eda_schema_to_protobuf(netlist_proto.area_metrics, netlist.area_metrics)
+    eda_schema_to_protobuf(netlist_proto.power_metrics, netlist.power_metrics)
+    eda_schema_to_protobuf(netlist_proto.critical_path_metrics, netlist.critical_path_metrics)
     
-    # Map type names to converter functions
-    # This provides a central registry of converters that the schema can reference
-    # making it easy to add new conversion types
-    converters = {
-        'float': safe_float,
-        'int': safe_int,
-        'str': safe_str,
-        'bool': safe_bool
-    }
-    
-    # Dynamically build schema from proto definitions
-    schema = build_schema_from_proto()
-    
-    # Process basic fields
-    for field, field_info in schema['basic_fields'].items():
-        if hasattr(netlist, field):
-            value = getattr(netlist, field)
-            if value is not None:
-                converter = converters[field_info['type']]
-                setattr(netlist_proto, field, converter(value))
-    
-    # Process nested objects - automatically handles deep field setting
-    for obj_name, obj_fields in schema['nested_objects'].items():
-        if hasattr(netlist, obj_name):
-            obj = getattr(netlist, obj_name)
-            if obj is not None:
-                for field, field_info in obj_fields.items():
-                    if hasattr(obj, field):
-                        value = getattr(obj, field)
-                        if value is not None:
-                            converter = converters[field_info['type']]
-                            setattr(getattr(netlist_proto, obj_name), field, converter(value))
-    
-    # Process timing paths - handles special case of repeated message fields
-    if hasattr(netlist, 'timing_paths'):
-        for path_type, paths in netlist.timing_paths.items():
-            for path in paths:
-                path_proto = netlist_proto.timing_paths.add()
-                for field, field_info in schema['timing_path_fields'].items():
-                    if field in path:
-                        converter = converters[field_info['type']]
-                        setattr(path_proto, field, converter(path[field]))
-    
-    # Process nodes by type
-    if hasattr(netlist, 'nodes'):
-        # Create a mapping from node types to protobuf field names and creation functions
-        # Only include node types that have corresponding protobuf classes
-        # This ensures we don't try to use protobuf classes that don't exist
-        node_type_mapping = {}
-        
-        # Defensive programming: Only map node types if the corresponding protobuf 
-        # classes actually exist, preventing AttributeError exceptions
-        if hasattr(pb2, 'IOPortEntity'):
-            node_type_mapping['IO_PORT'] = ('io_ports', pb2.IOPortEntity)
-            
-        # TPNodeEntity doesn't exist in eda_schema_pb2, so we'll skip it
-        # if hasattr(pb2, 'TPNodeEntity'):
-        #     node_type_mapping['TP_NODE'] = ('tp_nodes', pb2.TPNodeEntity)
-        
-        if hasattr(pb2, 'GateEntity'):
-            node_type_mapping['GATE'] = ('gates', pb2.GateEntity)
-            
-        if hasattr(pb2, 'StandardCellEntity'):
-            node_type_mapping['STANDARD_CELL'] = ('standard_cells', pb2.StandardCellEntity)
-        
-        # Group nodes by type for more efficient processing
-        nodes_by_type = {}
-        for node_name, node_data in netlist.nodes.items():
-            if 'type' in node_data and 'entity' in node_data:
-                node_type = node_data['type']
-                if node_type in node_type_mapping:
-                    if node_type not in nodes_by_type:
-                        nodes_by_type[node_type] = []
-                    nodes_by_type[node_type].append((node_name, node_data['entity']))
-        
-        # Process each node type group
-        for node_type, proto_info in node_type_mapping.items():
-            if node_type in nodes_by_type:
-                proto_field_name, proto_class = proto_info
-                proto_objects = []
-                
-                for node_name, entity in nodes_by_type[node_type]:
-                    try:
-                        # Create a new protobuf object for this node
-                        proto_obj = proto_class()
-                        proto_obj.name = safe_str(node_name)
-                        
-                        # Apply field schema using the same pattern as for other objects
-                        # This makes the code consistent and easier to maintain
-                        for field, field_info in schema['node_types'][node_type].items():
-                            if hasattr(entity, field):
-                                value = getattr(entity, field)
-                                if value is not None:
-                                    converter = converters[field_info['type']]
-                                    setattr(proto_obj, field, converter(value))
-                        
-                        proto_objects.append(proto_obj)
-                    except Exception as e:
-                        # Error handling ensures one bad node doesn't break the whole process
-                        print(f"Error processing {node_type} {node_name}: {str(e)}")
-                
-                # Batch addition of objects is more efficient than adding them one by one
-                if proto_objects:
-                    getattr(netlist_proto, proto_field_name).extend(proto_objects)
-    
-    # Set key fields if they exist so that we can reconstruct the netlist key later
-    # Check if the fields exist in both the netlist and the protobuf schema
-    if hasattr(netlist, "circuit"):
-        # Store the circuit identifier as a custom property
-        if hasattr(netlist_proto, "metadata"):
-            netlist_proto.metadata.circuit = netlist.circuit
-        else:
-            # Add as a custom property if possible
-            print(f"Warning: Cannot store circuit ID '{netlist.circuit}' in protobuf - no suitable field")
-            
-    if hasattr(netlist, "netlist_id"):
-        # Store the netlist ID as a name or identifier
-        if hasattr(netlist_proto, "id"):
-            netlist_proto.id = netlist.netlist_id
-        elif hasattr(netlist_proto, "name"):
-            netlist_proto.name = netlist.netlist_id
-        else:
-            print(f"Warning: Cannot store netlist ID '{netlist.netlist_id}' in protobuf - no suitable field")
-            
-    if hasattr(netlist, "phase"):
-        # Store the phase information
-        if hasattr(netlist_proto, "metadata") and hasattr(netlist_proto.metadata, "phase"):
-            netlist_proto.metadata.phase = netlist.phase
-        else:
-            print(f"Warning: Cannot store phase '{netlist.phase}' in protobuf - no suitable field")
+    # NOTE: TimingPath → TimingPoint conversion is skipped for now.
+    # TimingPoint is expected to be deprecated soon — consult with EDA-schema
+    # before proceeding with this part of the conversion.
+    for timing_path in netlist.timing_paths.values():
+        timing_path_proto = netlist_proto.timing_paths.add()
+        eda_schema_to_protobuf(timing_path_proto, timing_path[0])
+
+    for clock_tree in netlist.clock_trees.values():
+        clock_tree_proto = netlist_proto.clock_trees.add()
+        eda_schema_to_protobuf(clock_tree_proto, clock_tree)
+
+
+    for node in netlist:
+        node_type = netlist.nodes[node]['type']
+        node_entity = netlist.nodes[node]['entity']
+        if node_type == 'IO_PORT':
+            node_proto = netlist_proto.io_ports.add()
+            eda_schema_to_protobuf(node_proto, node_entity)
+        elif node_type == 'GATE':
+            node_proto = netlist_proto.gates.add()
+            standard_cell_entity = test_dataset.standard_cells[node_entity.standard_cell]
+            eda_schema_to_protobuf(node_proto.standard_cell, standard_cell_entity)
+            eda_schema_to_protobuf(node_proto, node_entity)
+        elif node_type == 'INTERCONNECT':
+            node_proto = netlist_proto.interconnects.add()
+            eda_schema_to_protobuf(node_proto, node_entity)
+
+    for edge1, edge2 in netlist.edges:
+        edge_proto = netlist_proto.edges.add()
+        edge_proto.source = edge1
+        edge_proto.target = edge2
 
     return netlist_proto
 

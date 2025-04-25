@@ -88,13 +88,81 @@ def test_load_dataset():
             break
     assert found, f"Netlist with ID {NETLIST_ID} not found in dataset"
 
+
+def is_proto_edaschema_equal(proto_obj, edaschema_entity):
+    """Check if the protobuf file and EDA schema entity are equal.
+
+    NOTE: This comparison uses rounding due to known precision differences
+    between Protobuf (float32) and JSON Schema (usually float64).
+    Increasing the rounding precision (e.g., from 2 to 4) may cause test
+    failures due to small discrepancies in float representation.
+    """
+    is_match = True
+    for attr, attr_meta in edaschema_entity.schema["items"]["properties"].items():
+        # HACK: skip sort_index for now — needs upstream fix in EDA-schema
+        if attr in ["sort_index", "rudy"]:
+            continue
+        attr_is_numeric = attr_meta["type"] == "number" or (isinstance(attr_meta["type"], list) and "number" in attr_meta["type"])
+        if attr_is_numeric:
+            # TODO: Properly handle nullable fields (e.g., FloatValue) once unwrapping is in place.
+            # For now, default to 0.0 when EDA-schema field is None/missing
+            is_match = is_match and round(float(getattr(proto_obj, attr)), 2) == round(float(getattr(edaschema_entity, attr) or 0), 2)
+            # print(is_match, attr, getattr(proto_obj, attr), getattr(edaschema_entity, attr) or 0)
+        elif attr == "standard_cell":
+            is_match = is_match and getattr(proto_obj, attr).name == getattr(edaschema_entity, attr)
+        else:
+            is_match = is_match and getattr(proto_obj, attr) == getattr(edaschema_entity, attr)
+            # print(is_match, attr, getattr(proto_obj, attr), getattr(edaschema_entity, attr) or 0)
+    return is_match
+
+
 def test_convert_dataset_to_protobuf(test_dataset, first_netlist, temp_protobuf_file):
     """Test converting dataset to protobuf format and saving to file."""
     netlist_key, netlist = first_netlist
-    
+
     # Convert the netlist to protobuf
-    netlist_proto = dataset_to_protobuf(netlist)
-    
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
+
+    # Top-level comparisons
+    assert is_proto_edaschema_equal(netlist_proto, netlist)
+    assert is_proto_edaschema_equal(netlist_proto.cell_metrics, netlist.cell_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.area_metrics, netlist.area_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.power_metrics, netlist.power_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.critical_path_metrics, netlist.critical_path_metrics)
+
+    # Check timing paths
+    for i, timing_path in enumerate(netlist.timing_paths.values()):
+        timing_path_proto = netlist_proto.timing_paths[i]
+        assert is_proto_edaschema_equal(timing_path_proto, timing_path[0])
+
+    # Check clock trees
+    for i, clock_tree in enumerate(netlist.clock_trees.values()):
+        clock_tree_proto = netlist_proto.clock_trees[i]
+        assert is_proto_edaschema_equal(clock_tree_proto, clock_tree)
+
+    io_port_index, gate_index, interconnect_index = 0, 0, 0
+    for node in netlist:
+        node_type = netlist.nodes[node]['type']
+        node_entity = netlist.nodes[node]['entity']
+        if node_type == 'IO_PORT':
+            node_proto = netlist_proto.io_ports[io_port_index]
+            io_port_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+        elif node_type == 'GATE':
+            node_proto = netlist_proto.gates[gate_index]
+            gate_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+        elif node_type == 'INTERCONNECT':
+            node_proto = netlist_proto.interconnects[interconnect_index]
+            interconnect_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+
+    for edge_index, edges in enumerate(netlist.edges):
+        edge1, edge2 = edges
+        edge_proto = netlist_proto.edges[edge_index]
+        assert edge_proto.source == edge1
+        assert edge_proto.target == edge2
+
     # Check if conversion was successful
     assert netlist_proto is not None, "Conversion to protobuf failed"
     assert netlist_proto.ByteSize() > 0, "Protobuf data should not be empty"
