@@ -166,21 +166,27 @@ def test_convert_dataset_to_protobuf(test_dataset, first_netlist, temp_protobuf_
     # Check if conversion was successful
     assert netlist_proto is not None, "Conversion to protobuf failed"
     assert netlist_proto.ByteSize() > 0, "Protobuf data should not be empty"
-    
-    # Save the protobuf data to file
-    with open(temp_protobuf_file, 'wb') as f:
-        f.write(netlist_proto.SerializeToString())
-    
-    # Check if file was created and has content
-    assert os.path.exists(temp_protobuf_file), "Protobuf file was not created"
-    assert os.path.getsize(temp_protobuf_file) > 0, "Protobuf file is empty"
+
+def test_save_protobuf_file(test_dataset, first_netlist, temp_protobuf_file):
+    """Test saving a NetlistEntity protobuf object to a file."""
+    netlist_key, netlist = first_netlist
+
+    # Convert netlist to protobuf
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
+
+    # Save protobuf to file
+    save_protobuf_file(netlist_proto, temp_protobuf_file)
+
+    # Assertions: file must exist and not be empty
+    assert os.path.exists(temp_protobuf_file), "Protobuf file was not created."
+    assert os.path.getsize(temp_protobuf_file) > 0, "Protobuf file is empty."
 
 def test_load_protobuf_file(test_dataset, first_netlist, temp_protobuf_file):
-    """Test loading protobuf data from file."""
+    """Test loading NetlistEntity protobuf data from file."""
     netlist_key, netlist = first_netlist
     
     # Convert and save first
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -204,7 +210,7 @@ def test_basic_attributes_equality(test_dataset, first_netlist, temp_protobuf_fi
     netlist_key, netlist = first_netlist
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -232,7 +238,7 @@ def test_cell_metrics_equality(test_dataset, first_netlist, temp_protobuf_file):
         pytest.skip("Netlist doesn't have cell metrics")
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -264,7 +270,7 @@ def test_area_metrics_equality(test_dataset, first_netlist, temp_protobuf_file):
         pytest.skip("Netlist doesn't have area metrics")
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -295,7 +301,7 @@ def test_power_metrics_equality(test_dataset, first_netlist, temp_protobuf_file)
         pytest.skip("Netlist doesn't have power metrics")
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -325,7 +331,7 @@ def test_critical_path_metrics_equality(test_dataset, first_netlist, temp_protob
         pytest.skip("Netlist doesn't have critical path metrics")
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -355,7 +361,7 @@ def test_timing_paths_count(test_dataset, first_netlist, temp_protobuf_file):
         pytest.skip("Netlist doesn't have timing paths")
     
     # Convert and save
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     with open(temp_protobuf_file, 'wb') as f:
         f.write(netlist_proto.SerializeToString())
     
@@ -364,10 +370,9 @@ def test_timing_paths_count(test_dataset, first_netlist, temp_protobuf_file):
     
     # Check timing paths count
     assert hasattr(loaded_proto, 'timing_paths'), "Loaded protobuf should have timing_paths"
-    
-    netlist_timing_path_count = sum(len(paths) for paths in netlist.timing_paths.values())
+
+    netlist_timing_path_count = len(netlist.timing_paths)
     protobuf_timing_path_count = len(loaded_proto.timing_paths)
-    
     assert netlist_timing_path_count == protobuf_timing_path_count, "Timing path count doesn't match"
 
 def test_end_to_end_conversion(test_dataset, first_netlist, temp_protobuf_file):
@@ -375,7 +380,7 @@ def test_end_to_end_conversion(test_dataset, first_netlist, temp_protobuf_file):
     netlist_key, netlist = first_netlist
     
     # Convert netlist to protobuf
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     
     # Save protobuf to file
     with open(temp_protobuf_file, 'wb') as f:
@@ -429,7 +434,7 @@ def test_protobuf_to_dataset(test_dataset, first_netlist, temp_protobuf_file):
         netlist.phase = netlist_key[2]
 
     # Convert netlist to protobuf
-    netlist_proto = dataset_to_protobuf(netlist)
+    netlist_proto = dataset_to_protobuf(test_dataset, netlist)
     
     # Save protobuf to file
     with open(temp_protobuf_file, 'wb') as f:
