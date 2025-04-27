@@ -109,117 +109,7 @@ def safe_bool(value, default=False):
     except (ValueError, TypeError):
         return default
 
-
-def save_protobuf_file(entity, file_path, entity_class="EntityMessage"):
-    """
-    Converts an EDA-schema entity to Protobuf and writes it to a file.
-
-    Args:
-        entity: An instance of the entity (with attributes matching proto fields).
-        file_path: Path to save serialized protobuf.
-        entity_class: String name of the pb2 message class (default = "EntityMessage").
-    """
-    entity_cls = getattr(pb2, entity_class)
-    entity_message = entity_cls()
-
-    # Dynamically set fields based on DESCRIPTOR
-    for field in entity_message.DESCRIPTOR.fields:
-        value = getattr(entity, field.name)
-        
-        if field.label == field.LABEL_REPEATED:  # Repeated field (list of messages or scalars)
-            repeated_container = getattr(entity_message, field.name)
-            repeated_container.extend(value)
-        
-        elif field.message_type:  # Single nested message type
-            getattr(entity_message, field.name).CopyFrom(value)
-        
-        else:  # Scalar field (int, string, etc.)
-            setattr(entity_message, field.name, value)
-
-    # Write serialized protobuf to file
-    with open(file_path, "wb") as f:
-        f.write(entity_message.SerializeToString())
-
-def build_schema_from_proto():
-    """
-    Dynamically builds the schema dictionary from protobuf message descriptors.
-    
-    Returns:
-        dict: Schema with field mappings for various entity types
-    """
-    schema = {
-        'basic_fields': {},
-        'nested_objects': {},
-        'node_types': {},
-        'timing_path_fields': {}
-    }
-    
-    # Map protobuf field types to our converter types
-    type_mapping = {
-        1: 'float',  # TYPE_DOUBLE
-        2: 'float',  # TYPE_FLOAT
-        3: 'int',    # TYPE_INT64
-        4: 'int',    # TYPE_UINT64
-        5: 'int',    # TYPE_INT32
-        6: 'float',  # TYPE_FIXED64
-        7: 'float',  # TYPE_FIXED32
-        8: 'bool',   # TYPE_BOOL
-        9: 'str',    # TYPE_STRING
-        12: 'str',   # TYPE_BYTES
-        13: 'int',   # TYPE_UINT32
-        15: 'int',   # TYPE_SFIXED32
-        16: 'int',   # TYPE_SFIXED64
-        17: 'int',   # TYPE_SINT32
-        18: 'int',   # TYPE_SINT64
-    }
-    
-    # Extract basic fields from NetlistEntity
-    netlist_descriptor = pb2.NetlistEntity.DESCRIPTOR
-    for field in netlist_descriptor.fields:
-        if not field.message_type and field.label != field.LABEL_REPEATED:
-            if field.type in type_mapping:
-                schema['basic_fields'][field.name] = {'type': type_mapping[field.type]}
-    
-    # Extract nested objects
-    for field in netlist_descriptor.fields:
-        if field.message_type and field.label != field.LABEL_REPEATED:
-            nested_obj_name = field.name
-            nested_descriptor = field.message_type
-            schema['nested_objects'][nested_obj_name] = {}
-            
-            for nested_field in nested_descriptor.fields:
-                if not nested_field.message_type and nested_field.label != nested_field.LABEL_REPEATED:
-                    if nested_field.type in type_mapping:
-                        schema['nested_objects'][nested_obj_name][nested_field.name] = {'type': type_mapping[nested_field.type]}
-    
-    # Node types mapping
-    node_type_classes = {
-        'IO_PORT': 'IOPortEntity',
-        'GATE': 'GateEntity', 
-        'STANDARD_CELL': 'StandardCellEntity',
-        # 'TP_NODE': 'TimingPathNodeEntity',  # Uncomment if this becomes supported
-    }
-    
-    for node_type, class_name in node_type_classes.items():
-        if hasattr(pb2, class_name):
-            entity_descriptor = getattr(pb2, class_name).DESCRIPTOR
-            schema['node_types'][node_type] = {}
-            
-            for field in entity_descriptor.fields:
-                if not field.message_type and field.label != field.LABEL_REPEATED:
-                    if field.type in type_mapping:
-                        schema['node_types'][node_type][field.name] = {'type': type_mapping[field.type]}
-    
-    # For timing paths
-    if hasattr(pb2, 'TimingPathEntity'):
-        timing_path_descriptor = pb2.TimingPathEntity.DESCRIPTOR
-        for field in timing_path_descriptor.fields:
-            if not field.message_type and field.label != field.LABEL_REPEATED:
-                if field.type in type_mapping:
-                    schema['timing_path_fields'][field.name] = {'type': type_mapping[field.type]}
-    
-    return schema
-
+# Mapping of field types to conversion functions
 CONVERTER = {
     'float': safe_float,
     'int': safe_int,
@@ -258,16 +148,16 @@ def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
             converter = CONVERTER[field_type]
             setattr(pb2_entity, field.name, converter(value))
 
-
-def dataset_to_protobuf(test_dataset, netlist):
+def dataset_to_protobuf(dataset, netlist):
     """
-    Convert a netlist from the dataset into a protobuf object.
-    
+    Converts a dataset and its associated netlist into a populated NetlistEntity protobuf message.
+
     Args:
-        netlist: The netlist object to convert
-        
+        dataset: The full dataset object, used for accessing standard cell information.
+        netlist: The netlist graph object containing nodes, edges, and related attributes.
+
     Returns:
-        pb2.NetlistEntity: The populated protobuf object
+        pb2.NetlistEntity: A fully populated NetlistEntity protobuf object representing the netlist structure.
     """
     # Create a new NetlistEntity protobuf message
     # This is the main protobuf message that will hold the netlist data
@@ -298,7 +188,7 @@ def dataset_to_protobuf(test_dataset, netlist):
             eda_schema_to_protobuf(node_proto, node_entity)
         elif node_type == 'GATE':
             node_proto = netlist_proto.gates.add()
-            standard_cell_entity = test_dataset.standard_cells[node_entity.standard_cell]
+            standard_cell_entity = dataset.standard_cells[node_entity.standard_cell]
             eda_schema_to_protobuf(node_proto.standard_cell, standard_cell_entity)
             eda_schema_to_protobuf(node_proto, node_entity)
         elif node_type == 'INTERCONNECT':
@@ -312,74 +202,39 @@ def dataset_to_protobuf(test_dataset, netlist):
 
     return netlist_proto
 
-def load_protobuf_file(filename, type_name="NetlistEntity"):
+def load_protobuf_file(file_path):
     """
-    Load and parse a protobuf file into the corresponding object type.
-    
-    This function deserializes a binary protobuf file into a Python object 
-    that corresponds to the specified protobuf message type. It handles
-    different types of protobuf messages defined in the schema, with NetlistEntity
-    as the default type.
-    
-    The function dynamically imports the appropriate protobuf message class
-    based on the provided type_name parameter, which allows loading different
-    types of protobuf messages without modifying the code.
-    
+    Loads a NetlistEntity Protobuf message from a binary file.
+
     Args:
-        filename (str): Path to the protobuf file to be loaded
-        type_name (str): Name of the protobuf message class to use for parsing
-                        (default: "NetlistEntity")
-        
+        file_path: Path to the file containing serialized NetlistEntity protobuf data.
+
     Returns:
-        object: The parsed protobuf object if successful, None otherwise
-        
-    Example:
-        # Load a netlist from a protobuf file
-        netlist = load_pb("path/to/netlist.pb")
-        
-        # Load cell metrics from a protobuf file
-        cell_metrics = load_pb("path/to/metrics.pb", "CellMetricsEntity")
+        An instance of NetlistEntity.
     """
-    try:
-        # Dynamically get the appropriate message class from pb2 module
-        # This allows us to handle different protobuf message types without
-        # having to write separate loading functions for each type
-        message_class = getattr(pb2, type_name)
-        
-        # Create an empty instance of the message class
-        # This will be populated with the data from the protobuf file
-        message = message_class()
-        
-        # Open the file in binary mode (protobuf is a binary format)
-        # and read its contents into the message object
-        with open(filename, "rb") as f:
-            # ParseFromString deserializes the binary data into the message object
-            # converting it from the wire format into a Python object
-            message.ParseFromString(f.read())
-            
-        # Log success message with type and filename for debugging
-        print(f"Successfully loaded {type_name} from {filename}")
-        
-        # Return the populated message object to the caller
-        return message
-        
-    except AttributeError:
-        # This exception occurs if type_name is not a valid protobuf message class
-        print(f"Error: {type_name} is not a valid protobuf message type")
-        import traceback
-        traceback.print_exc()
-        return None
-    except FileNotFoundError:
-        # This exception occurs if the specified file doesn't exist
-        print(f"Error: The file {filename} was not found")
-        return None
-    except Exception as e:
-        # Catch any other exceptions that might occur during loading
-        # This could include invalid protobuf format, permission errors, etc.
-        print(f"Error loading protobuf file: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return None
+    entity = pb2.NetlistEntity()
+
+    with open(file_path, "rb") as f:
+        entity.ParseFromString(f.read())
+
+    return entity
+
+def save_protobuf_file(entity, file_path):
+    """
+    Serializes a Protobuf entity and saves it to a binary file.
+
+    Args:
+        entity: A Protobuf message instance (e.g., NetlistEntity, CellMetricsEntity).
+        file_path: Path where the serialized protobuf should be saved.
+    """
+    if entity is None:
+        raise ValueError("Entity cannot be None.")
+
+    if not hasattr(entity, 'SerializeToString'):
+        raise TypeError("Provided entity is not a valid Protobuf message.")
+
+    with open(file_path, "wb") as f:
+        f.write(entity.SerializeToString())
 
 def protobuf_to_dataset(protobuf_obj, db_obj):
     """

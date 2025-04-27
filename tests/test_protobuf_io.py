@@ -71,9 +71,8 @@ class TestProtobufIO:  # SINGLE class
     def test_save_and_load_protobuf_file(self, entity_name):
         # Get a test protobuf object
         protobuf = get_test_protobuf(entity_name)
-        
         # Save the protobuf to a file
-        save_protobuf_file(protobuf, str(self.test_file), entity_class=entity_name)
+        save_protobuf_file(protobuf, str(self.test_file))
         
         # Load the protobuf from the file
         loaded_protobuf = load_protobuf_file(str(self.test_file))
