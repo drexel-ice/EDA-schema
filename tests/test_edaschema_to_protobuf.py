@@ -116,7 +116,7 @@ def is_proto_edaschema_equal(proto_obj, edaschema_entity):
     return is_match
 
 
-def test_convert_dataset_to_protobuf(test_dataset, first_netlist, temp_protobuf_file):
+def test_convert_dataset_to_protobuf(test_dataset, first_netlist):
     """Test converting dataset to protobuf format and saving to file."""
     netlist_key, netlist = first_netlist
 
@@ -166,6 +166,43 @@ def test_convert_dataset_to_protobuf(test_dataset, first_netlist, temp_protobuf_
     # Check if conversion was successful
     assert netlist_proto is not None, "Conversion to protobuf failed"
     assert netlist_proto.ByteSize() > 0, "Protobuf data should not be empty"
+
+def test_convert_protobuf_to_edaschema():
+    netlist_proto = load_protobuf_file("/home/prtx/Code/eda-schema-internal/dataset/test_dataset_grpc/gcd/id-000001/detailed_route_netlist.pb")
+    netlist = protobuf_to_dataset(netlist_proto, SQLitePickleDB(DATASET_DIR))
+    # Top-level comparisons
+    assert is_proto_edaschema_equal(netlist_proto, netlist)
+    assert is_proto_edaschema_equal(netlist_proto.cell_metrics, netlist.cell_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.area_metrics, netlist.area_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.power_metrics, netlist.power_metrics)
+    assert is_proto_edaschema_equal(netlist_proto.critical_path_metrics, netlist.critical_path_metrics)
+
+    # Check timing paths
+    for i, timing_path_key in enumerate(netlist.timing_paths):
+        timing_path_proto = netlist_proto.timing_paths[i]
+        assert is_proto_edaschema_equal(timing_path_proto, netlist.timing_paths[timing_path_key])
+
+    io_port_index, gate_index, interconnect_index = 0, 0, 0
+    for node in netlist:
+        node_type = netlist.nodes[node]['type']
+        node_entity = netlist.nodes[node]['entity']
+        if node_type == 'IO_PORT':
+            node_proto = netlist_proto.io_ports[io_port_index]
+            io_port_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+        elif node_type == 'GATE':
+            node_proto = netlist_proto.gates[gate_index]
+            gate_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+        elif node_type == 'INTERCONNECT':
+            node_proto = netlist_proto.interconnects[interconnect_index]
+            interconnect_index += 1
+            assert is_proto_edaschema_equal(node_proto, node_entity)
+
+    eda_schema_edges = [edges for edges in netlist.edges]
+    proto_edges = [(edge.source, edge.target) for edge in netlist_proto.edges]
+    assert len(eda_schema_edges) == len(netlist_proto.edges), "Number of edges in EDA schema and protobuf do not match"
+    assert sorted(eda_schema_edges) == sorted(proto_edges), "Edges in EDA schema and protobuf do not match"
 
 def test_save_protobuf_file(test_dataset, first_netlist, temp_protobuf_file):
     """Test saving a NetlistEntity protobuf object to a file."""

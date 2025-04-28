@@ -13,7 +13,7 @@ Changes:
 from google.protobuf.descriptor import FieldDescriptor
 
 import eda_schema.eda_schema_pb2 as pb2
-from eda_schema.entity import NetlistEntity, PowerMetricsEntity, StandardCellEntity
+import eda_schema.entity as eda_schema_entity
 from eda_schema.errors import ValidationError
 from eda_schema.dataset import Dataset
 
@@ -38,8 +38,6 @@ FIELD_TYPE_MAP = {
     17: "int",     # TYPE_SINT32
     18: "int",     # TYPE_SINT64
 }
-
-
 
 # Type conversion utility functions - moved from inside dataset_to_protobuf to module level
 # for reusability and better code organization. These can be used by other functions
@@ -202,41 +200,25 @@ def dataset_to_protobuf(dataset, netlist):
 
     return netlist_proto
 
-def load_protobuf_file(file_path):
+def protobuf_to_eda_schema(edaschema_entity, pb2_entity):
     """
-    Loads a NetlistEntity Protobuf message from a binary file.
+    Convert an EDA-schema entity to a Protobuf object.
 
     Args:
-        file_path: Path to the file containing serialized NetlistEntity protobuf data.
-
-    Returns:
-        An instance of NetlistEntity.
+        pb2_entity: An instance of the Protobuf message to populate.
+        edaschema_entity: The EDA-schema entity containing source data.
     """
-    entity = pb2.NetlistEntity()
+    data_dict = {}
+    for field in pb2_entity.DESCRIPTOR.fields:
+        field_type = FIELD_TYPE_MAP.get(field.type)
+        if not field_type:
+            # Skip unsupported or complex types
+            continue
+        value = getattr(pb2_entity, field.name)
+        data_dict[field.name] = value
+    edaschema_entity.load(data_dict)
 
-    with open(file_path, "rb") as f:
-        entity.ParseFromString(f.read())
-
-    return entity
-
-def save_protobuf_file(entity, file_path):
-    """
-    Serializes a Protobuf entity and saves it to a binary file.
-
-    Args:
-        entity: A Protobuf message instance (e.g., NetlistEntity, CellMetricsEntity).
-        file_path: Path where the serialized protobuf should be saved.
-    """
-    if entity is None:
-        raise ValueError("Entity cannot be None.")
-
-    if not hasattr(entity, 'SerializeToString'):
-        raise TypeError("Provided entity is not a valid Protobuf message.")
-
-    with open(file_path, "wb") as f:
-        f.write(entity.SerializeToString())
-
-def protobuf_to_dataset(protobuf_obj, db_obj):
+def protobuf_to_dataset(netlist_proto):
     """
     Converts a protobuf object back into a Dataset object.
 
@@ -247,111 +229,84 @@ def protobuf_to_dataset(protobuf_obj, db_obj):
     Returns:
         Dataset: The reconstructed Dataset object.
     """
-    dataset = Dataset(db_obj)
+    netlist_entity = eda_schema_entity.NetlistEntity()
+    protobuf_to_eda_schema(netlist_entity, netlist_proto)
 
-    # Extract circuit info from various possible fields
-    circuit = None
-    if hasattr(protobuf_obj, "metadata") and hasattr(protobuf_obj.metadata, "circuit"):
-        circuit = protobuf_obj.metadata.circuit
-    
-    # Extract netlist_id from id or name fields
-    netlist_id = None
-    if hasattr(protobuf_obj, "id"):
-        netlist_id = protobuf_obj.id
-    elif hasattr(protobuf_obj, "name"):
-        netlist_id = protobuf_obj.name
-        
-    # Extract phase from metadata
-    phase = None
-    if hasattr(protobuf_obj, "metadata") and hasattr(protobuf_obj.metadata, "phase"):
-        phase = protobuf_obj.metadata.phase
+    netlist_entity.cell_metrics = eda_schema_entity.CellMetricsEntity()
+    protobuf_to_eda_schema(netlist_entity.cell_metrics, netlist_proto.cell_metrics)
 
-    # For testing purposes, always use a default key to make tests pass
-    # In real usage, the key would be determined from the data or from parameters
-    circuit = circuit or "gcd"
-    netlist_id = netlist_id or "id-000001"
-    phase = phase or "floorplan"
-    print(f"Using netlist key ({circuit}, {netlist_id}, {phase})")
+    netlist_entity.area_metrics = eda_schema_entity.AreaMetricsEntity()
+    protobuf_to_eda_schema(netlist_entity.area_metrics, netlist_proto.area_metrics)
 
-    # Create a netlist key based on protobuf fields
-    netlist_key = (circuit, netlist_id, phase)
-    netlist_data = {}
+    netlist_entity.power_metrics = eda_schema_entity.PowerMetricsEntity()
+    protobuf_to_eda_schema(netlist_entity.power_metrics, netlist_proto.power_metrics)
 
-    # Process basic fields
-    for field in protobuf_obj.DESCRIPTOR.fields:
-        if hasattr(protobuf_obj, field.name):
-            value = getattr(protobuf_obj, field.name)
-            if value is not None:
-                netlist_data[field.name] = value
+    netlist_entity.critical_path_metrics = eda_schema_entity.CriticalPathMetricsEntity()
+    protobuf_to_eda_schema(netlist_entity.critical_path_metrics, netlist_proto.critical_path_metrics)
 
-    # Process nested objects
-    if hasattr(protobuf_obj, "cell_metrics"):
-        netlist_data["cell_metrics"] = {
-            field.name: getattr(protobuf_obj.cell_metrics, field.name)
-            for field in protobuf_obj.cell_metrics.DESCRIPTOR.fields
-        }
+    for timing_path_proto in netlist_proto.timing_paths:
+        timing_path = eda_schema_entity.TimingPathEntity()
+        netlist_entity.timing_paths[(timing_path_proto.startpoint, timing_path_proto.endpoint, timing_path_proto.path_type)] = timing_path
+        protobuf_to_eda_schema(timing_path, timing_path_proto)
 
-    if hasattr(protobuf_obj, "area_metrics"):
-        netlist_data["area_metrics"] = {
-            field.name: getattr(protobuf_obj.area_metrics, field.name)
-            for field in protobuf_obj.area_metrics.DESCRIPTOR.fields
-        }
+    for io_port_proto in netlist_proto.io_ports:
+        io_port_enity = eda_schema_entity.IOPortEntity()
+        protobuf_to_eda_schema(io_port_enity, io_port_proto)
+        netlist_entity.add_node(io_port_enity.name,
+            type='IO_PORT',
+            entity=io_port_enity,
+        )
+    for gate_proto in netlist_proto.gates:
+        gate_enity = eda_schema_entity.GateEntity()
+        gate_enity.standard_cell = gate_proto.standard_cell.name
+        protobuf_to_eda_schema(gate_enity, gate_proto)
+        netlist_entity.add_node(gate_enity.name,
+            type='GATE',
+            entity=gate_enity,
+        )
+    for interconnect_proto in netlist_proto.interconnects:
+        interconnect_enity = eda_schema_entity.InterconnectEntity()
+        protobuf_to_eda_schema(interconnect_enity, interconnect_proto)
+        netlist_entity.add_node(interconnect_enity.name,
+            type='INTERCONNECT',
+            entity=interconnect_enity,
+        )
 
-    if hasattr(protobuf_obj, "power_metrics"):
-        netlist_data["power_metrics"] = {
-            field.name: getattr(protobuf_obj.power_metrics, field.name)
-            for field in protobuf_obj.power_metrics.DESCRIPTOR.fields
-        }
+    for edge in netlist_proto.edges:
+        netlist_entity.add_edge(edge.source, edge.target)
 
-    if hasattr(protobuf_obj, "critical_path_metrics"):
-        netlist_data["critical_path_metrics"] = {
-            field.name: getattr(protobuf_obj.critical_path_metrics, field.name)
-            for field in protobuf_obj.critical_path_metrics.DESCRIPTOR.fields
-        }
+    return netlist_entity
 
-    # Process timing paths
-    if hasattr(protobuf_obj, "timing_paths"):
-        netlist_data["timing_paths"] = {}
-        for timing_path in protobuf_obj.timing_paths:
-            key = (timing_path.startpoint, timing_path.endpoint, timing_path.path_type)
-            netlist_data["timing_paths"][key] = {
-                field.name: getattr(timing_path, field.name)
-                for field in timing_path.DESCRIPTOR.fields
-            }
+def load_protobuf_file(file_path):
+    """
+    Loads a NetlistEntity Protobuf message from a binary file.
 
-    # Process nodes
-    if hasattr(protobuf_obj, "io_ports"):
-        netlist_data["nodes"] = {}
-        for io_port in protobuf_obj.io_ports:
-            netlist_data["nodes"][io_port.name] = {
-                "type": "IO_PORT",
-                "entity": {
-                    field.name: getattr(io_port, field.name)
-                    for field in io_port.DESCRIPTOR.fields
-                },
-            }
+    Args:
+        file_path: Path to the file containing serialized NetlistEntity protobuf data.
 
-    if hasattr(protobuf_obj, "gates"):
-        for gate in protobuf_obj.gates:
-            netlist_data["nodes"][gate.name] = {
-                "type": "GATE",
-                "entity": {
-                    field.name: getattr(gate, field.name)
-                    for field in gate.DESCRIPTOR.fields
-                },
-            }
+    Returns:
+        An instance of NetlistEntity.
+    """
+    netlist_proto = pb2.NetlistEntity()
 
-    if hasattr(protobuf_obj, "standard_cells"):
-        for cell in protobuf_obj.standard_cells:
-            netlist_data["nodes"][cell.name] = {
-                "type": "STANDARD_CELL",
-                "entity": {
-                    field.name: getattr(cell, field.name)
-                    for field in cell.DESCRIPTOR.fields
-                },
-            }
+    with open(file_path, "rb") as f:
+        netlist_proto.ParseFromString(f.read())
 
-    # Add the reconstructed netlist to the dataset
-    dataset[netlist_key] = netlist_data
+    return netlist_proto
 
-    return dataset
+def save_protobuf_file(netlist_proto, file_path):
+    """
+    Serializes a Protobuf object and saves it to a binary file.
+
+    Args:
+        entity: A Protobuf message instance (e.g., NetlistEntity, CellMetricsEntity).
+        file_path: Path where the serialized protobuf should be saved.
+    """
+    if netlist_proto is None:
+        raise ValueError("Entity cannot be None.")
+
+    if not hasattr(netlist_proto, 'SerializeToString'):
+        raise TypeError("Provided entity is not a valid Protobuf message.")
+
+    with open(file_path, "wb") as f:
+        f.write(netlist_proto.SerializeToString())
