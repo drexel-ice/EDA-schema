@@ -248,9 +248,9 @@ class GraphEntity(nx.DiGraph, BaseEntity):
         for node in graph.nodes:
             entity = graph.nodes[node]["entity"]
             entity_type = graph.nodes[node]["type"]
-            if entity_type == "IO_PORT" and entity.direction == "INPUT":
+            if entity_type == "PORT" and entity.direction == "INPUT":
                 color_map.append("red")
-            if entity_type == "IO_PORT" and entity.direction == "OUTPUT":
+            if entity_type == "PORT" and entity.direction == "OUTPUT":
                 color_map.append("blue")
             if entity_type == "GATE":
                 color_map.append("green")

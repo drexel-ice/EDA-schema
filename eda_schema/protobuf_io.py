@@ -178,11 +178,11 @@ def dataset_to_protobuf(dataset, netlist):
         eda_schema_to_protobuf(clock_tree_proto, clock_tree)
 
 
-    for node in netlist:
-        node_type = netlist.nodes[node]['type']
-        node_entity = netlist.nodes[node]['entity']
-        if node_type == 'IO_PORT':
-            node_proto = netlist_proto.io_ports.add()
+    for node in stage_entity.netlist:
+        node_type = stage_entity.netlist.nodes[node]['type']
+        node_entity = stage_entity.netlist.nodes[node]['entity']
+        if node_type == 'PORT':
+            node_proto = stage_proto.netlist.ports.add()
             eda_schema_to_protobuf(node_proto, node_entity)
         elif node_type == 'GATE':
             node_proto = netlist_proto.gates.add()
@@ -249,12 +249,12 @@ def protobuf_to_dataset(netlist_proto):
         netlist_entity.timing_paths[(timing_path_proto.startpoint, timing_path_proto.endpoint, timing_path_proto.path_type)] = timing_path
         protobuf_to_eda_schema(timing_path, timing_path_proto)
 
-    for io_port_proto in netlist_proto.io_ports:
-        io_port_enity = eda_schema_entity.IOPortEntity()
-        protobuf_to_eda_schema(io_port_enity, io_port_proto)
-        netlist_entity.add_node(io_port_enity.name,
-            type='IO_PORT',
-            entity=io_port_enity,
+    for port_proto in netlist_proto.ports:
+        port_enity = eda_schema_entity.IOPortEntity()
+        protobuf_to_eda_schema(port_enity, port_proto)
+        netlist_entity.add_node(port_enity.name,
+            type='PORT',
+            entity=port_enity,
         )
     for gate_proto in netlist_proto.gates:
         gate_enity = eda_schema_entity.GateEntity()

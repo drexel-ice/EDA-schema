@@ -47,7 +47,7 @@ def test_netlist_sanity_check(phase, expected_values):
             no_of_sequential += std_cell.is_sequential
         elif node_data["type"] == "INTERCONNECT":
             no_of_nets += 1
-        elif node_data["type"] == "IO_PORT":
+        elif node_data["type"] == "PORT":
             if node_data["entity"].direction == "INPUT":
                 no_of_inputs += 1
             elif node_data["entity"].direction == "OUTPUT":
@@ -93,7 +93,7 @@ def test_floating_pins(phase):
             netlist.nodes[node]["type"] == "GATE" 
             for node in netlist.dfs_traverse(node, fanin=False, depth_limit=2) + netlist.dfs_traverse(node, fanout=False, depth_limit=2)
         )
-        for node in netlist.nodes if netlist.nodes[node]["type"] == "IO_PORT"
+        for node in netlist.nodes if netlist.nodes[node]["type"] == "PORT"
     )
     
     assert no_of_floating_pins == 0
