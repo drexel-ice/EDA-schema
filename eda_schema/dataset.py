@@ -65,11 +65,13 @@ class Dataset(dict):
             netlist_id (str): Netlist ID.
             phase (str): Circuit design phase.
         """
-        netlist_key = (circuit, netlist_id, phase)
-        netlist = self[netlist_key]
-        netlist_key_str = "-".join(netlist_key)
-        netlist_dict = dict(zip(entity.KEY_COLUMNS, netlist_key))
+        key = (circuit, netlist_id, phase)
+        stage = self[key]
+        netlist = stage.netlist
+        netlist_key_str = "-".join(key)
+        netlist_dict = dict(zip(entity.KEY_COLUMNS, key))
 
+        self.db.add_table_row("stages", {**netlist_dict, **stage.asdict()})
         self.db.add_table_row("netlists", {**netlist_dict, **netlist.asdict()})
         self.db.add_table_row("cell_metrics", {**netlist_dict, **netlist.cell_metrics.asdict()})
         self.db.add_table_row("area_metrics", {**netlist_dict, **netlist.area_metrics.asdict()})

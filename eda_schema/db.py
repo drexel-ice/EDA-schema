@@ -13,6 +13,7 @@ from eda_schema.errors import DataNotFoundError
 
 class SchemaMetadata:
     standard_cells = entity.StandardCellEntity().schema["items"]["properties"]
+    stages = entity.StageEntity().schema["items"]["properties"]
     netlists = entity.NetlistEntity().schema["items"]["properties"]
     cell_metrics = entity.CellMetricsEntity().schema["items"]["properties"]
     area_metrics = entity.AreaMetricsEntity().schema["items"]["properties"]

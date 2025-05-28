@@ -6,6 +6,50 @@ KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
 PHASES = ["floorplan", "global_place", "place_resized", "detailed_place", "cts", "global_route", "detailed_route"]
 
 
+class FlowEntity(BaseEntity):
+    """Class for representing netlist data using a JSON schema."""
+
+    title = "flow"
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "version": {"type": ["number", "null"]},
+                "design_type": {"type": ["string", "null"]},
+            },
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stages = {}
+
+class StageEntity(BaseEntity):
+    """Class for representing netlist data using a JSON schema."""
+
+    title = "stage"
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+            },
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.netlist = {}
+        self.cell_metrics = None
+        self.area_metrics = None
+        self.power_metrics = None
+        self.timing_metrics = None
+
 class NetlistEntity(GraphEntity):
     """Class for representing netlist data using a JSON schema."""
 
