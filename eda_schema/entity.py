@@ -66,10 +66,7 @@ class NetlistEntity(GraphEntity):
                 "no_of_outputs": {"type": "number"},
                 "no_of_cells": {"type": "number"},
                 "no_of_nets": {"type": "number"},
-                "utilization": {"type": ["number", "null"]},
-                "cell_density": {"type": ["number", "null"]},
-                "pin_density": {"type": ["number", "null"]},
-                "net_density": {"type": ["number", "null"]},
+                "utilization": {"type": "number"},
             },
         },
     }
@@ -79,7 +76,8 @@ class NetlistEntity(GraphEntity):
         self.cell_metrics = None
         self.area_metrics = None
         self.power_metrics = None
-        self.critical_path_metrics = None
+        self.timing_metrics = None
+        self.timing_graph = {}
         self.timing_paths = {}
         self.clock_trees = {}
 
@@ -127,6 +125,8 @@ class AreaMetricsEntity(BaseEntity):
                 "diode_area": {"type": "number"},
                 "macro_area": {"type": "number"},
                 "cell_area": {"type": "number"},
+                "core_area": {"type": "number"},
+                "die_area": {"type": "number"},
                 "total_area": {"type": "number"},
             },
         },
@@ -191,7 +191,7 @@ class PortEntity(BaseEntity):
                 "direction": {"type": "string"},
                 "x": {"type": ["number", "null"]},
                 "y": {"type": ["number", "null"]},
-                "capacitance": {"type": ["number", "null"]},
+                "load_capacitance": {"type": ["number", "null"]},
             },
         },
     }
@@ -211,8 +211,15 @@ class GateEntity(BaseEntity):
                 "standard_cell": {"type": "string"},
                 "no_of_fanins": {"type": "number"},
                 "no_of_fanouts": {"type": "number"},
-                "x": {"type": ["number", "null"]},
-                "y": {"type": ["number", "null"]},
+                "llx": {"type": ["number", "null"]},
+                "lly": {"type": ["number", "null"]},
+                "urx": {"type": ["number", "null"]},
+                "ury": {"type": ["number", "null"]},
+                "is_sequential": {"type": "boolean"},
+                "is_filler": {"type": "boolean"},
+                "is_inverter": {"type": "boolean"},
+                "is_buffer": {"type": "boolean"},
+                "is_diode": {"type": "boolean"},
             },
         },
     }
@@ -297,8 +304,8 @@ class InterconnectEntity(GraphEntity):
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "no_of_inputs": {"type": "number"},
-                "no_of_outputs": {"type": "number"},
+                "is_special_net": {"type": "boolean"},
+                "no_of_fanouts": {"type": "number"},
                 "x_min": {"type": ["number", "null"]},
                 "y_min": {"type": ["number", "null"]},
                 "x_max": {"type": ["number", "null"]},
