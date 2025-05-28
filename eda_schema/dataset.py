@@ -101,7 +101,7 @@ class Dataset(dict):
                     })
                 self.db.add_graph_data("nets", net, net_key)
 
-        self.db.add_table_data("io_ports", io_port_data)
+        self.db.add_table_data("ports", port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("pins", pin_data)
         self.db.add_table_data("nets", net_data)
@@ -186,8 +186,11 @@ class Dataset(dict):
         power_metrics_data = self.db.get_table_row("power_metrics", **key).to_dict()
         netlist_entity.power_metrics = entity.PowerMetricsEntity(power_metrics_data, validate=validate)
 
-        io_port_df = self.db.get_table_data("io_ports", **key)
-        io_port_dict = io_port_df.set_index("name").to_dict('index')
+        timing_metrics_data = self.db.get_table_row("timing_metrics", **key).to_dict()
+        netlist_entity.timing_metrics = entity.TimingMetricsEntity(timing_metrics_data, validate=validate)
+
+        port_df = self.db.get_table_data("ports", **key)
+        port_dict = port_df.set_index("name").to_dict('index')
 
         gate_df = self.db.get_table_data("gates", **key)
         gate_dict = gate_df.set_index("name").to_dict('index')
@@ -202,9 +205,9 @@ class Dataset(dict):
         netlist_key_str = "-".join(key.values())
         netlist_graph = self.db.get_graph_data("netlists", netlist_key_str)
         for node, node_type in zip(netlist_graph["nodes"], netlist_graph["node_types"]):
-            if node_type == "IO_PORT":
-                io_port_entity = entity.IOPortEntity({"name": node, **io_port_dict[node]}, validate=validate)
-                info_dict = {"type": "IO_PORT", "entity": io_port_entity}
+            if node_type == "PORT":
+                port_entity = entity.PortEntity({"name": node, **port_dict[node]}, validate=validate)
+                info_dict = {"type": "PORT", "entity": port_entity}
 
             if node_type == "GATE":
                 gate_entity = entity.GateEntity({"name": node, **gate_dict[node]}, validate=validate)

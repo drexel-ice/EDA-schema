@@ -111,32 +111,32 @@ class PowerMetricsEntity(BaseEntity):
     }
 
 
-class CriticalPathMetricsEntity(BaseEntity):
+class TimingMetricsEntity(BaseEntity):
     """Class for representing critical path metric data using a JSON schema."""
 
-    title = "critical_path_metrics"
+    title = "timing_metrics"
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
         "items": {
             "type": "object",
             "properties": {
-                "startpoint": {"type": "string"},
-                "endpoint": {"type": "string"},
-                "worst_arrival_time": {"type": "number"},
-                "worst_slack": {"type": "number"},
                 "total_negative_slack": {"type": "number"},
-                "no_of_timing_paths": {"type": "number"},
-                "no_of_slack_violations": {"type": "number"},
+                "worst_slack": {"type": "number"},
+                "critical_path_arrival_time": {"type": "number"},
+                "critical_path_required_time": {"type": "number"},
+                "critical_path_startpoint": {"type": "string"},
+                "critical_path_endpoint": {"type": "string"},
+                "no_of_violating_endpoints": {"type": "number"},
             },
         },
     }
 
 
-class IOPortEntity(BaseEntity):
+class PortEntity(BaseEntity):
     """Class for representing input/output port data using a JSON schema."""
 
-    title = "io_port"
+    title = "port"
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
