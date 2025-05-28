@@ -264,12 +264,13 @@ class InterconnectEntity(GraphEntity):
                 "rudy": {"type": ["number", "null"]},
                 "resistance": {"type": ["number", "null"]},
                 "capacitance": {"type": ["number", "null"]},
+                "total_coupling_capacitance": {"type": ["number", "null"]},
             },
         },
     }
 
 
-class InterconnectSegmentEntity(BaseEntity):
+class WireEntity(BaseEntity):
     """Class for representing interconnect segment data using a JSON schema."""
 
     title = "interconnect_segment"
@@ -281,6 +282,7 @@ class InterconnectSegmentEntity(BaseEntity):
             "properties": {
                 "name": {"type": "string"},
                 "length": {"type": ["number", "null"]},
+                "metal_layer": {"type": "string"},
                 "x1": {"type": ["number", "null"]},
                 "y1": {"type": ["number", "null"]},
                 "x2": {"type": ["number", "null"]},

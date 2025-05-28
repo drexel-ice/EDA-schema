@@ -22,9 +22,9 @@ class SchemaMetadata:
     gates = entity.GateEntity().schema["items"]["properties"]
     pins = entity.PinEntity().schema["items"]["properties"]
     nets = entity.InterconnectEntity().schema["items"]["properties"]
-    net_segments = {
+    wires = {
         "net_name": {"type": "string"},
-        **entity.InterconnectSegmentEntity().schema["items"]["properties"]
+        **entity.WireEntity().schema["items"]["properties"]
     }
     timing_paths = entity.TimingPathEntity().schema["items"]["properties"]
     timing_path_pins = {
