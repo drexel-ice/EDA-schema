@@ -27,6 +27,7 @@ class SchemaMetadata:
         "net_name": {"type": "string"},
         **entity.WireEntity().schema["items"]["properties"]
     }
+    timing_graphs = entity.TimingGraphEntity().schema["items"]["properties"]
     timing_paths = entity.TimingPathEntity().schema["items"]["properties"]
     timing_path_pins = {
         "startpoint": {"type": "string"},

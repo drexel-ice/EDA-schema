@@ -111,6 +111,7 @@ class Dataset(dict):
         if wire_data:
             self.db.add_table_data("wires", wire_data)
 
+        self.db.add_graph_data("timing_graphs", netlist.timing_graph, netlist_key_str)
         timing_path_dict = []
         timing_path_pin_data = []
         for timing_path_list in netlist.timing_paths.values():
