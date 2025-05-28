@@ -341,6 +341,20 @@ class WireEntity(BaseEntity):
     }
 
 
+class TimingGraphEntity(GraphEntity):
+    """Class for representing timing path data using a JSON schema."""
+
+    title = "timing_graph"
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {},
+        },
+    }
+
+
 class TimingPathEntity(GraphEntity):
     """Class for representing timing path data using a JSON schema."""
 
