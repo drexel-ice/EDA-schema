@@ -12,9 +12,10 @@ from eda_schema.errors import ValidationError
 
 LEGEND_HANDLES = [
     mpatches.Patch(color="red", label="INPUT"),
-    mpatches.Patch(color="blue", label="OUTPUT"),
     mpatches.Patch(color="green", label="GATE"),
+    mpatches.Patch(color="orange", label="PIN"),
     mpatches.Patch(color="yellow", label="INTERCONNECT"),
+    mpatches.Patch(color="blue", label="OUTPUT"),
 ]
 
 class BaseEntity:
@@ -255,6 +256,8 @@ class GraphEntity(nx.DiGraph, BaseEntity):
                 color_map.append("green")
             if entity_type == "INTERCONNECT":
                 color_map.append("yellow")
+            if entity_type == "PIN":
+                color_map.append("orange")
 
         pos = graphviz_layout(graph, prog="dot")
         plt.legend(handles=LEGEND_HANDLES, loc="best")

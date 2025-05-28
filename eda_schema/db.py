@@ -20,18 +20,18 @@ class SchemaMetadata:
     critical_path_metrics = entity.CriticalPathMetricsEntity().schema["items"]["properties"]
     io_ports = entity.IOPortEntity().schema["items"]["properties"]
     gates = entity.GateEntity().schema["items"]["properties"]
+    pins = entity.PinEntity().schema["items"]["properties"]
     nets = entity.InterconnectEntity().schema["items"]["properties"]
     net_segments = {
         "net_name": {"type": "string"},
         **entity.InterconnectSegmentEntity().schema["items"]["properties"]
     }
     timing_paths = entity.TimingPathEntity().schema["items"]["properties"]
-    timing_points = {
+    timing_path_pins = {
         "startpoint": {"type": "string"},
         "endpoint": {"type": "string"},
         "path_type": {"type": "string"},
-        "sort_index": {"type": "number"},
-        **entity.TimingPointEntity().schema["items"]["properties"],
+        **entity.TimingPathPinEntity().schema["items"]["properties"],
     }
     clock_trees = entity.ClockTreeEntity().schema["items"]["properties"]
 

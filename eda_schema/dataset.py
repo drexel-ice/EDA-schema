@@ -79,13 +79,15 @@ class Dataset(dict):
             {**netlist_dict, **netlist.critical_path_metrics.asdict()}
         )
 
-        io_port_data, gate_data, net_data, net_segment_data = [], [], [], []
+        port_data, gate_data, pin_data, net_data, wire_data = [], [], [], [], []
         for node in netlist.nodes:
             node_dict = {**netlist_dict, **netlist.nodes[node]["entity"].asdict()}
-            if netlist.nodes[node]["type"] == "IO_PORT":
-                io_port_data.append(node_dict)
+            if netlist.nodes[node]["type"] == "PORT":
+                port_data.append(node_dict)
             if netlist.nodes[node]["type"] == "GATE":
                 gate_data.append(node_dict)
+            if netlist.nodes[node]["type"] == "PIN":
+                pin_data.append(node_dict)
             if netlist.nodes[node]["type"] == "INTERCONNECT":
                 net_data.append(node_dict)
                 net = netlist.nodes[node]["entity"]
@@ -100,28 +102,30 @@ class Dataset(dict):
 
         self.db.add_table_data("io_ports", io_port_data)
         self.db.add_table_data("gates", gate_data)
+        self.db.add_table_data("pins", pin_data)
         self.db.add_table_data("nets", net_data)
         if net_segment_data:
             self.db.add_table_data("net_segments", net_segment_data)
 
         timing_path_dict = []
-        timing_point_data = []
+        timing_path_pin_data = []
         for timing_path_list in netlist.timing_paths.values():
             for timing_path in timing_path_list:
                 timing_path_key = f"{netlist_key_str}-{timing_path.startpoint}-{timing_path.endpoint}-{timing_path.path_type}-{timing_path.sort_index}"
                 timing_path_dict.append({**netlist_dict, **timing_path.asdict()})
-                for timing_point in timing_path.nodes:
-                    timing_point_data.append({
+                for timing_path_pin in timing_path.nodes:
+                    timing_path_pin_data.append({
                         **netlist_dict,
                         "startpoint": timing_path.startpoint,
                         "endpoint": timing_path.endpoint,
                         "path_type": timing_path.path_type,
-                        "sort_index": timing_path.sort_index,
-                        **timing_path.nodes[timing_point]["entity"].asdict(),
+                        # "sort_index": timing_path.sort_index,
+                        **timing_path.nodes[timing_path_pin]["entity"].asdict(),
                     })
+                self.db.add_graph_data("timing_paths", timing_path, timing_path_key)
 
         self.db.add_table_data("timing_paths", timing_path_dict)
-        self.db.add_table_data("timing_points", timing_point_data)
+        self.db.add_table_data("timing_path_pins", timing_path_pin_data)
 
         clock_tree_data = []
         for clock_source, clock_tree in netlist.clock_trees.items():
