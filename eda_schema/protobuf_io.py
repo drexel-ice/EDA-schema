@@ -190,7 +190,7 @@ def dataset_to_protobuf(dataset, netlist):
             eda_schema_to_protobuf(node_proto.standard_cell, standard_cell_entity)
             eda_schema_to_protobuf(node_proto, node_entity)
         elif node_type == 'INTERCONNECT':
-            node_proto = netlist_proto.interconnects.add()
+            node_proto = stage_proto.netlist.nets.add()
             eda_schema_to_protobuf(node_proto, node_entity)
 
     for edge1, edge2 in netlist.edges:

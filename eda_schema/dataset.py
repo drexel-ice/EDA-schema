@@ -92,20 +92,21 @@ class Dataset(dict):
                 net_data.append(node_dict)
                 net = netlist.nodes[node]["entity"]
                 net_key = f"{netlist_key_str}-{net.name}"
-                for net_segment in net.nodes:
-                    net_segment_data.append({
+                for wire in net.nodes:
+                    wire_data.append({
                         **netlist_dict,
                         "net_name": net.name,
-                        "name": net_segment,
-                        **net.nodes[net_segment]["entity"].asdict()
+                        "name": wire,
+                        **net.nodes[wire]["entity"].asdict()
                     })
+                self.db.add_graph_data("nets", net, net_key)
 
         self.db.add_table_data("io_ports", io_port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("pins", pin_data)
         self.db.add_table_data("nets", net_data)
-        if net_segment_data:
-            self.db.add_table_data("net_segments", net_segment_data)
+        if wire_data:
+            self.db.add_table_data("wires", wire_data)
 
         timing_path_dict = []
         timing_path_pin_data = []
@@ -194,9 +195,9 @@ class Dataset(dict):
         net_df = self.db.get_table_data("nets", **key)
         net_dict = net_df.set_index("name").to_dict('index')
 
-        net_segment_df = None
+        wire_df = None
         if key["phase"] != "floorplan":
-            net_segment_df = self.db.get_table_data("net_segments", **key)
+            wire_df = self.db.get_table_data("wires", **key)
 
         netlist_key_str = "-".join(key.values())
         netlist_graph = self.db.get_graph_data("netlists", netlist_key_str)
@@ -212,8 +213,8 @@ class Dataset(dict):
             if node_type == "INTERCONNECT":
                 net_key ={**key, "name": node}
                 if key["phase"] != "floorplan":
-                    net_segment_dict = net_segment_df[net_segment_df.net_name==node].set_index("name").to_dict('index')
-                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], net_segment_dict, validate=validate)
+                    wire_dict = wire_df[wire_df.net_name==node].set_index("name").to_dict('index')
+                    interconnect_entity = self.load_interconnect(net_key, net_dict[node], wire_dict, validate=validate)
                 else:
                     interconnect_entity = self.load_interconnect(net_key, net_dict[node], None, validate=validate)
                 info_dict = {"type": "INTERCONNECT", "entity": interconnect_entity}
@@ -267,24 +268,24 @@ class Dataset(dict):
 
         return timing_path_entity
 
-    def load_interconnect(self, net_key, _net_data=None, _net_segment_dict=None, validate=True):
+    def load_interconnect(self, net_key, _net_data=None, _wire_dict=None, validate=True):
         if _net_data is None:
             _net_data = self.db.get_table_row("nets", **net_key).to_dict()
-        if net_key["phase"] != "floorplan" and _net_segment_dict is None:
-            net_segment_key = dict(net_key)
-            net_segment_key["net_name"] = net_segment_key.pop("name")
-            net_segment_df = self.db.get_table_data("net_segments", **net_segment_key)
-            _net_segment_dict = net_segment_df.set_index("name").to_dict('index')
+        if net_key["phase"] != "floorplan" and _wire_dict is None:
+            wire_key = dict(net_key)
+            wire_key["net_name"] = wire_key.pop("name")
+            wire_df = self.db.get_table_data("wires", **wire_key)
+            _wire_dict = wire_df.set_index("name").to_dict('index')
 
         interconnect_entity = entity.InterconnectEntity(_net_data, validate=validate)
         net_key_str =  "-".join(net_key.values())
 
         if net_key["phase"] == "route":
             net_graph = self.db.get_graph_data("nets", net_key_str)
-            for net_segment in net_graph["nodes"]:
-                net_segment_entity = entity.InterconnectSegmentEntity({"name": net_segment, **_net_segment_dict[net_segment]}, validate=validate)
-                info_dict = {"type": "NETSEGMENT", "entity": net_segment_entity}
-                interconnect_entity.add_node(net_segment, **info_dict)
+            for wire in net_graph["nodes"]:
+                wire_entity = entity.InterconnectSegmentEntity({"name": wire, **_wire_dict[wire]}, validate=validate)
+                info_dict = {"type": "NETSEGMENT", "entity": wire_entity}
+                interconnect_entity.add_node(wire, **info_dict)
 
             for edge in net_graph["edges"]:
                 interconnect_entity.add_edge(*edge)
