@@ -77,9 +77,10 @@ class Dataset(dict):
         self.db.add_table_row("area_metrics", {**netlist_dict, **netlist.area_metrics.asdict()})
         self.db.add_table_row("power_metrics", {**netlist_dict, **netlist.power_metrics.asdict()})
         self.db.add_table_row(
-            "critical_path_metrics",
-            {**netlist_dict, **netlist.critical_path_metrics.asdict()}
+            "timing_metrics",
+            {**netlist_dict, **netlist.timing_metrics.asdict()}
         )
+        self.db.add_graph_data("netlists", netlist, netlist_key_str)
 
         port_data, gate_data, pin_data, net_data, wire_data = [], [], [], [], []
         for node in netlist.nodes:
@@ -228,9 +229,6 @@ class Dataset(dict):
 
         for edge in netlist_graph["edges"]:
             netlist_entity.add_edge(*edge)
-
-        critical_path_metrics_data = self.db.get_table_row("critical_path_metrics", **key).to_dict()
-        netlist_entity.critical_path_metrics = entity.CriticalPathMetricsEntity(critical_path_metrics_data, validate=validate)
 
         timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max", sort_index=timing_path_sort_index)
         timing_point_df = self.db.get_table_data("timing_points", **key, path_type="max", sort_index=timing_path_sort_index)
