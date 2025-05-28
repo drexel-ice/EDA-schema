@@ -146,7 +146,7 @@ def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
             converter = CONVERTER[field_type]
             setattr(pb2_entity, field.name, converter(value))
 
-def dataset_to_protobuf(dataset, netlist):
+def dataset_to_protobuf(dataset, stage_entity):
     """
     Converts a dataset and its associated netlist into a populated NetlistEntity protobuf message.
 
@@ -159,22 +159,22 @@ def dataset_to_protobuf(dataset, netlist):
     """
     # Create a new NetlistEntity protobuf message
     # This is the main protobuf message that will hold the netlist data
-    netlist_proto = pb2.NetlistEntity()
-    eda_schema_to_protobuf(netlist_proto, netlist)
-    eda_schema_to_protobuf(netlist_proto.cell_metrics, netlist.cell_metrics)
-    eda_schema_to_protobuf(netlist_proto.area_metrics, netlist.area_metrics)
-    eda_schema_to_protobuf(netlist_proto.power_metrics, netlist.power_metrics)
-    eda_schema_to_protobuf(netlist_proto.critical_path_metrics, netlist.critical_path_metrics)
+    stage_proto = pb2.StageEntity()
+    eda_schema_to_protobuf(stage_proto.netlist, stage_entity.netlist)
+    eda_schema_to_protobuf(stage_proto.cell_metrics, stage_entity.cell_metrics)
+    eda_schema_to_protobuf(stage_proto.area_metrics, stage_entity.area_metrics)
+    eda_schema_to_protobuf(stage_proto.power_metrics, stage_entity.power_metrics)
+    eda_schema_to_protobuf(stage_proto.timing_metrics, stage_entity.timing_metrics)
     
     # NOTE: TimingPath → TimingPoint conversion is skipped for now.
     # TimingPoint is expected to be deprecated soon — consult with EDA-schema
     # before proceeding with this part of the conversion.
-    for timing_path in netlist.timing_paths.values():
-        timing_path_proto = netlist_proto.timing_paths.add()
+    for timing_path in stage_entity.netlist.timing_paths.values():
+        timing_path_proto = stage_proto.netlist.timing_paths.add()
         eda_schema_to_protobuf(timing_path_proto, timing_path[0])
 
-    for clock_tree in netlist.clock_trees.values():
-        clock_tree_proto = netlist_proto.clock_trees.add()
+    for clock_tree in stage_entity.netlist.clock_trees.values():
+        clock_tree_proto = stage_proto.netlist.clock_trees.add()
         eda_schema_to_protobuf(clock_tree_proto, clock_tree)
 
 
@@ -185,7 +185,7 @@ def dataset_to_protobuf(dataset, netlist):
             node_proto = stage_proto.netlist.ports.add()
             eda_schema_to_protobuf(node_proto, node_entity)
         elif node_type == 'GATE':
-            node_proto = netlist_proto.gates.add()
+            node_proto = stage_proto.netlist.gates.add()
             standard_cell_entity = dataset.standard_cells[node_entity.standard_cell]
             eda_schema_to_protobuf(node_proto.standard_cell, standard_cell_entity)
             eda_schema_to_protobuf(node_proto, node_entity)
@@ -193,12 +193,12 @@ def dataset_to_protobuf(dataset, netlist):
             node_proto = stage_proto.netlist.nets.add()
             eda_schema_to_protobuf(node_proto, node_entity)
 
-    for edge1, edge2 in netlist.edges:
-        edge_proto = netlist_proto.edges.add()
+    for edge1, edge2 in stage_entity.netlist.edges:
+        edge_proto = stage_proto.netlist.edges.add()
         edge_proto.source = edge1
         edge_proto.target = edge2
 
-    return netlist_proto
+    return stage_proto
 
 def protobuf_to_eda_schema(edaschema_entity, pb2_entity):
     """
