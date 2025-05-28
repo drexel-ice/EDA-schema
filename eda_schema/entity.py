@@ -207,6 +207,41 @@ class StandardCellEntity(BaseEntity):
     }
 
 
+class PinEntity(BaseEntity):
+    """Class for representing pin data using a JSON schema."""
+
+    title = "pin"
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "type": {"type": "string"},
+                "direction": {"type": "string"},
+                "is_in_clk": {"type": "boolean"},
+                "is_startpoint": {"type": "boolean"},
+                "is_endpoint": {"type": "boolean"},
+
+                "setup_rise_slew": {"type": ["number", "null"]},
+                "setup_fall_slew": {"type": ["number", "null"]},
+                "hold_rise_slew": {"type": ["number", "null"]},
+                "hold_fall_slew": {"type": ["number", "null"]},
+
+                "setup_rise_slack": {"type": ["number", "null"]},
+                "setup_fall_slack": {"type": ["number", "null"]},
+                "hold_rise_slack": {"type": ["number", "null"]},
+                "hold_fall_slack": {"type": ["number", "null"]},
+
+                "load_capacitance": {"type": ["number", "null"]},
+                "ir_drop": {"type": ["number", "null"]},
+                "switching_activity": {"type": ["number", "null"]},
+            }
+        }
+    }
+
+
 class InterconnectEntity(GraphEntity):
     """Class for representing interconnect data using a JSON schema."""
 
@@ -273,38 +308,33 @@ class TimingPathEntity(GraphEntity):
                 "startpoint": {"type": "string"},
                 "endpoint": {"type": "string"},
                 "path_type": {"type": "string"},
-                "sort_index": {"type": "number"},
                 "arrival_time": {"type": "number"},
                 "required_time": {"type": "number"},
                 "slack": {"type": "number"},
                 "no_of_gates": {"type": "number"},
+                # "no_of_pins": {"type": "number"},
                 "is_critical_path": {"type": "boolean"},
             },
         },
     }
 
 
-
-class TimingPointEntity(BaseEntity):
+class TimingPathPinEntity(BaseEntity):
     """Class for representing timing path point data using a JSON schema."""
 
-    title = "timing_point"
+    title = "timing_path_pin"
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
         "items": {
             "type": "object",
             "properties": {
-                "name": {"type": "string"},
-                "gate": {"type": "string"},
-                "standard_cell": {"type": ["string", "null"]},
                 "pin": {"type": ["string", "null"]},
-                "cell_delay": {"type": "number"},
+                "delay": {"type": "number"},
                 "arrival_time": {"type": "number"},
                 "slew": {"type": "number"},
                 "is_rise_transition": {"type": "boolean"},
                 "is_fall_transition": {"type": "boolean"},
-                "node_depth": {"type": "number"},
             },
         },
     }
