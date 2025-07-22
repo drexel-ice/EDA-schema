@@ -48,6 +48,10 @@ class SchemaMetadata:
         """Get the schema for a specific entity by name."""
         return getattr(cls, name, None)
 
+    @classmethod
+    def is_graph_entity(cls, entity_name):
+        return entity_name in ["netlists", "clock_trees", "timing_paths", "timing_graphs", "nets"]
+
 
 class BaseDB:
     """
@@ -147,7 +151,7 @@ class FileDB(BaseDB):
         """
         self.data_home = data_home
 
-    def _create_table(self, entity_name, columns):
+    def _create_table(self, entity_name, columns, is_graph_entity):
         """
         Create a data table for a specific entity.
 
@@ -157,6 +161,8 @@ class FileDB(BaseDB):
         """
         if not os.path.exists(f"{self.data_home}/{entity_name}"):
             os.mkdir(f"{self.data_home}/{entity_name}")
+        if is_graph_entity and not os.path.exists(f"{self.data_home}/{entity_name}/graphs"):
+            os.mkdir(f"{self.data_home}/{entity_name}/graphs")
         pd.DataFrame(columns=columns).to_csv(
             f"{self.data_home}/{entity_name}/table.csv", index=False
         )
@@ -170,9 +176,9 @@ class FileDB(BaseDB):
 
         for entity_name, schema in SchemaMetadata.items():
             if entity_name == "standard_cells":
-                self._create_table(entity_name, list(schema.keys()))
+                self._create_table(entity_name, list(schema.keys()), is_graph_entity=SchemaMetadata.is_graph_entity(entity_name))
             else:
-                self._create_table(entity_name, entity.KEY_COLUMNS + list(schema.keys()))
+                self._create_table(entity_name, entity.KEY_COLUMNS + list(schema.keys()), is_graph_entity=SchemaMetadata.is_graph_entity(entity_name))
 
     def add_graph_data(self, entity_name, graph, key):
         """
@@ -183,7 +189,7 @@ class FileDB(BaseDB):
             graph: Graph object containing the data.
             key (str): Unique identifier for the graph data.
         """
-        with open(f"{self.data_home}/{entity_name}/{key}.json", "w") as out_file:
+        with open(f"{self.data_home}/{entity_name}/graphs/{key}.json", "w") as out_file:
             json.dump(graph.graph_dict(), out_file)
 
     def get_graph_data(self, entity_name, key):
@@ -197,7 +203,7 @@ class FileDB(BaseDB):
         Returns:
             dict: Graph data as a dictionary.
         """
-        with open(f"{self.data_home}/{entity_name}/{key}.json") as out_file:
+        with open(f"{self.data_home}/{entity_name}/graphs/{key}.json") as out_file:
             return json.load(out_file)
 
     def add_table_row(self, entity_name, row):
