@@ -136,6 +136,7 @@ class Dataset(dict):
         for clock_source, clock_tree in netlist.clock_trees.items():
             clock_tree_key = f"{netlist_key_str}-{clock_source}"
             clock_tree_data.append({**netlist_dict, **clock_tree.asdict()})
+            self.db.add_graph_data("clock_trees", clock_tree, clock_tree_key)
         self.db.add_table_data("clock_trees", clock_tree_data)
 
         self.db.save_netlist(netlist, circuit, netlist_id, phase)
@@ -202,6 +203,9 @@ class Dataset(dict):
         net_df = self.db.get_table_data("nets", **key)
         net_dict = net_df.set_index("name").to_dict('index')
 
+        pin_df = self.db.get_table_data("pins", **key)
+        pin_dict = pin_df.set_index("name").to_dict('index')
+
         wire_df = None
         if key["phase"] != "floorplan":
             wire_df = self.db.get_table_data("wires", **key)
@@ -226,46 +230,57 @@ class Dataset(dict):
                     interconnect_entity = self.load_interconnect(net_key, net_dict[node], None, validate=validate)
                 info_dict = {"type": "INTERCONNECT", "entity": interconnect_entity}
 
+            if node_type == "PIN":
+                pin_entity = entity.PinEntity({"name": node, **pin_dict[node]}, validate=validate)
+                info_dict = {"type": "PIN", "entity": pin_entity}
+
             netlist_entity.add_node(node, **info_dict)
 
         for edge in netlist_graph["edges"]:
             netlist_entity.add_edge(*edge)
 
-        timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max", sort_index=timing_path_sort_index)
-        timing_point_df = self.db.get_table_data("timing_points", **key, path_type="max", sort_index=timing_path_sort_index)
-        timing_point_df["index_col"] = timing_point_df["startpoint"] + timing_point_df["endpoint"] + timing_point_df["path_type"] + timing_point_df["sort_index"].apply(str) + timing_point_df["name"]
-        timing_point_dict = timing_point_df.set_index("index_col").to_dict('index')
+        if load_timing_paths:
+            if timing_path_sort_index is not None:
+                timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max", sort_index=timing_path_sort_index)
+                timing_path_pin_df = self.db.get_table_data("timing_path_pins", **key, path_type="max", sort_index=timing_path_sort_index)
+            else:
+                timing_path_df = self.db.get_table_data("timing_paths", **key, path_type="max")
+                timing_path_pin_df = self.db.get_table_data("timing_path_pins", **key, path_type="max")
+            timing_path_pin_df["index_col"] = timing_path_pin_df["startpoint"] + timing_path_pin_df["endpoint"] + timing_path_pin_df["path_type"] + timing_path_pin_df["sort_index"].apply(str) + timing_path_pin_df["pin"]
+            timing_path_pin_dict = timing_path_pin_df.set_index("index_col").to_dict('index')
 
-        for _, timing_path_data in timing_path_df.iterrows():
-            timing_path_key ={
-                **key,
-                "startpoint": timing_path_data["startpoint"],
-                "endpoint": timing_path_data["endpoint"],
-                "path_type": timing_path_data["path_type"],
-                "sort_index": timing_path_sort_index,
-            }
-            timing_path_entity = self.load_timing_path(timing_path_key, timing_path_data, timing_point_df, timing_point_dict, validate=validate)
-            netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"])] = timing_path_entity
+            for _, timing_path_data in timing_path_df.iterrows():
+                timing_path_key ={
+                    **key,
+                    "startpoint": timing_path_data["startpoint"],
+                    "endpoint": timing_path_data["endpoint"],
+                    "path_type": timing_path_data["path_type"],
+                    "sort_index": timing_path_data["sort_index"],
+                }
+                timing_path_entity = self.load_timing_path(timing_path_key, timing_path_data, timing_path_pin_df, timing_path_pin_dict, validate=validate)
+                if (timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"]) not in netlist_entity.timing_paths:
+                    netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"])] = []
+                netlist_entity.timing_paths[(timing_path_data["startpoint"], timing_path_data["endpoint"], timing_path_data["path_type"])].append(timing_path_entity)
 
         return netlist_entity
 
-    def load_timing_path(self, timing_path_key, _timing_path_data=None, _timing_point_df=None, _timing_point_dict=None, validate=True):
+    def load_timing_path(self, timing_path_key, _timing_path_data=None, _timing_path_pin_df=None, _timing_path_pin_dict=None, validate=True):
         if _timing_path_data is None:
             _timing_path_data = self.db.get_table_row("timing_paths", **timing_path_key)
-        if _timing_point_dict is None:
-            if _timing_point_df is None:
-                _timing_point_df = self.db.get_table_data("timing_points", **timing_path_key)
-            _timing_point_df["index_col"] = _timing_point_df["startpoint"] + _timing_point_df["endpoint"] + _timing_point_df["path_type"] + _timing_point_df["sort_index"].apply(str) + _timing_point_df["name"]
-            _timing_point_dict = _timing_point_df.set_index("index_col").to_dict('index')
+        if _timing_path_pin_dict is None:
+            if _timing_path_pin_df is None:
+                _timing_path_pin_df = self.db.get_table_data("timing_points", **timing_path_key)
+            _timing_path_pin_df["index_col"] = _timing_path_pin_df["startpoint"] + _timing_path_pin_df["endpoint"] + _timing_path_pin_df["path_type"] + _timing_path_pin_df["name"]
+            _timing_path_pin_dict = _timing_path_pin_df.set_index("index_col").to_dict('index')
 
         timing_path_entity = entity.TimingPathEntity(_timing_path_data.to_dict(), validate=validate)
         timing_path_key_str =  "-".join([str(x) for x in timing_path_key.values()])
 
         timing_path_graph = self.db.get_graph_data("timing_paths", timing_path_key_str)
-        for timing_point in timing_path_graph["nodes"]:
-            timing_point_entity = entity.TimingPointEntity(_timing_point_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + str(_timing_path_data["sort_index"]) + timing_point], validate=validate)
-            info_dict = {"type": "TIMINGPOINT", "entity": timing_point_entity}
-            timing_path_entity.add_node(timing_point, **info_dict)
+        for timing_path_pin in timing_path_graph["nodes"]:
+            timing_path_pin_entity = entity.TimingPathPinEntity(_timing_path_pin_dict[_timing_path_data["startpoint"] + _timing_path_data["endpoint"] + _timing_path_data["path_type"] + str(_timing_path_data["sort_index"]) + timing_path_pin], validate=validate)
+            info_dict = {"type": "TIMINGPOINT", "entity": timing_path_pin_entity}
+            timing_path_entity.add_node(timing_path_pin, **info_dict)
 
         for edge in timing_path_graph["edges"]:
             timing_path_entity.add_edge(*edge)
