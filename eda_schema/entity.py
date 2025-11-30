@@ -1,478 +1,661 @@
-from copy import deepcopy
+from __future__ import annotations
 
-from eda_schema.base import BaseEntity, GraphEntity
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
-KEY_COLUMNS = ["circuit", "netlist_id", "phase"]
-PHASES = ["floorplan", "global_place", "place_resized", "detailed_place", "cts", "global_route", "detailed_route"]
+from pydantic import Field
+
+from eda_schema.base import BaseEntity, GraphEntity, Image2D
 
 
-class FlowEntity(BaseEntity):
-    """Class for representing netlist data using a JSON schema."""
+class DesignStages(str, Enum):
+    """
+    Enumeration of all major stages in a physical design flow.
+    Each stage corresponds to a key milestone in the ASIC layout process
+    and may be associated with metrics, constraints, and intermediate data.
+    """
+    FLOORPLAN      = "floorplan"
+    GLOBAL_PLACE   = "global_place"
+    PLACE_RESIZED  = "place_resized"
+    DETAILED_PLACE = "detailed_place"
+    CTS            = "cts"
+    GLOBAL_ROUTE   = "global_route"
+    DETAILED_ROUTE = "detailed_route"
+    FINAL          = "final"
 
-    title = "flow"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "version": {"type": ["number", "null"]},
-                "design_type": {"type": ["string", "null"]},
-            },
-        },
-    }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.stages = {}
+class DesignFlowEntity(BaseEntity):
+    """Top-level container for a design flow and its stages."""
 
-class StageEntity(BaseEntity):
-    """Class for representing netlist data using a JSON schema."""
+    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
 
-    title = "stage"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-            },
-        },
-    }
+    design: str
+    run_status: Optional[str] = None
+    datetime: Optional[str] = None
+    runtime: Optional[timedelta] = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.netlist = {}
-        self.cell_metrics = None
-        self.area_metrics = None
-        self.power_metrics = None
-        self.timing_metrics = None
+    constraints: Optional["ConstraintEntity"] = None
+    stages: Dict[str, "DesignStageEntity"] = Field(default_factory=dict)
 
-class NetlistEntity(GraphEntity):
-    """Class for representing netlist data using a JSON schema."""
 
-    title = "netlist"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "width": {"type": ["number", "null"]},
-                "height": {"type": ["number", "null"]},
-                "no_of_inputs": {"type": "number"},
-                "no_of_outputs": {"type": "number"},
-                "no_of_cells": {"type": "number"},
-                "no_of_nets": {"type": "number"},
-                "utilization": {"type": "number"},
-            },
-        },
-    }
+class ConstraintEntity(BaseEntity):
+    """Timing, electrical, routing, and IO constraints applied to a design."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cell_metrics = None
-        self.area_metrics = None
-        self.power_metrics = None
-        self.timing_metrics = None
-        self.timing_graph = {}
-        self.timing_paths = {}
-        self.clock_trees = {}
+    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
+
+    # Clock-related
+    clock_period: Optional[float] = None
+    clock_uncertainty: Optional[float] = None
+    clock_latency: Optional[float] = None
+    clock_transition: Optional[float] = None
+
+    # IO constraints
+    input_delay: Optional[float] = None
+    output_delay: Optional[float] = None
+
+    aspect_ratio: Optional[float] = None
+    core_utilization: Optional[float] = None
+
+
+class DesignStageEntity(BaseEntity):
+    """Metadata and metrics for a single stage in the design flow."""
+
+    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: str = Field(metadata={"pk": True})
+
+    run_status: Optional[str] = None
+    runtime: Optional[timedelta] = None
+
+    netlist: Optional["NetlistEntity"] = None
+    cell_metrics: Optional["CellMetricsEntity"] = None
+    area_metrics: Optional["AreaMetricsEntity"] = None
+    power_metrics: Optional["PowerMetricsEntity"] = None
+    timing_metrics: Optional["TimingMetricsEntity"] = None
+    routability_metrics: Optional["RoutabilityMetricsEntity"] = None
 
 
 class CellMetricsEntity(BaseEntity):
-    """Class for representing cell metric data using a JSON schema."""
+    """Counts of various cell categories in the design."""
 
-    title = "cell_metrics"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "no_of_combinational_cells": {"type": "number"},
-                "no_of_sequential_cells": {"type": "number"},
-                "no_of_buffers": {"type": "number"},
-                "no_of_inverters": {"type": "number"},
-                "no_of_fillers": {"type": "number"},
-                "no_of_tap_cells": {"type": "number"},
-                "no_of_diodes": {"type": "number"},
-                "no_of_macros": {"type": "number"},
-                "no_of_total_cells": {"type": "number"},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    no_of_combinational_cells: int
+    no_of_sequential_cells: int
+    no_of_buffers: int
+    no_of_inverters: int
+    no_of_fillers: int
+    no_of_tap_cells: int
+    no_of_diodes: int
+    no_of_macros: int
+    no_of_total_cells: int
 
 
 class AreaMetricsEntity(BaseEntity):
-    """Class for representing area metric data using a JSON schema."""
+    """Area metrics for cells, macros, die, and core."""
 
-    title = "area_metrics"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "combinational_cell_area": {"type": "number"},
-                "sequential_cell_area": {"type": "number"},
-                "buffer_area": {"type": "number"},
-                "inverter_area": {"type": "number"},
-                "filler_area": {"type": "number"},
-                "tap_cell_area": {"type": "number"},
-                "diode_area": {"type": "number"},
-                "macro_area": {"type": "number"},
-                "cell_area": {"type": "number"},
-                "core_area": {"type": "number"},
-                "die_area": {"type": "number"},
-                "total_area": {"type": "number"},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    combinational_cell_area: float
+    sequential_cell_area: float
+    buffer_area: float
+    inverter_area: float
+    filler_area: float
+    tap_cell_area: float
+    diode_area: float
+    macro_area: float
+
+    cell_area: float
+    core_area: float
+    die_area: float
+    total_area: float
 
 
 class PowerMetricsEntity(BaseEntity):
-    """Class for representing power metric data using a JSON schema."""
+    """Aggregated internal, switching, leakage, and total power metrics."""
 
-    title = "power_metrics"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "combinational_power": {"type": "number"},
-                "sequential_power": {"type": "number"},
-                "macro_power": {"type": "number"},
-                "internal_power": {"type": "number"},
-                "switching_power": {"type": "number"},
-                "leakage_power": {"type": "number"},
-                "total_power": {"type": "number"},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    combinational_power: float
+    sequential_power: float
+    macro_power: float
+    internal_power: float
+    switching_power: float
+    leakage_power: float
+    total_power: float
 
 
 class TimingMetricsEntity(BaseEntity):
-    """Class for representing critical path metric data using a JSON schema."""
+    """Top-level summary of timing slack and critical path statistics."""
 
-    title = "timing_metrics"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "total_negative_slack": {"type": "number"},
-                "worst_slack": {"type": "number"},
-                "critical_path_arrival_time": {"type": "number"},
-                "critical_path_required_time": {"type": "number"},
-                "critical_path_startpoint": {"type": "string"},
-                "critical_path_endpoint": {"type": "string"},
-                "no_of_violating_endpoints": {"type": "number"},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    total_negative_slack: float
+    worst_slack: float
+
+    critical_path_arrival_time: float
+    critical_path_required_time: float
+
+    critical_path_startpoint: str
+    critical_path_endpoint: str
+
+    no_of_violating_endpoints: int
+
+
+class RoutabilityMetricsEntity(BaseEntity):
+    """Routability and congestion metrics (overflow, congestion maps, layer usage)."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    # Rudy-based congestion images
+    rudy_net: Optional[Any] = None
+    rudy_long: Optional[Any] = None
+    rudy_short: Optional[Any] = None
+    rudy_pin: Optional[Any] = None
+
+    # Scalar summary metrics
+    total_resource: Optional[float] = None
+    total_demand: Optional[float] = None
+    total_overflow: Optional[float] = None
+    total_overflow_h: Optional[float] = None
+    total_overflow_v: Optional[float] = None
+    total_usage_percent: Optional[float] = None
+
+    # Per-metal-layer metrics
+    total_resource_by_metal_layers: Optional[Dict[str, float]] = None
+    total_demand_by_metal_layers: Optional[Dict[str, float]] = None
+    total_overflow_by_metal_layers: Optional[Dict[str, float]] = None
+    total_overflow_h_by_metal_layers: Optional[Dict[str, float]] = None
+    total_overflow_v_by_metal_layers: Optional[Dict[str, float]] = None
+    total_usage_percent_by_metal_layers: Optional[Dict[str, float]] = None
+
+    # Congestion heatmaps (images)
+    horizontal_congestion: Optional[Any] = None
+    vertical_congestion: Optional[Any] = None
+    total_congestion: Optional[Any] = None
+
+    # Density maps (all images)
+    pin_density: Optional[Any] = None
+    net_density: Optional[Any] = None
+    cell_density: Optional[Any] = None
+    drv_locations: Optional[Any] = None
+
+    # Simple int field
+    no_of_drvs: Optional[int] = None
+
 
 
 class PortEntity(BaseEntity):
-    """Class for representing input/output port data using a JSON schema."""
+    """Named input/output port and its physical + electrical attributes."""
 
-    title = "port"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "direction": {"type": "string"},
-                "x": {"type": ["number", "null"]},
-                "y": {"type": ["number", "null"]},
-                "load_capacitance": {"type": ["number", "null"]},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    name: str = Field(metadata={"pk": True})
+
+    direction: str
+
+    x: Optional[float] = None
+    y: Optional[float] = None
+
+    load_capacitance: Optional[float] = None
 
 
 class GateEntity(BaseEntity):
-    """Class for representing gate data using a JSON schema."""
+    """Placed gate instance, including physical bounds and pin counts."""
 
-    title = "gate"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "standard_cell": {"type": "string"},
-                "no_of_fanins": {"type": "number"},
-                "no_of_fanouts": {"type": "number"},
-                "llx": {"type": ["number", "null"]},
-                "lly": {"type": ["number", "null"]},
-                "urx": {"type": ["number", "null"]},
-                "ury": {"type": ["number", "null"]},
-                "is_sequential": {"type": "boolean"},
-                "is_filler": {"type": "boolean"},
-                "is_inverter": {"type": "boolean"},
-                "is_buffer": {"type": "boolean"},
-                "is_diode": {"type": "boolean"},
-            },
-        },
-    }
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    name: str = Field(metadata={"pk": True})
+
+    standard_cell: str
+
+    x1: Optional[float] = None
+    y1: Optional[float] = None
+    x2: Optional[float] = None
+    y2: Optional[float] = None
+
+    no_of_inputs: int
+    no_of_outputs: int
 
 
 class StandardCellEntity(BaseEntity):
-    """Class for representing standard cell data using a JSON schema."""
+    """Standard-cell library definition and its electrical characteristics."""
 
-    title = "standard_cell"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "width": {"type": "number"},
-                "height": {"type": "number"},
-                "no_of_input_pins": {"type": "number"},
-                "no_of_output_pins": {"type": "number"},
-                "is_sequential": {"type": "boolean"},
-                "is_inverter": {"type": "boolean"},
-                "is_buffer": {"type": "boolean"},
-                "drive_strength": {"type": ["number", "null"]},
-                "input_capacitance_min": {"type": ["number", "null"]},
-                "input_capacitance_max": {"type": ["number", "null"]},
-                "input_capacitance_mean": {"type": ["number", "null"]},
-                "output_capacitance_min": {"type": ["number", "null"]},
-                "output_capacitance_max": {"type": ["number", "null"]},
-                "output_capacitance_mean": {"type": ["number", "null"]},
-                "leakage_power_min": {"type": ["number", "null"]},
-                "leakage_power_max": {"type": ["number", "null"]},
-                "leakage_power_provided": {"type": "number"},
-            },
-        },
-    }
+    name: str = Field(metadata={"pk": True})
+    width: float
+    height: float
+
+    no_of_input_pins: int
+    no_of_output_pins: int
+
+    is_sequential: bool
+    is_inverter: bool
+    is_buffer: bool
+    is_filler: bool
+    is_diode: bool
+
+    drive_strength: Optional[int] = None
+
+    input_capacitance_min: Optional[float] = None
+    input_capacitance_max: Optional[float] = None
+
+    output_capacitance_min: Optional[float] = None
+    output_capacitance_max: Optional[float] = None
+
+    leakage_power_min: Optional[float] = None
+    leakage_power_max: Optional[float] = None
 
 
 class PinEntity(BaseEntity):
-    """Class for representing pin data using a JSON schema."""
+    """Pin instance with timing and electrical details."""
 
-    title = "pin"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "type": {"type": "string"},
-                "direction": {"type": "string"},
-                "is_in_clk": {"type": "boolean"},
-                "is_startpoint": {"type": "boolean"},
-                "is_endpoint": {"type": "boolean"},
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    name: str = Field(metadata={"pk": True})
 
-                "setup_rise_slew": {"type": ["number", "null"]},
-                "setup_fall_slew": {"type": ["number", "null"]},
-                "hold_rise_slew": {"type": ["number", "null"]},
-                "hold_fall_slew": {"type": ["number", "null"]},
+    type: str
+    direction: str
 
-                "setup_rise_slack": {"type": ["number", "null"]},
-                "setup_fall_slack": {"type": ["number", "null"]},
-                "hold_rise_slack": {"type": ["number", "null"]},
-                "hold_fall_slack": {"type": ["number", "null"]},
+    is_in_clk: bool
+    is_startpoint: bool
+    is_endpoint: bool
 
-                "load_capacitance": {"type": ["number", "null"]},
-                "ir_drop": {"type": ["number", "null"]},
-                "switching_activity": {"type": ["number", "null"]},
-            }
-        }
+    setup_rise_slew: Optional[float] = None
+    setup_fall_slew: Optional[float] = None
+    hold_rise_slew: Optional[float] = None
+    hold_fall_slew: Optional[float] = None
+
+    setup_rise_slack: Optional[float] = None
+    setup_fall_slack: Optional[float] = None
+    hold_rise_slack: Optional[float] = None
+    hold_fall_slack: Optional[float] = None
+
+    load_capacitance: Optional[float] = None
+    ir_drop: Optional[float] = None
+    switching_activity: Optional[float] = None
+
+
+class MetalSegmentEntity(BaseEntity):
+    """Single metal routing segment with coordinates and properties."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    net_name: Optional[str] = Field(metadata={"pk": True})
+    name: str = Field(metadata={"pk": True})
+
+    metal_layer: str
+
+    x1: Optional[float] = None
+    y1: Optional[float] = None
+    x2: Optional[float] = None
+    y2: Optional[float] = None
+
+    x: Optional[float] = None
+    y: Optional[float] = None
+
+    length: Optional[float] = None
+    resistance: Optional[float] = None
+    capacitance: Optional[float] = None
+    rudy: Optional[float] = None
+
+
+class ViaEntity(BaseEntity):
+    """Via connecting routing layers at a physical coordinate."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    net_name: Optional[str] = Field(metadata={"pk": True})
+
+    via_layer: str
+
+    x1: Optional[float] = None
+    y1: Optional[float] = None
+    x2: Optional[float] = None
+    y2: Optional[float] = None
+
+
+class NetEntity(GraphEntity):
+    """Represents a routed net, including metal segments and vias."""
+
+    NODE_TYPES: ClassVar[Dict[str, type]] = {
+        "METALSEGMENT": MetalSegmentEntity,
+        "VIA": ViaEntity,
     }
 
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    name: str = Field(metadata={"pk": True})
 
-class InterconnectEntity(GraphEntity):
-    """Class for representing interconnect data using a JSON schema."""
+    is_special_net: bool
+    no_of_fanouts: int
 
-    title = "interconnect"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "is_special_net": {"type": "boolean"},
-                "no_of_fanouts": {"type": "number"},
-                "x_min": {"type": ["number", "null"]},
-                "y_min": {"type": ["number", "null"]},
-                "x_max": {"type": ["number", "null"]},
-                "y_max": {"type": ["number", "null"]},
-                "length": {"type": ["number", "null"]},
-                "hpwl": {"type": ["number", "null"]},
-                "rudy": {"type": ["number", "null"]},
-                "resistance": {"type": ["number", "null"]},
-                "capacitance": {"type": ["number", "null"]},
-                "total_coupling_capacitance": {"type": ["number", "null"]},
-            },
-        },
+    x_min: Optional[float] = None
+    y_min: Optional[float] = None
+    x_max: Optional[float] = None
+    y_max: Optional[float] = None
+
+    length: Optional[float] = None
+    hpwl: Optional[float] = None
+    resistance: Optional[float] = None
+    capacitance: Optional[float] = None
+    total_coupling_capacitance: Optional[float] = None
+
+
+class NetlistEntity(GraphEntity):
+    """Complete netlist with nodes, metrics, placement images, and timing data."""
+
+    NODE_TYPES: ClassVar[Dict[str, type]] = {
+        "GATE": GateEntity,
+        "PORT": PortEntity,
+        "PIN": PinEntity,
+        "NET": NetEntity,
     }
 
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
 
-class WireEntity(BaseEntity):
-    """Class for representing interconnect segment data using a JSON schema."""
+    width: Optional[float] = None
+    height: Optional[float] = None
 
-    title = "interconnect_segment"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "length": {"type": ["number", "null"]},
-                "metal_layer": {"type": "string"},
-                "x1": {"type": ["number", "null"]},
-                "y1": {"type": ["number", "null"]},
-                "x2": {"type": ["number", "null"]},
-                "y2": {"type": ["number", "null"]},
-                "x": {"type": ["number", "null"]},
-                "y": {"type": ["number", "null"]},
-                "rudy": {"type": ["number", "null"]},
-                "resistance": {"type": ["number", "null"]},
-                "capacitance": {"type": ["number", "null"]},
-            },
-        },
-    }
+    no_of_inputs: int
+    no_of_outputs: int
+    no_of_cells: int
+    no_of_nets: int
+    utilization: float
 
+    cell_placement: Optional[Image2D] = None
+    cell_placement_combinational: Optional[Image2D] = None
+    cell_placement_sequential: Optional[Image2D] = None
+    cell_placement_filler: Optional[Image2D] = None
+    pin_placement: Optional[Image2D] = None
+    routing: Optional[Image2D] = None
 
-class TimingGraphEntity(GraphEntity):
-    """Class for representing timing path data using a JSON schema."""
+    routing_by_metal: Dict[str, Image2D] = Field(default_factory=dict)
 
-    title = "timing_graph"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {},
-        },
-    }
+    cell_metrics: Optional["CellMetricsEntity"] = None
+    area_metrics: Optional["AreaMetricsEntity"] = None
+    power_metrics: Optional["PowerMetricsEntity"] = None
+    timing_metrics: Optional["TimingMetricsEntity"] = None
 
-
-class TimingPathEntity(GraphEntity):
-    """Class for representing timing path data using a JSON schema."""
-
-    title = "timing_path"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "startpoint": {"type": "string"},
-                "endpoint": {"type": "string"},
-                "path_type": {"type": "string"},
-                "arrival_time": {"type": "number"},
-                "required_time": {"type": "number"},
-                "slack": {"type": "number"},
-                "no_of_gates": {"type": "number"},
-                # "no_of_pins": {"type": "number"},
-                "is_critical_path": {"type": "boolean"},
-            },
-        },
-    }
-
-
-class TimingPathPinEntity(BaseEntity):
-    """Class for representing timing path point data using a JSON schema."""
-
-    title = "timing_path_pin"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "pin": {"type": ["string", "null"]},
-                "delay": {"type": "number"},
-                "arrival_time": {"type": "number"},
-                "slew": {"type": "number"},
-                "is_rise_transition": {"type": "boolean"},
-                "is_fall_transition": {"type": "boolean"},
-            },
-        },
-    }
+    timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = Field(default_factory=dict)
+    clock_trees: Dict[str, "ClockTreeEntity"] = Field(default_factory=dict)
+    pdn: Optional["PDNEntity"] = None
 
 
 class ClockTreeEntity(GraphEntity):
-    """Class for representing clock tree using a JSON schema."""
+    """Clock tree extracted from a netlist, including buffers and sinks."""
 
-    title = "clock_tree"
-
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "clock_source": {"type": "string"},
-                "no_of_buffers": {"type": "number"},
-                "no_of_clock_sinks": {"type": "number"},
-            },
-        },
+    NODE_TYPES: ClassVar[Dict[str, type]] = {
+        "GATE": GateEntity,
+        "PORT": PortEntity,
+        "PIN":  PinEntity,
+        "NET":  NetEntity,
     }
 
-    def load_from_netlist(self, netlist, clock_source, dff_cells):
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    clock_source: str = Field(metadata={"pk": True})
+
+    no_of_buffers: int = 0
+    no_of_clock_sinks: int = 0
+
+    cell_placement: Optional[Image2D] = None
+    cell_placement_combinational: Optional[Image2D] = None
+    cell_placement_sequential: Optional[Image2D] = None
+    pin_placement: Optional[Image2D] = None
+    routing: Optional[Image2D] = None
+
+    routing_by_metal: Dict[str, Image2D] = Field(default_factory=dict)
+
+    def load_from_netlist(self, netlist, clock_source: str, dff_cells: List[str]):
         """
-        Load clock tree data from a netlist.
+        Extract the clock tree from a full design netlist.
+
+        This performs a directed traversal starting from the specified
+        `clock_source` node and identifies all nodes reachable along the
+        clock distribution network. The resulting induced subgraph is then
+        stored in `self._graph`.
 
         Args:
-            netlist: Netlist data.
-            clock_source: Clock source information.
-            dff_cells: D flip-flop information.
+            netlist (GraphEntity): The complete netlist to extract from.
+            clock_source (str): Name of the root node of the clock tree.
+            dff_cells (List[str]): List of standard-cell names that represent
+                sequential elements (e.g., flip-flops). These nodes are counted
+                as clock sinks and are not further traversed.
         """
-        self._netlist = netlist
-        self._dff_cells = dff_cells
-        self.source = clock_source
+        self.no_of_buffers = 0
+        self.no_of_clock_sinks = 0
+        self.clock_source = clock_source
 
-        self._no_of_clock_sinks = 0
-        self._no_of_buffers = 0
+        cts_nodes = self._traverse_cts(netlist, clock_source, dff_cells)
+        self._graph = netlist.subgraph(cts_nodes).copy()
 
-        cts_nodes = self._traverse_cts(clock_source)
-        cts_netlist_dict = deepcopy(self._netlist.subgraph(cts_nodes).__dict__)
-
-        super().__init__({
-            "clock_source": clock_source,
-            "no_of_clock_sinks": self._no_of_clock_sinks,
-            "no_of_buffers": self._no_of_buffers,
-        })
-        self.__dict__.update(cts_netlist_dict)
-
-    def _traverse_cts(self, node):
+    def _traverse_cts(self, netlist, node: str, dff_cells: List[str]) -> List[str]:
         """
-        Traverse the clock tree structure starting from a given node.
+        Perform a DFS-style traversal to collect all clock distribution nodes.
+
+        This helper identifies which nodes belong to the clock tree by
+        recursively following outgoing edges until:
+        - A flip-flop is reached (counted as a sink)
+        - No further clock-propagating nodes are found
 
         Args:
-            node: Starting node for traversal.
+            netlist (GraphEntity): Source netlist containing all nodes.
+            node (str): Current node to evaluate.
+            dff_cells (List[str]): Standard-cell names considered sequential.
 
         Returns:
-            list: List of traversed nodes in the clock tree.
+            List[str]: Ordered list of nodes belonging to the clock tree.
         """
-        traversed_nodes = [node]
+        traversed = [node]
         stack = [node]
 
         while stack:
-            current_node = stack.pop()
-            for output in self._netlist.successors(current_node):
-                if output not in traversed_nodes:
-                    traversed_nodes.append(output)
-                    output_node_data = self._netlist.nodes[output]
-                    if output_node_data["type"] == "GATE" and output_node_data["entity"].standard_cell in self._dff_cells:
-                        self._no_of_clock_sinks += 1
-                        continue
-                    stack.append(output)
+            current = stack.pop()
+            for out_node in netlist.successors(current):
+                if out_node in traversed:
+                    continue
 
-        return traversed_nodes
+                traversed.append(out_node)
+                node_data = netlist.nodes[out_node]
+
+                if (
+                    node_data["type"] == "GATE"
+                    and node_data["entity"].standard_cell in dff_cells
+                ):
+                    self.no_of_clock_sinks += 1
+                    continue
+
+                if node_data["type"] == "GATE":
+                    self.no_of_buffers += 1
+
+                stack.append(out_node)
+
+        return traversed
+
+
+class PDNEntity(BaseEntity):
+    """Power distribution network: routing + IR drop + EM maps."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+
+    routing_vdd: Optional[Image2D] = None
+    routing_vss: Optional[Image2D] = None
+    ir_drop_vdd: Optional[Image2D] = None
+    ir_drop_vss: Optional[Image2D] = None
+    em_vdd: Optional[Image2D] = None
+    em_vss: Optional[Image2D] = None
+
+
+class NetArcEntity(BaseEntity):
+    """Timing arc across a routed net."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    startpoint: str = Field(metadata={"pk": True})
+    endpoint: str = Field(metadata={"pk": True})
+    path_type: str = Field(metadata={"pk": True})
+    net_name: str = Field(metadata={"pk": True})
+
+    delay: float
+    arrival_time: float
+    slew: float
+    capacitance: Optional[float] = None
+
+
+class CellArcEntity(BaseEntity):
+    """Logical timing arc through a cell."""
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    startpoint: str = Field(metadata={"pk": True})
+    endpoint: str = Field(metadata={"pk": True})
+    path_type: str = Field(metadata={"pk": True})
+    gate_name: str = Field(metadata={"pk": True})
+
+    delay: float
+    arrival_time: float
+    slew: float
+
+
+class TimingPathEntity(GraphEntity):
+    """Detailed timing path composed of net arcs, cell arcs, and pin sequence."""
+
+    NODE_TYPES: ClassVar[Dict[str, type]] = {
+        "PIN": PinEntity,
+        "PORT": PortEntity,
+        "NET_ARC": NetArcEntity,
+        "CELL_ARC": CellArcEntity,
+    }
+
+    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
+    stage: Optional[str] = Field(metadata={"pk": True})
+    startpoint: str = Field(metadata={"pk": True})
+    endpoint: str = Field(metadata={"pk": True})
+    path_type: str = Field(metadata={"pk": True})
+
+    arrival_time: float
+    required_time: float
+    slack: float
+
+    no_of_pins: int
+    is_critical_path: bool
+
+
+class SchemaMetadata:
+    """
+    Central registry of Pydantic JSON-schema metadata for all EDA entities.
+
+    This class provides:
+      - A single source of truth for entity → schema mappings
+      - Utility functions to retrieve schemas and iterate over them
+      - Identification of which entities contain internal graphs
+    """
+
+    # ---------------------------------------------------------------
+    # Primary registry mapping entity names → model classes
+    # ---------------------------------------------------------------
+    _ENTITY_MODELS: ClassVar[Dict[str, type]] = {
+        "design_flows": DesignFlowEntity,
+        "constraints": ConstraintEntity,
+        "design_stages": DesignStageEntity,
+        "netlists": NetlistEntity,
+        "clock_trees": ClockTreeEntity,
+        "pdns": PDNEntity,
+        "ports": PortEntity,
+        "gates": GateEntity,
+        "standard_cells": StandardCellEntity,
+        "nets": NetEntity,
+        "metal_segments": MetalSegmentEntity,
+        "vias": ViaEntity,
+        "pins": PinEntity,
+        "timing_paths": TimingPathEntity,
+        "net_arcs": NetArcEntity,
+        "cell_arcs": CellArcEntity,
+        "cell_metrics": CellMetricsEntity,
+        "area_metrics": AreaMetricsEntity,
+        "power_metrics": PowerMetricsEntity,
+        "timing_metrics": TimingMetricsEntity,
+        "routability_metrics": RoutabilityMetricsEntity,
+    }
+
+    _SCHEMAS: ClassVar[Dict[str, Dict[str, Any]]] = {
+        name: model.model_json_schema().get("properties", {})
+        for name, model in _ENTITY_MODELS.items()
+    }
+
+    _GRAPH_ENTITIES: ClassVar[List[str]] = [
+        name
+        for name, model in _ENTITY_MODELS.items()
+        if issubclass(model, GraphEntity)
+    ]
+
+    @classmethod
+    def items(cls) -> List[Tuple[str, Dict[str, Any]]]:
+        """
+        Returns:
+            List of (entity_name, schema_properties) tuples for all entities.
+        """
+        return list(cls._SCHEMAS.items())
+
+    @classmethod
+    def get_schema(cls, name: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve the JSON-schema of a specific entity.
+
+        Args:
+            name (str): Name of the entity (e.g., "nets", "timing_paths").
+
+        Returns:
+            dict | None: The schema properties, or None if not registered.
+        """
+        return cls._SCHEMAS.get(name)
+
+    @classmethod
+    def get_pk_columns(cls, entity_name: str) -> List[str]:
+        """
+        Return the list of primary-key fields for a given entity.
+
+        Primary keys are detected via:
+            Field(..., metadata={"pk": True})
+
+        Args:
+            entity_name (str): Name of the entity.
+
+        Returns:
+            List[str]: List of primary-key column names.
+        """
+        schema = cls.get_schema(entity_name)
+        if schema is None:
+            return []
+
+        pk_cols = []
+        for col_name, col_info in schema.items():
+            meta = col_info.get("metadata", {})
+            if meta.get("pk") is True:
+                pk_cols.append(col_name)
+
+        return pk_cols
+
+    @classmethod
+    def is_graph_entity(cls, entity_name: str) -> bool:
+        """
+        Check whether the specified entity is GraphEntity-based.
+
+        Args:
+            entity_name (str): The name of the entity to check.
+
+        Returns:
+            bool: True if the entity contains an internal directed graph.
+        """
+        return entity_name in cls._GRAPH_ENTITIES
+
+# Rebuild all Pydantic models (resolve forward references)
+for model in SchemaMetadata._ENTITY_MODELS.values():
+    model.model_rebuild()
