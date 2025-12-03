@@ -121,34 +121,50 @@ class Image2D(np.ndarray):
         })
         return json_schema
 
-    def plot(self, filename: str, invert_mask: bool = True) -> None:
+    def plot(self, filename: str, invert_mask: bool = False, cmap="gray") -> None:
         """
-        Save an RGB image or a binary mask to disk.
+        Save an image to disk.
+
+        Supports:
+            - binary masks (2D arrays of 0/1)
+            - scalar fields (2D float arrays, e.g., RUDY)
+            - RGB images (H,W,3)
 
         Args:
-            filename (str): Output path. No extension is added automatically.
-            invert_mask (bool, optional): If True and `img` is 2D, logical invert the mask before rendering.
+            filename (str): Output path.
+            invert_mask (bool): Only applies to binary masks.
+            cmap (str): Colormap for scalar maps.
         """
-        if self.ndim == 2:
-            mask = self.astype(np.uint8)
-            if invert_mask:
-                mask = 1 - mask
-
-            rgb = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
-            rgb[mask == 1] = [255, 255, 255]
-        else:
+        if self.ndim == 3:
+            # RGB image as-is
             rgb = self
+        elif self.ndim == 2:
+            unique_vals = np.unique(self)
+            if unique_vals.size <= 2:
+                # Case 1: binary mask
+                mask = self.astype(np.uint8)
+                if invert_mask:
+                    mask = 1 - mask
 
-        height, width = rgb.shape[:2]
+                rgb = np.zeros((*mask.shape, 3), dtype=np.uint8)
+                rgb[mask == 1] = [255, 255, 255]
+            else:
+                # Case 2: scalar map (e.g., RUDY)
+                norm = (self - self.min()) / (self.max() - self.min() + 1e-12)
+                rgba = plt.cm.get_cmap(cmap)(norm)  # returns RGBA float map
+                rgb = (rgba[:, :, :3] * 255).astype(np.uint8)
+        else:
+            raise ValueError("Image must be 2D or 3D.")
 
-        fig = plt.figure(figsize=(width / 100.0, height / 100.0), frameon=False)
-        ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
+        # Render with Matplotlib
+        h, w = rgb.shape[:2]
+        fig = plt.figure(figsize=(w / 100, h / 100), frameon=False)
+        ax = plt.Axes(fig, [0, 0, 1, 1])
         fig.add_axes(ax)
-
-        ax.set_axis_off()
+        ax.axis("off")
         ax.imshow(rgb)
 
-        plt.savefig(filename, dpi=100, bbox_inches="tight", pad_inches=0.0)
+        plt.savefig(filename, dpi=100, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
 
