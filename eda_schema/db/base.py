@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from eda_schema import entity
+from eda_schema.base import Image2D
+from eda_schema.errors import DataNotFoundError
 
 
 class BaseDB(ABC):
@@ -111,6 +113,64 @@ class BaseDB(ABC):
         """
         raise NotImplementedError
 
+    # ------------------------------------------------------------------
+    # Image Storage
+    # ------------------------------------------------------------------
+    @abstractmethod
+    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+        """
+        Store an Image2D associated with an entity row.
+
+        Args:
+            entity_name (str): Name of the entity (e.g. "netlists").
+            image_name (str): Name of the image field (e.g. "cell_placement").
+            image (Image2D): The image to store.
+            **key_fields: Primary key values identifying the row
+                        (e.g. flow_id="X", stage="Y").
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_image(self, entity_name: str, field: str, **key_fields) -> Image2D:
+        """
+        Retrieve an Image2D stored for a specific entity row.
+
+        Args:
+            entity_name (str): Name of the entity (e.g. "netlists").
+            field (str): Name of the stored image field.
+            **key_fields: Primary key values identifying the row.
+
+        Returns:
+            Image2D: The loaded image.
+        """
+        raise NotImplementedError
+
+    def add_entity_images(self, entity_name: str, entity_obj: Any) -> None:
+        """
+        Store all Image2D fields from an entity instance.
+
+        Args:
+            entity_name (str): Name of the entity (e.g. "netlists").
+            entity_obj: A BaseEntity subclass instance.
+        """
+        images = entity_obj.get_image_data()
+
+        # Extract primary keys from the entity instance
+        key_fields = {pk: getattr(entity_obj, pk) for pk in entity_obj._primary_keys}
+
+        for image_name, image_obj in images.items():
+            if image_obj is None:
+                continue
+            self.add_image(
+                entity_name,
+                image_name=image_name,
+                image=image_obj,
+                **key_fields,
+            )
+
+    # ------------------------------------------------------------------
+    # Combined entity
+    # ------------------------------------------------------------------
     def get_entity(self, entity_name: str, **key_fields):
         """
         Retrieve a fully constructed entity instance, including its graph if applicable.
@@ -159,7 +219,17 @@ class BaseDB(ABC):
         # Attach graph (if graph entity)
         # --------------------------------------------------------------
         if entity.SchemaMetadata.is_graph_entity(entity_name):
-            gdict = self.get_graph_data(entity_name, **key_fields)
-            obj.load_graph_dict(gdict)
+            graph_data = self.get_graph_data(entity_name, **key_fields)
+            obj.load_graph_data(graph_data)
+
+        # --------------------------------------------------------------
+        # Load Image2D fields for this entity (if any exist)
+        # --------------------------------------------------------------
+        for image_field in obj._image_keys:
+            try:
+                image = self.get_image(entity_name, image_field, **key_fields)
+                setattr(obj, image_field, image)
+            except DataNotFoundError:
+                setattr(obj, image_field, None)
 
         return obj
