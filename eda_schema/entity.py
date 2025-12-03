@@ -366,6 +366,7 @@ class NetlistEntity(GraphEntity):
     no_of_outputs: int
     no_of_cells: int
     no_of_nets: int
+    no_of_pins: int
     utilization: float
 
     cell_placement: Optional[Image2D] = None

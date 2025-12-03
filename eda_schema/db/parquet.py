@@ -2,12 +2,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from eda_schema import entity
-from eda_schema.base import resolve_schema_type_and_nullable
+from eda_schema.base import Image2D, resolve_schema_type_and_nullable
 from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
 
@@ -91,6 +92,18 @@ class ParquetDB(BaseDB):
             Path: Path to the Parquet file.
         """
         return self._entity_path(entity_name) / "table.parquet"
+
+    def _image_dir(self, entity_name: str) -> Path:
+        """
+        Get the directory where image files for an entity are stored.
+
+        Args:
+            entity_name (str): Name of the entity.
+
+        Returns:
+            Path: Directory containing all image files associated with the entity.
+        """
+        return self._entity_path(entity_name) / "images"
 
     def _graph_path(self, entity_name: str) -> Path:
         """
@@ -242,14 +255,16 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(entity_name=entity_name)
         return df.iloc[0]
 
-    def add_graph_data(self, entity_name: str, graph: Any, **key_fields):
+    def add_graph_data(self, entity_name: str, graph_data: Dict[str, Any], **key_fields):
         """
-        Append a new graph row into graph.parquet for the entity.
+        Store graph data for an entity row.
 
         Args:
-            entity_name (str): Entity type.
-            graph (GraphEntity): Object exposing graph_dict().
-            **key_fields: Primary-key values (e.g. flow_id="X", stage="Y").
+            entity_name (str): Name of the entity.
+            graph_data (dict): Output of entity.get_graph_data().
+                            Must be JSON-serializable.
+            **key_fields: Primary-key values identifying the row
+                        (e.g. flow_id="X", stage="Y").
         """
         # --------------------------------------------------------------
         # Validate primary-key fields
@@ -272,21 +287,17 @@ class ParquetDB(BaseDB):
                 f"(expected {sorted(pk_cols)})"
             )
 
-        # --------------------------------------------------------------
-        # Build row dictionary for Parquet
-        # --------------------------------------------------------------
+        # Build row for Parquet storage
         row_dict = {pk: [str(key_fields[pk])] for pk in pk_cols}
-        row_dict["graph_json"] = [json.dumps(graph.graph_dict())]
+        row_dict["graph_json"] = [json.dumps(graph_data)]
 
-        # --------------------------------------------------------------
-        # Load → append → save
-        # --------------------------------------------------------------
+        # Load existing graph table → append → save
         gpath = self._graph_path(entity_name)
         existing = pq.read_table(gpath)
 
         new_table = pa.Table.from_pydict(row_dict, schema=existing.schema)
-
         combined = pa.concat_tables([existing, new_table])
+
         pq.write_table(combined, gpath)
 
     def get_graph_data(self, entity_name: str, **key_fields) -> Dict[str, Any]:
@@ -325,3 +336,64 @@ class ParquetDB(BaseDB):
             )
 
         return json.loads(df.iloc[0]["graph_json"])
+
+    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields):
+        """
+        Store an image (NumPy array) associated with an entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            image_name (str): Name of the image field (e.g. "cell_placement").
+            image (Image2D): Image data.
+            **key_fields: Primary-key values identifying the row
+                        (e.g. flow_id="X", stage="Y").
+
+        Returns:
+            str: Filesystem path where the image was stored.
+        """
+        # Ensure the image directory exists
+        image_dir = self._image_dir(entity_name)
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        # Construct filename from field + primary keys
+        key_str = "__".join(f"{k}={v}" for k, v in key_fields.items())
+        path = image_dir / f"{image_name}__{key_str}.npy"
+
+        # Save as .npy
+        np.save(path, image.astype(np.float32))
+
+        return str(path)
+
+    def get_image(self, entity_name: str, image_name: str, **key_fields) -> Image2D:
+        """
+        Retrieve an image associated with an entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            image_name (str): Name of the image field.
+            **key_fields: Primary-key values identifying the row.
+
+        Returns:
+            Image2D: The loaded image.
+
+        Raises:
+            DataNotFoundError: If the image file does not exist.
+        """
+        # --------------------------------------------------------------
+        # Construct expected path
+        # --------------------------------------------------------------
+        image_dir = self._image_dir(entity_name)
+        key_str = "__".join(f"{k}={v}" for k, v in key_fields.items())
+        path = image_dir / f"{image_name}__{key_str}.npy"
+
+        # --------------------------------------------------------------
+        # Ensure the file exists
+        # --------------------------------------------------------------
+        if not path.exists():
+            raise DataNotFoundError(entity_name=f"{entity_name}:{image_name}")
+
+        # --------------------------------------------------------------
+        # Load and return wrapped Image2D
+        # --------------------------------------------------------------
+        arr = np.load(path)
+        return entity.Image2D(arr)

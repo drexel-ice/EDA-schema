@@ -82,7 +82,7 @@ class Dataset(dict):
     def dump_standard_cells(self):
         """Dump standard cell data into the database."""
         for std_cell in self.standard_cells.values():
-            self.db.add_table_row("standard_cells", std_cell.asdict())
+            self.db.add_table_row("standard_cells", std_cell.get_tabular_data())
 
     def dump(self) -> None:
         """
@@ -115,8 +115,8 @@ class Dataset(dict):
         """
         design_flow = self[flow_id]
 
-        self.db.add_table_row("design_flows", design_flow.asdict())
-        self.db.add_table_row("constraints", design_flow.constraints.asdict())
+        self.db.add_table_row("design_flows", design_flow.get_tabular_data())
+        self.db.add_table_row("constraints", design_flow.constraints.get_tabular_data())
 
         for stage_enum in entity.DesignStages:
             stage = stage_enum.value
@@ -134,15 +134,17 @@ class Dataset(dict):
         """
         netlist = design_stage.netlist
         # Persist stage-level metadata + metrics tables
-        self.db.add_table_row("design_stages", design_stage.asdict())
-        self.db.add_table_row("netlists", netlist.asdict())
-        self.db.add_table_row("cell_metrics", design_stage.cell_metrics.asdict())
-        self.db.add_table_row("area_metrics", design_stage.area_metrics.asdict())
-        self.db.add_table_row("power_metrics", design_stage.power_metrics.asdict())
-        self.db.add_table_row("timing_metrics", design_stage.timing_metrics.asdict())
+        self.db.add_table_row("design_stages", design_stage.get_tabular_data())
+        self.db.add_table_row("netlists", netlist.get_tabular_data())
+        self.db.add_table_row("cell_metrics", design_stage.cell_metrics.get_tabular_data())
+        self.db.add_table_row("area_metrics", design_stage.area_metrics.get_tabular_data())
+        self.db.add_table_row("power_metrics", design_stage.power_metrics.get_tabular_data())
+        self.db.add_table_row("timing_metrics", design_stage.timing_metrics.get_tabular_data())
 
         # Dump netlist graph
-        self.db.add_graph_data("netlists", netlist, flow_id=flow_id, stage=stage)
+        self.db.add_graph_data("netlists", netlist.get_graph_data(), flow_id=flow_id, stage=stage)
+        self.db.add_entity_images("netlists", netlist)
+
 
         # Dump node entities (PORT / GATE / PIN / NET)
         port_data, gate_data, pin_data, net_data, metal_segment_data = [], [], [], [], []
@@ -150,17 +152,17 @@ class Dataset(dict):
             node_entity = netlist.nodes[node]["entity"]
             node_type = netlist.nodes[node]["type"]
             if node_type == "PORT":
-                port_data.append(node_entity.asdict())
+                port_data.append(node_entity.get_tabular_data())
             elif node_type == "GATE":
-                gate_data.append(node_entity.asdict())
+                gate_data.append(node_entity.get_tabular_data())
             elif node_type == "PIN":
-                pin_data.append(node_entity.asdict())
+                pin_data.append(node_entity.get_tabular_data())
             elif node_type == "NET":
-                net_data.append(node_entity.asdict())
+                net_data.append(node_entity.get_tabular_data())
                 net = netlist.nodes[node]["entity"]
                 for metal_segment in net.nodes:
-                    metal_segment_data.append(net.nodes[metal_segment]["entity"].asdict())
-                self.db.add_graph_data("nets", net, flow_id=flow_id, stage=stage, name=net.name)
+                    metal_segment_data.append(net.nodes[metal_segment]["entity"].get_tabular_data())
+                self.db.add_graph_data("nets", net.get_graph_data(), flow_id=flow_id, stage=stage, name=net.name)
 
         self.db.add_table_data("ports", port_data)
         self.db.add_table_data("gates", gate_data)
@@ -175,17 +177,17 @@ class Dataset(dict):
         cell_arc_data = []
 
         for timing_path in netlist.timing_paths.values():
-            timing_path_data.append(timing_path.asdict())
+            timing_path_data.append(timing_path.get_tabular_data())
             for node in timing_path.nodes:
                 tp_node_entity = timing_path.nodes[node]["entity"]
                 tp_node_type = timing_path.nodes[node]["type"]
                 if tp_node_type == "NET_ARC":
-                    net_arc_data.append(tp_node_entity.asdict())
+                    net_arc_data.append(tp_node_entity.get_tabular_data())
                 elif tp_node_type == "CELL_ARC":
-                    cell_arc_data.append(tp_node_entity.asdict())
+                    cell_arc_data.append(tp_node_entity.get_tabular_data())
             self.db.add_graph_data(
                 "timing_paths",
-                timing_path,
+                timing_path.get_graph_data(),
                 flow_id=flow_id,
                 stage=stage,
                 startpoint=timing_path.startpoint,
@@ -199,15 +201,16 @@ class Dataset(dict):
 
         # Dump clock trees
         clock_tree_data = []
-        for clock_src, clock_tree in netlist.clock_trees.items():
-            clock_tree_data.append(clock_tree.asdict())
+        for clock_source, clock_tree in netlist.clock_trees.items():
+            clock_tree_data.append(clock_tree.get_tabular_data())
             self.db.add_graph_data(
                 "clock_trees",
-                clock_tree,
+                clock_tree.get_graph_data(),
                 flow_id=flow_id,
                 stage=stage,
-                clock_source=clock_src,
+                clock_source=clock_source,
             )
+            self.db.add_entity_images("clock_trees", clock_tree)
         self.db.add_table_data("clock_trees", clock_tree_data)
 
     def load_standard_cells(self) -> None:
