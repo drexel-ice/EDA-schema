@@ -139,7 +139,10 @@ class Dataset(dict):
         self.db.add_table_row("cell_metrics", design_stage.cell_metrics.get_tabular_data())
         self.db.add_table_row("area_metrics", design_stage.area_metrics.get_tabular_data())
         self.db.add_table_row("power_metrics", design_stage.power_metrics.get_tabular_data())
+        self.db.add_table_row("routability_metrics", design_stage.routability_metrics.get_tabular_data())
         self.db.add_table_row("timing_metrics", design_stage.timing_metrics.get_tabular_data())
+
+        self.db.add_entity_images("routability_metrics", design_stage.routability_metrics)
 
         # Dump netlist graph
         self.db.add_graph_data("netlists", netlist.get_graph_data(), flow_id=flow_id, stage=stage)
@@ -290,6 +293,7 @@ class Dataset(dict):
         design_stage_entity.cell_metrics = self.db.get_entity("cell_metrics", flow_id=flow_id, stage=stage)
         design_stage_entity.area_metrics = self.db.get_entity("area_metrics", flow_id=flow_id, stage=stage)
         design_stage_entity.power_metrics = self.db.get_entity("power_metrics", flow_id=flow_id, stage=stage)
+        design_stage_entity.routability_metrics = self.db.get_entity("routability_metrics", flow_id=flow_id, stage=stage)
         design_stage_entity.timing_metrics = self.db.get_entity("timing_metrics", flow_id=flow_id, stage=stage)
         return design_stage_entity
 

@@ -153,10 +153,12 @@ class RoutabilityMetricsEntity(BaseEntity):
     stage: Optional[str] = Field(metadata={"pk": True})
 
     # Rudy-based congestion images
-    rudy_net: Optional[Any] = None
-    rudy_long: Optional[Any] = None
-    rudy_short: Optional[Any] = None
-    rudy_pin: Optional[Any] = None
+    rudy_net: Optional[Image2D] = None
+    rudy_net_long: Optional[Image2D] = None
+    rudy_net_short: Optional[Image2D] = None
+    rudy_pin: Optional[Image2D] = None
+    rudy_pin_long: Optional[Image2D] = None
+    rudy_pin_short: Optional[Image2D] = None
 
     # Scalar summary metrics
     total_resource: Optional[float] = None
