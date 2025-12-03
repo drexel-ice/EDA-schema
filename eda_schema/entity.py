@@ -385,7 +385,7 @@ class NetlistEntity(GraphEntity):
 
     timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = Field(default_factory=dict)
     clock_trees: Dict[str, "ClockTreeEntity"] = Field(default_factory=dict)
-    pdn: Optional["PDNEntity"] = None
+    power_delivery_network: Optional["PDNEntity"] = None
 
 
 class ClockTreeEntity(GraphEntity):
@@ -568,7 +568,7 @@ class SchemaMetadata:
         "design_stages": DesignStageEntity,
         "netlists": NetlistEntity,
         "clock_trees": ClockTreeEntity,
-        "pdns": PDNEntity,
+        "power_delivery_networks": PDNEntity,
         "ports": PortEntity,
         "gates": GateEntity,
         "standard_cells": StandardCellEntity,

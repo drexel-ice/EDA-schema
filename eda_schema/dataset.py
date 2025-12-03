@@ -213,6 +213,10 @@ class Dataset(dict):
             self.db.add_entity_images("clock_trees", clock_tree)
         self.db.add_table_data("clock_trees", clock_tree_data)
 
+        # Dump power delivery network
+        self.db.add_entity_images("power_delivery_networks", netlist.power_delivery_network)
+        self.db.add_table_row("power_delivery_networks", netlist.power_delivery_network.get_tabular_data())
+
     def load_standard_cells(self) -> None:
         """
         Load all standard-cell rows from the database.
@@ -325,6 +329,7 @@ class Dataset(dict):
 
         netlist_entity.timing_paths = self.load_timing_paths(flow_id, stage, netlist_entity)
         netlist_entity.clock_trees = self.load_clock_trees(flow_id, stage, netlist_entity)
+        netlist_entity.power_delivery_network = self.db.get_entity("power_delivery_networks", flow_id=flow_id, stage=stage)
 
         return netlist_entity
 
