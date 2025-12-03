@@ -147,7 +147,7 @@ class NetlistNetMapper(dict):
         self._phase_cells = NetlistCellMapper(netlist)
 
         for node, node_info in netlist.nodes.items():
-            if node_info.get("type") in ["INTERCONNECT", "IO_PORT"]:
+            if node_info.get("type") in ["NET", "IO_PORT"]:
                 self[node] = sorted(self._get_connected_node_info(netlist.predecessors(node)) +
                                     self._get_connected_node_info(netlist.successors(node)))
 
@@ -275,8 +275,8 @@ class NetlistBufferChecker:
             node_data = netlist.nodes[node]
             if node_data["type"] == "GATE":
                 data.add((node, phase_cells.strip_sizing_info(node)))
-            if node_data["type"] == "INTERCONNECT":
-                data.add((node, "INTERCONNECT"))
+            if node_data["type"] == "NET":
+                data.add((node, "NET"))
         return data
 
     def _compare_for_buffer_insertion(self, phase1_data, phase2_data):
@@ -301,7 +301,7 @@ class NetlistBufferChecker:
         for node, node_type in phase2_data.difference(phase1_data):
             if node_type == "GATE" and not self.phase2_cells.cell_is_delay(node):
                 is_buffered = False
-            if node_type == "INTERCONNECT":
+            if node_type == "NET":
                 added_nets.append(node)
         return [is_buffered, added_nets]
 
