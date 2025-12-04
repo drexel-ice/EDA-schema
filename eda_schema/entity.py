@@ -108,8 +108,6 @@ class AreaMetricsEntity(BaseEntity):
     macro_area: float
 
     cell_area: float
-    core_area: float
-    die_area: float
     total_area: float
 
 
@@ -137,12 +135,12 @@ class TimingMetricsEntity(BaseEntity):
     total_negative_slack: float
     worst_slack: float
 
-    critical_path_arrival_time: float
-    critical_path_required_time: float
-
     critical_path_startpoint: str
     critical_path_endpoint: str
+    worst_arrival_time: float
+    worst_required_time: float
 
+    no_of_endpoints: int
     no_of_violating_endpoints: int
 
 
@@ -160,35 +158,35 @@ class RoutabilityMetricsEntity(BaseEntity):
     rudy_pin_long: Optional[Image2D] = None
     rudy_pin_short: Optional[Image2D] = None
 
-    # Scalar summary metrics
-    total_resource: Optional[float] = None
-    total_demand: Optional[float] = None
-    total_overflow: Optional[float] = None
-    total_overflow_h: Optional[float] = None
-    total_overflow_v: Optional[float] = None
-    total_usage_percent: Optional[float] = None
+    # # Scalar summary metrics
+    # total_resource: Optional[float] = None
+    # total_demand: Optional[float] = None
+    # total_overflow: Optional[float] = None
+    # total_overflow_h: Optional[float] = None
+    # total_overflow_v: Optional[float] = None
+    # total_usage_percent: Optional[float] = None
 
-    # Per-metal-layer metrics
-    total_resource_by_metal_layers: Optional[Dict[str, float]] = None
-    total_demand_by_metal_layers: Optional[Dict[str, float]] = None
-    total_overflow_by_metal_layers: Optional[Dict[str, float]] = None
-    total_overflow_h_by_metal_layers: Optional[Dict[str, float]] = None
-    total_overflow_v_by_metal_layers: Optional[Dict[str, float]] = None
-    total_usage_percent_by_metal_layers: Optional[Dict[str, float]] = None
+    # # Per-metal-layer metrics
+    # total_resource_by_metal_layers: Optional[Dict[str, float]] = None
+    # total_demand_by_metal_layers: Optional[Dict[str, float]] = None
+    # total_overflow_by_metal_layers: Optional[Dict[str, float]] = None
+    # total_overflow_h_by_metal_layers: Optional[Dict[str, float]] = None
+    # total_overflow_v_by_metal_layers: Optional[Dict[str, float]] = None
+    # total_usage_percent_by_metal_layers: Optional[Dict[str, float]] = None
 
-    # Congestion heatmaps (images)
-    horizontal_congestion: Optional[Any] = None
-    vertical_congestion: Optional[Any] = None
-    total_congestion: Optional[Any] = None
+    # # Congestion heatmaps (images)
+    # horizontal_congestion: Optional[Any] = None
+    # vertical_congestion: Optional[Any] = None
+    # total_congestion: Optional[Any] = None
 
-    # Density maps (all images)
-    pin_density: Optional[Any] = None
-    net_density: Optional[Any] = None
-    cell_density: Optional[Any] = None
-    drv_locations: Optional[Any] = None
+    # # Density maps (all images)
+    # pin_density: Optional[Any] = None
+    # net_density: Optional[Any] = None
+    # cell_density: Optional[Any] = None
+    # drv_locations: Optional[Any] = None
 
-    # Simple int field
-    no_of_drvs: Optional[int] = None
+    # # Simple int field
+    # no_of_drvs: Optional[int] = None
 
 
 
@@ -204,8 +202,6 @@ class PortEntity(BaseEntity):
     x: Optional[float] = None
     y: Optional[float] = None
 
-    load_capacitance: Optional[float] = None
-
 
 class GateEntity(BaseEntity):
     """Placed gate instance, including physical bounds and pin counts."""
@@ -216,10 +212,10 @@ class GateEntity(BaseEntity):
 
     standard_cell: str
 
-    x1: Optional[float] = None
-    y1: Optional[float] = None
-    x2: Optional[float] = None
-    y2: Optional[float] = None
+    x_min: Optional[float] = None
+    y_min: Optional[float] = None
+    x_max: Optional[float] = None
+    y_max: Optional[float] = None
 
     no_of_inputs: int
     no_of_outputs: int
@@ -260,12 +256,15 @@ class PinEntity(BaseEntity):
     stage: Optional[str] = Field(metadata={"pk": True})
     name: str = Field(metadata={"pk": True})
 
-    type: str
     direction: str
 
-    is_in_clk: bool
     is_startpoint: bool
     is_endpoint: bool
+
+    x_min: Optional[float] = None
+    y_min: Optional[float] = None
+    x_max: Optional[float] = None
+    y_max: Optional[float] = None
 
     setup_rise_slew: Optional[float] = None
     setup_fall_slew: Optional[float] = None
@@ -278,7 +277,6 @@ class PinEntity(BaseEntity):
     hold_fall_slack: Optional[float] = None
 
     load_capacitance: Optional[float] = None
-    ir_drop: Optional[float] = None
     switching_activity: Optional[float] = None
 
 
@@ -292,10 +290,10 @@ class MetalSegmentEntity(BaseEntity):
 
     metal_layer: str
 
-    x1: Optional[float] = None
-    y1: Optional[float] = None
-    x2: Optional[float] = None
-    y2: Optional[float] = None
+    x_min: Optional[float] = None
+    y_min: Optional[float] = None
+    x_max: Optional[float] = None
+    y_max: Optional[float] = None
 
     x: Optional[float] = None
     y: Optional[float] = None
@@ -315,10 +313,10 @@ class ViaEntity(BaseEntity):
 
     via_layer: str
 
-    x1: Optional[float] = None
-    y1: Optional[float] = None
-    x2: Optional[float] = None
-    y2: Optional[float] = None
+    x_min: Optional[float] = None
+    y_min: Optional[float] = None
+    x_max: Optional[float] = None
+    y_max: Optional[float] = None
 
 
 class NetEntity(GraphEntity):
