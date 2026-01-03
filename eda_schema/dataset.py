@@ -132,9 +132,12 @@ class Dataset(dict):
             flow_id (str): Flow identifier.
             stage (str): Stage name.
         """
-        netlist = design_stage.netlist
-        # Persist stage-level metadata + metrics tables
         self.db.add_table_row("design_stages", design_stage.get_tabular_data())
+
+        netlist = design_stage.netlist
+        if netlist is None:
+            return
+        # Persist stage-level metadata + metrics tables
         self.db.add_table_row("netlists", netlist.get_tabular_data())
         self.db.add_table_row("cell_metrics", design_stage.cell_metrics.get_tabular_data())
         self.db.add_table_row("area_metrics", design_stage.area_metrics.get_tabular_data())
@@ -147,7 +150,6 @@ class Dataset(dict):
         # Dump netlist graph
         self.db.add_graph_data("netlists", netlist.get_graph_data(), flow_id=flow_id, stage=stage)
         self.db.add_entity_images("netlists", netlist)
-
 
         # Dump node entities (PORT / GATE / PIN / NET)
         port_data, gate_data, pin_data, net_data, metal_segment_data = [], [], [], [], []
@@ -163,21 +165,23 @@ class Dataset(dict):
             elif node_type == "NET":
                 net_data.append(node_entity.get_tabular_data())
                 net = netlist.nodes[node]["entity"]
-                for metal_segment in net.nodes:
-                    metal_segment_data.append(net.nodes[metal_segment]["entity"].get_tabular_data())
-                self.db.add_graph_data("nets", net.get_graph_data(), flow_id=flow_id, stage=stage, name=net.name)
+                # for metal_segment in net.nodes:
+                #     metal_segment_data.append(net.nodes[metal_segment]["entity"].get_tabular_data())
+                # self.db.add_graph_data("nets", net.get_graph_data(), flow_id=flow_id, stage=stage, name=net.name)
+                # self.db.add_entity_images("nets", node_entity)
 
         self.db.add_table_data("ports", port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("pins", pin_data)
         self.db.add_table_data("nets", net_data)
-        if metal_segment_data:
-            self.db.add_table_data("metal_segments", metal_segment_data)
+        # if metal_segment_data:
+        #     self.db.add_table_data("metal_segments", metal_segment_data)
 
         # Dump timing paths + their graphs
         timing_path_data = []
         net_arc_data = []
         cell_arc_data = []
+        timing_path_graphs = []
 
         for timing_path in netlist.timing_paths.values():
             timing_path_data.append(timing_path.get_tabular_data())
@@ -188,19 +192,20 @@ class Dataset(dict):
                     net_arc_data.append(tp_node_entity.get_tabular_data())
                 elif tp_node_type == "CELL_ARC":
                     cell_arc_data.append(tp_node_entity.get_tabular_data())
-            self.db.add_graph_data(
-                "timing_paths",
-                timing_path.get_graph_data(),
-                flow_id=flow_id,
-                stage=stage,
-                startpoint=timing_path.startpoint,
-                endpoint=timing_path.endpoint,
-                path_type=timing_path.path_type,
-            )
+            timing_path_graphs.append({
+                "data": timing_path.get_graph_data(),
+                "flow_id": flow_id,
+                "stage": stage,
+                "startpoint": timing_path.startpoint,
+                "endpoint": timing_path.endpoint,
+                "path_type": timing_path.path_type,
+            })
 
-        self.db.add_table_data("timing_paths", timing_path_data)
+
         self.db.add_table_data("net_arcs", net_arc_data)
         self.db.add_table_data("cell_arcs", cell_arc_data)
+        self.db.add_table_data("timing_paths", timing_path_data)
+        self.db.add_graph_data_batch("timing_paths", timing_path_graphs)
 
         # Dump clock trees
         clock_tree_data = []
@@ -365,14 +370,14 @@ class Dataset(dict):
 
         timing_paths = {}
         df = self.db.get_table_data("timing_paths", flow_id=flow_id, stage=stage)
-        for _, row in df.iterrows():
+        for row in df.itertuples(index=False):
             timing_path_entity = self.db.get_entity(
                 "timing_paths",
                 flow_id=flow_id,
                 stage=stage,
-                startpoint=row["startpoint"],
-                endpoint=row["endpoint"],
-                path_type=row["path_type"],
+                startpoint=row.startpoint,
+                endpoint=row.endpoint,
+                path_type=row.path_type,
             )
 
             for node in timing_path_entity.nodes:
@@ -382,13 +387,13 @@ class Dataset(dict):
                 elif node_type == "PIN":
                     timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
                 elif node_type == "NET_ARC":
-                    arc_key = (row["startpoint"], row["endpoint"], row["path_type"], node)
-                    timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(name=node, **net_arc_dict[arc_key])
+                    arc_key = (row.startpoint, row.endpoint, row.path_type, node)
+                    timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(**net_arc_dict[arc_key])
                 elif node_type == "CELL_ARC":
-                    arc_key = (row["startpoint"], row["endpoint"], row["path_type"], node)
-                    timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(name=node, **cell_arc_dict[arc_key])
+                    arc_key = (row.startpoint, row.endpoint, row.path_type, node)
+                    timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(**cell_arc_dict[arc_key])
 
-            timing_paths[(row["startpoint"], row["endpoint"], row["path_type"])] = timing_path_entity
+            timing_paths[(row.startpoint, row.endpoint, row.path_type)] = timing_path_entity
 
         return timing_paths
 
@@ -408,12 +413,12 @@ class Dataset(dict):
         """
         clock_tree_entities = {}
         df = self.db.get_table_data("clock_trees", flow_id=flow_id, stage=stage)
-        for _, row in df.iterrows():
-            clock_tree_entity = self.db.get_entity("clock_trees", flow_id=flow_id, stage=stage, clock_source=row["clock_source"])
+        for row in df.itertuples(index=False):
+            clock_tree_entity = self.db.get_entity("clock_trees", flow_id=flow_id, stage=stage, clock_source=row.clock_source)
             for node in clock_tree_entity.nodes:
                 node_type = clock_tree_entity.nodes[node]["type"]
                 clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
 
-            clock_tree_entities[row["clock_source"]] = clock_tree_entity
+            clock_tree_entities[row.clock_source] = clock_tree_entity
 
         return clock_tree_entities

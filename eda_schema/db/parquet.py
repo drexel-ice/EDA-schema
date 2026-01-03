@@ -1,14 +1,16 @@
 import json
 from pathlib import Path
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.compute as pc
 
 from eda_schema import entity
-from eda_schema.base import Image2D, resolve_schema_type_and_nullable
+from eda_schema.base import Image2D, resolve_field_type_and_nullable
 from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
 
@@ -32,6 +34,7 @@ def arrow_from_type(type_name: Optional[str]) -> Optional[pa.DataType]:
     return mapping.get(type_name)
 
 
+@lru_cache(maxsize=None)
 def build_arrow_schema(entity_name: str) -> pa.Schema:
     """
     Build an Apache Arrow schema for the given entity.
@@ -42,17 +45,38 @@ def build_arrow_schema(entity_name: str) -> pa.Schema:
     Returns:
         pa.Schema: Arrow schema describing the entity structure.
     """
-    raw = entity.SchemaMetadata.get_schema(entity_name)
-    fields = []
+    model_cls = entity.SchemaMetadata.get_model(entity_name)
+    if model_cls is None:
+        raise KeyError(f"Unknown entity: {entity_name}")
 
-    for col_name, col_info in raw.items():
-        type_name, nullable, _ = resolve_schema_type_and_nullable(col_info)
+    entity_fields = entity.SchemaMetadata.get_fields(entity_name)
+    if entity_fields is None:
+        raise KeyError(f"No fields found for entity: {entity_name}")
+
+    arrow_fields: list[pa.Field] = []
+
+    for f in entity_fields:
+        type_name, nullable, _ = resolve_field_type_and_nullable(model_cls, f)
         arrow_type = arrow_from_type(type_name)
 
-        if arrow_type:
-            fields.append(pa.field(col_name, arrow_type, nullable=nullable))
+        # Skip unsupported / non-tabular fields
+        if arrow_type is None:
+            continue
 
-    return pa.schema(fields)
+        arrow_fields.append(
+            pa.field(
+                f.name,
+                arrow_type,
+                nullable=nullable,
+            )
+        )
+
+    return pa.schema(arrow_fields)
+
+
+@lru_cache(maxsize=128)
+def _load_arrow_table(path: Path) -> pa.Table:
+    return pq.read_table(path)
 
 
 class ParquetDB(BaseDB):
@@ -68,6 +92,8 @@ class ParquetDB(BaseDB):
             data_home (str | Path): Root directory for all stored data.
         """
         self.data_home = Path(data_home)
+        self._writers = {}  # entity_name -> ParquetWriter
+        self._graph_writers = {}  # entity_name -> ParquetWriter
 
     def _entity_path(self, entity_name: str) -> Path:
         """
@@ -117,13 +143,12 @@ class ParquetDB(BaseDB):
         """
         return self._entity_path(entity_name) / "graph.parquet"
 
-    def _create_table(self, entity_name: str, columns: List[str], is_graph_entity: bool):
+    def _create_table(self, entity_name: str, is_graph_entity: bool):
         """
         Create an empty Parquet table for the entity.
 
         Args:
             entity_name (str): Name of the entity.
-            columns (list): Unused; present for compatibility.
             is_graph_entity (bool): Whether the entity has graph data.
         """
         entity_dir = self._entity_path(entity_name)
@@ -136,26 +161,30 @@ class ParquetDB(BaseDB):
 
         # Create empty graph.parquet if needed
         if is_graph_entity:
-            schema_dict = entity.SchemaMetadata.get_schema(entity_name)
             pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
-
             if not pk_cols:
                 raise ValueError(f"Entity '{entity_name}' must define at least one primary key")
 
-            fields = []
+            model_cls = entity.SchemaMetadata.get_model(entity_name)
+            model_fields = entity.SchemaMetadata.get_fields(entity_name)
+            field_map = {f.name: f for f in model_fields}
+
+            graph_fields: list[pa.Field] = []
+
             for pk in pk_cols:
-                type_name, nullable, _ = resolve_schema_type_and_nullable(schema_dict[pk])
-                arrow_type = arrow_from_type(type_name)
+                field = field_map[pk]
+                type_name, _, _ = resolve_field_type_and_nullable(model_cls, field)
+                arrow_type = arrow_from_type(type_name) or pa.string()
 
-                # PKs must never be nullable
-                fields.append(pa.field(pk, arrow_type or pa.string(), nullable=False))
+                # Primary keys are never nullable
+                graph_fields.append(pa.field(pk, arrow_type, nullable=False))
 
-            # graph_json is required
-            fields.append(pa.field("graph_json", pa.string(), nullable=False))
+            # Serialized graph payload
+            graph_fields.append(pa.field("graph_json", pa.string(), nullable=False))
 
-            gschema = pa.schema(fields)
+            gschema = pa.schema(graph_fields)
 
-            empty_arrays = [pa.array([], type=f.type) for f in fields]
+            empty_arrays = [pa.array([], type=field.type) for field in graph_fields]
             empty_graph_table = pa.Table.from_arrays(empty_arrays, schema=gschema)
 
             pq.write_table(empty_graph_table, self._graph_path(entity_name))
@@ -170,11 +199,10 @@ class ParquetDB(BaseDB):
         """
         self.data_home.mkdir(parents=True, exist_ok=True)
 
-        for entity_name, schema in entity.SchemaMetadata.items():
+        for entity_name, _ in entity.SchemaMetadata.items():
             self._create_table(
-                entity_name,
-                list(schema.keys()),
-                entity.SchemaMetadata.is_graph_entity(entity_name),
+                entity_name=entity_name,
+                is_graph_entity=entity.SchemaMetadata.is_graph_entity(entity_name),
             )
 
     def _append_to_table(self, entity_name: str, df: pd.DataFrame):
@@ -188,14 +216,19 @@ class ParquetDB(BaseDB):
         Returns:
             None
         """
+        if df.empty:
+            return
+
         table_path = self._table_path(entity_name)
-        existing = pq.read_table(table_path)
-
         schema = build_arrow_schema(entity_name)
-        append_table = pa.Table.from_pandas(df, schema=schema, preserve_index=False)
-        combined = pa.concat_tables([existing, append_table])
+        table = pa.Table.from_pandas(df, schema=schema, preserve_index=False)
 
-        pq.write_table(combined, table_path)
+        writer = self._writers.get(entity_name)
+        if writer is None:
+            writer = pq.ParquetWriter(table_path, schema)
+            self._writers[entity_name] = writer
+
+        writer.write_table(table)
 
     def add_table_row(self, entity_name: str, row: Dict[str, Any]):
         """
@@ -229,12 +262,43 @@ class ParquetDB(BaseDB):
         Returns:
             pd.DataFrame: Filtered table data.
         """
-        df = pd.read_parquet(self._table_path(entity_name))
+        table = _load_arrow_table(self._table_path(entity_name))
 
-        for key, value in filters.items():
-            df = df[df[key] == value]
+        if filters:
+            mask = None
 
-        return df
+            for key, value in filters.items():
+                col = table[key]
+                col_type = col.type
+
+                # -------------------------
+                # Iterable (IN filter)
+                # -------------------------
+                if (
+                    isinstance(value, Iterable)
+                    and not isinstance(value, (str, bytes))
+                ):
+                    values = list(value)
+
+                    # Empty IN → no rows
+                    if not values:
+                        return table.slice(0, 0).to_pandas()
+
+                    value_array = pa.array(values, type=col_type)
+                    cond = pc.is_in(col, value_set=value_array)
+
+                # -------------------------
+                # Scalar (= filter)
+                # -------------------------
+                else:
+                    scalar = pa.scalar(value, type=col_type)
+                    cond = pc.equal(col, scalar)
+
+                mask = cond if mask is None else pc.and_(mask, cond)
+
+            table = table.filter(mask)
+
+        return table.to_pandas()
 
     def get_table_row(self, entity_name: str, **filters) -> pd.Series:
         """
@@ -255,26 +319,36 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(entity_name=entity_name)
         return df.iloc[0]
 
-    def add_graph_data(self, entity_name: str, graph_data: Dict[str, Any], **key_fields):
+    # --------------------------------------------------------------
+    # Internal helpers (DB responsibility only)
+    # --------------------------------------------------------------
+    def _validate_graph_keys(
+        self,
+        entity_name: str,
+        key_fields: Dict[str, Any],
+    ) -> List[str]:
         """
-        Store graph data for an entity row.
+        Validate that provided key fields exactly match the entity's
+        primary-key definition.
 
         Args:
-            entity_name (str): Name of the entity.
-            graph_data (dict): Output of entity.get_graph_data().
-                            Must be JSON-serializable.
-            **key_fields: Primary-key values identifying the row
-                        (e.g. flow_id="X", stage="Y").
+            entity_name (str): Graph entity name.
+            key_fields (dict): Provided primary-key values.
+
+        Returns:
+            list[str]: Ordered list of primary-key column names.
+
+        Raises:
+            ValueError: If required primary-key fields are missing
+                        or unexpected fields are provided.
         """
-        # --------------------------------------------------------------
-        # Validate primary-key fields
-        # --------------------------------------------------------------
         pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
+
         provided = set(key_fields.keys())
         required = set(pk_cols)
 
         missing = required - provided
-        extra   = provided - required
+        extra = provided - required
 
         if missing:
             raise ValueError(
@@ -287,18 +361,115 @@ class ParquetDB(BaseDB):
                 f"(expected {sorted(pk_cols)})"
             )
 
-        # Build row for Parquet storage
-        row_dict = {pk: [str(key_fields[pk])] for pk in pk_cols}
-        row_dict["graph_json"] = [json.dumps(graph_data)]
+        return pk_cols
 
-        # Load existing graph table → append → save
+    def _build_graph_row(
+        self,
+        entity_name: str,
+        graph_data: Dict[str, Any],
+        key_fields: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Build a single graph-table row from graph data and primary-key fields.
+
+        Performs primary-key validation and JSON serialization of the graph.
+
+        Args:
+            entity_name (str): Graph entity name.
+            graph_data (dict): Graph structure (JSON-serializable).
+            key_fields (dict): Primary-key values.
+
+        Returns:
+            dict: Row dictionary matching the graph.parquet schema.
+        """
+        pk_cols = self._validate_graph_keys(entity_name, key_fields)
+
+        row = {pk: str(key_fields[pk]) for pk in pk_cols}
+        row["graph_json"] = json.dumps(graph_data)
+
+        return row
+
+    def _write_graph_rows(
+        self,
+        entity_name: str,
+        rows: List[Dict[str, Any]],
+    ):
+        """
+        Append one or more graph rows to the entity's graph Parquet file.
+
+        Manages ParquetWriter lifecycle and ensures schema consistency.
+
+        Args:
+            entity_name (str): Graph entity name.
+            rows (list): List of fully-built graph rows.
+        """
+        if not rows:
+            return
+
         gpath = self._graph_path(entity_name)
-        existing = pq.read_table(gpath)
 
-        new_table = pa.Table.from_pydict(row_dict, schema=existing.schema)
-        combined = pa.concat_tables([existing, new_table])
+        writer = self._graph_writers.get(entity_name)
+        if writer is None:
+            schema = pq.read_schema(gpath)
+            writer = pq.ParquetWriter(gpath, schema)
+            self._graph_writers[entity_name] = writer
 
-        pq.write_table(combined, gpath)
+        table = pa.Table.from_pylist(rows, schema=writer.schema)
+        writer.write_table(table)
+
+    def add_graph_data_batch(
+        self,
+        entity_name: str,
+        rows: List[Dict[str, Any]],
+    ):
+        """
+        Add multiple graph entries in a single Parquet write.
+
+        Each input row must have the form:
+            {
+                "data": <graph_dict>,
+                "<pk1>": value,
+                "<pk2>": value,
+                ...
+            }
+
+        Args:
+            entity_name (str): Graph entity name.
+            rows (list): List of graph row dictionaries.
+        """
+        if not rows:
+            return
+
+        built_rows = []
+        for row in rows:
+            if "data" not in row:
+                raise ValueError("Graph row must contain a 'data' field")
+
+            graph_data = row["data"]
+            key_fields = {k: v for k, v in row.items() if k != "data"}
+
+            built_rows.append(
+                self._build_graph_row(entity_name, graph_data, key_fields)
+            )
+
+        self._write_graph_rows(entity_name, built_rows)
+
+    def add_graph_data(
+        self,
+        entity_name: str,
+        graph_data: Dict[str, Any],
+        **key_fields,
+    ):
+        """
+        Add a single graph entry for an entity.
+
+        Args:
+            entity_name (str): Graph entity name.
+            graph_data (dict): Graph structure (JSON-serializable).
+            **key_fields: Primary-key values identifying the row.
+        """
+        row = self._build_graph_row(entity_name, graph_data, key_fields)
+        self._write_graph_rows(entity_name, [row])
 
     def get_graph_data(self, entity_name: str, **key_fields) -> Dict[str, Any]:
         """
@@ -315,27 +486,29 @@ class ParquetDB(BaseDB):
             ValueError: If PKs are missing.
             DataNotFoundError: If no matching graph row exists.
         """
-        df = pq.read_table(self._graph_path(entity_name)).to_pandas()
+        table = _load_arrow_table(self._graph_path(entity_name))
 
         pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
 
-        # Validate PK completeness
         missing = [pk for pk in pk_cols if pk not in key_fields]
         if missing:
             raise ValueError(
                 f"Missing primary-key fields for '{entity_name}': {missing}"
             )
 
-        # Filter on all PK fields
+        mask = None
         for pk in pk_cols:
-            df = df[df[pk] == str(key_fields[pk])]
+            cond = pc.equal(table[pk], pa.scalar(str(key_fields[pk])))
+            mask = cond if mask is None else pc.and_(mask, cond)
 
-        if df.empty:
+        filtered = table.filter(mask)
+
+        if filtered.num_rows == 0:
             raise DataNotFoundError(
                 entity_name=f"{entity_name} (graph key={key_fields})"
             )
 
-        return json.loads(df.iloc[0]["graph_json"])
+        return json.loads(filtered["graph_json"][0].as_py())
 
     def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields):
         """
@@ -357,10 +530,10 @@ class ParquetDB(BaseDB):
 
         # Construct filename from field + primary keys
         key_str = "__".join(f"{k}={v}" for k, v in key_fields.items())
-        path = image_dir / f"{image_name}__{key_str}.npy"
+        path = image_dir / f"{image_name}__{key_str}"
 
         # Save as .npy
-        np.save(path, image.astype(np.float32))
+        np.savez_compressed(path, image)
 
         return str(path)
 
@@ -384,7 +557,7 @@ class ParquetDB(BaseDB):
         # --------------------------------------------------------------
         image_dir = self._image_dir(entity_name)
         key_str = "__".join(f"{k}={v}" for k, v in key_fields.items())
-        path = image_dir / f"{image_name}__{key_str}.npy"
+        path = image_dir / f"{image_name}__{key_str}.npz"
 
         # --------------------------------------------------------------
         # Ensure the file exists
@@ -395,5 +568,19 @@ class ParquetDB(BaseDB):
         # --------------------------------------------------------------
         # Load and return wrapped Image2D
         # --------------------------------------------------------------
-        arr = np.load(path)
+        data = np.load(path)
+        arr = data['arr_0']
         return entity.Image2D(arr)
+
+    def close(self):
+        """
+        Close all active Parquet writers and release file handles.
+        """
+        for writer in self._writers.values():
+            writer.close()
+
+        for writer in self._graph_writers.values():
+            writer.close()
+
+        self._writers.clear()
+        self._graph_writers.clear()

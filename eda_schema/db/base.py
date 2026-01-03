@@ -190,10 +190,9 @@ class BaseDB(ABC):
         # --------------------------------------------------------------
         # Validate entity type
         # --------------------------------------------------------------
-        if entity_name not in entity.SchemaMetadata._ENTITY_MODELS:
+        model_cls = entity.SchemaMetadata.get_model(entity_name)
+        if model_cls is None:
             raise ValueError(f"Unknown entity '{entity_name}'")
-
-        model_cls = entity.SchemaMetadata._ENTITY_MODELS[entity_name]
 
         # --------------------------------------------------------------
         # Validate primary keys
@@ -221,6 +220,23 @@ class BaseDB(ABC):
         if entity.SchemaMetadata.is_graph_entity(entity_name):
             graph_data = self.get_graph_data(entity_name, **key_fields)
             obj.load_graph_data(graph_data)
+            for node_type, node_cls in obj.NODE_TYPES.items():
+                node_entity_name = node_type.lower() + "s"
+                node_fields = {k: v for k, v in key_fields.items() if k in entity.SchemaMetadata.get_columns(node_entity_name)}
+                if entity_name == "timing_paths" and node_type in ["PIN", "PORT"] or entity_name == "clock_trees":
+                    pins = [tp_node for tp_node, tp_node_type in zip(graph_data["nodes"], graph_data["node_types"]) if tp_node_type == node_type]
+                    node_fields["name"] = pins
+
+                node_data_id = "name"
+                if node_type == "NET_ARC":
+                    node_data_id = "net_name"
+                if node_type == "CELL_ARC":
+                    node_data_id = "gate_name"
+
+                node_data = self.get_table_data(node_entity_name, **node_fields)
+                for row in node_data.itertuples(index=False):
+                    row_dict = row._asdict()
+                    obj.nodes[row_dict[node_data_id]]["entity"] = node_cls(**row_dict)
 
         # --------------------------------------------------------------
         # Load Image2D fields for this entity (if any exist)

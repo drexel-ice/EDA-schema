@@ -8,7 +8,7 @@ import pandas as pd
 from eda_schema import entity
 from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
-from eda_schema.base import resolve_schema_type_and_nullable
+from eda_schema.base import resolve_field_type_and_nullable
 
 
 def sqlite_type_from_type(type_name: Optional[str]) -> Optional[str]:
@@ -57,13 +57,18 @@ class SQLitePickleDB(BaseDB):
         Returns:
             None
         """
-        for entity_name, schema in entity.SchemaMetadata.items():
+        for entity_name, model in entity.SchemaMetadata.items():
             columns = []
-            for column_name, field_meta in schema.items():
-                type_name, is_nullable, _ = resolve_schema_type_and_nullable(field_meta)
+            for field in entity.SchemaMetadata.get_fields(entity_name):
+                type_name, is_nullable, _ = resolve_field_type_and_nullable(field)
                 sqlite_type = sqlite_type_from_type(type_name)
+                if sqlite_type is None:
+                    continue
                 null_constraint = "NULL" if is_nullable else "NOT NULL"
-                columns.append(f"{column_name} {sqlite_type} {null_constraint}")
+                columns.append(f"{f.name} {sqlite_type} {null_constraint}")
+
+            if not columns:
+                continue
 
             column_defs = ", ".join(columns)
             self.cursor.execute(
