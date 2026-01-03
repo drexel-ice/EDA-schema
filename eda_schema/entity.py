@@ -1,56 +1,60 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from dataclasses import dataclass, field, fields
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Optional, Tuple
-
-from pydantic import Field
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
 
 from eda_schema.base import BaseEntity, GraphEntity, Image2D
 
 
+# ============================================================
+# Design stages
+# ============================================================
+
 class DesignStages(str, Enum):
     """
     Enumeration of all major stages in a physical design flow.
-    Each stage corresponds to a key milestone in the ASIC layout process
-    and may be associated with metrics, constraints, and intermediate data.
     """
-    FLOORPLAN      = "floorplan"
-    GLOBAL_PLACE   = "global_place"
-    PLACE_RESIZED  = "place_resized"
+    FLOORPLAN = "floorplan"
+    GLOBAL_PLACE = "global_place"
+    PLACE_RESIZED = "place_resized"
     DETAILED_PLACE = "detailed_place"
-    CTS            = "cts"
-    GLOBAL_ROUTE   = "global_route"
+    CTS = "cts"
+    GLOBAL_ROUTE = "global_route"
     DETAILED_ROUTE = "detailed_route"
-    FINAL          = "final"
+    FINAL = "final"
 
+    @classmethod
+    def tolist(cls):
+        return [stage.value for stage in cls]
 
+# ============================================================
+# Flow / constraint entities
+# ============================================================
+
+@dataclass(slots=True)
 class DesignFlowEntity(BaseEntity):
     """Top-level container for a design flow and its stages."""
 
-    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
-
+    flow_id: str = field(metadata={"pk": True})
     design: str
     run_status: Optional[str] = None
-    datetime: Optional[str] = None
-    runtime: Optional[timedelta] = None
 
     constraints: Optional["ConstraintEntity"] = None
-    stages: Dict[str, "DesignStageEntity"] = Field(default_factory=dict)
+    stages: Dict[str, "DesignStageEntity"] = field(default_factory=dict)
 
 
+@dataclass(slots=True)
 class ConstraintEntity(BaseEntity):
-    """Timing, electrical, routing, and IO constraints applied to a design."""
+    """Timing, electrical, routing, and IO constraints."""
 
-    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
+    flow_id: str = field(metadata={"pk": True})
 
-    # Clock-related
     clock_period: Optional[float] = None
     clock_uncertainty: Optional[float] = None
     clock_latency: Optional[float] = None
     clock_transition: Optional[float] = None
 
-    # IO constraints
     input_delay: Optional[float] = None
     output_delay: Optional[float] = None
 
@@ -58,14 +62,14 @@ class ConstraintEntity(BaseEntity):
     core_utilization: Optional[float] = None
 
 
+@dataclass(slots=True)
 class DesignStageEntity(BaseEntity):
-    """Metadata and metrics for a single stage in the design flow."""
+    """Metadata and metrics for a single design stage."""
 
-    flow_id: str = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: str = Field(metadata={"pk": True})
+    flow_id: str = field(metadata={"pk": True})
+    stage: str = field(metadata={"pk": True})
 
     run_status: Optional[str] = None
-    runtime: Optional[timedelta] = None
 
     netlist: Optional["NetlistEntity"] = None
     cell_metrics: Optional["CellMetricsEntity"] = None
@@ -75,11 +79,16 @@ class DesignStageEntity(BaseEntity):
     routability_metrics: Optional["RoutabilityMetricsEntity"] = None
 
 
-class CellMetricsEntity(BaseEntity):
-    """Counts of various cell categories in the design."""
+# ============================================================
+# Metrics entities
+# ============================================================
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
+@dataclass(slots=True)
+class CellMetricsEntity(BaseEntity):
+    """Counts of various cell categories."""
+
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
     no_of_combinational_cells: int
     no_of_sequential_cells: int
@@ -92,11 +101,12 @@ class CellMetricsEntity(BaseEntity):
     no_of_total_cells: int
 
 
+@dataclass(slots=True)
 class AreaMetricsEntity(BaseEntity):
-    """Area metrics for cells, macros, die, and core."""
+    """Area metrics for cells and die."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
     combinational_cell_area: float
     sequential_cell_area: float
@@ -111,11 +121,12 @@ class AreaMetricsEntity(BaseEntity):
     total_area: float
 
 
+@dataclass(slots=True)
 class PowerMetricsEntity(BaseEntity):
-    """Aggregated internal, switching, leakage, and total power metrics."""
+    """Aggregated power metrics."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
     combinational_power: float
     sequential_power: float
@@ -126,11 +137,12 @@ class PowerMetricsEntity(BaseEntity):
     total_power: float
 
 
+@dataclass(slots=True)
 class TimingMetricsEntity(BaseEntity):
-    """Top-level summary of timing slack and critical path statistics."""
+    """Summary timing metrics."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
     total_negative_slack: float
     worst_slack: float
@@ -144,13 +156,13 @@ class TimingMetricsEntity(BaseEntity):
     no_of_violating_endpoints: int
 
 
+@dataclass(slots=True)
 class RoutabilityMetricsEntity(BaseEntity):
-    """Routability and congestion metrics (overflow, congestion maps, layer usage)."""
+    """Routability and congestion images."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
-    # Rudy-based congestion images
     rudy_net: Optional[Image2D] = None
     rudy_net_long: Optional[Image2D] = None
     rudy_net_short: Optional[Image2D] = None
@@ -158,73 +170,47 @@ class RoutabilityMetricsEntity(BaseEntity):
     rudy_pin_long: Optional[Image2D] = None
     rudy_pin_short: Optional[Image2D] = None
 
-    # # Scalar summary metrics
-    # total_resource: Optional[float] = None
-    # total_demand: Optional[float] = None
-    # total_overflow: Optional[float] = None
-    # total_overflow_h: Optional[float] = None
-    # total_overflow_v: Optional[float] = None
-    # total_usage_percent: Optional[float] = None
 
-    # # Per-metal-layer metrics
-    # total_resource_by_metal_layers: Optional[Dict[str, float]] = None
-    # total_demand_by_metal_layers: Optional[Dict[str, float]] = None
-    # total_overflow_by_metal_layers: Optional[Dict[str, float]] = None
-    # total_overflow_h_by_metal_layers: Optional[Dict[str, float]] = None
-    # total_overflow_v_by_metal_layers: Optional[Dict[str, float]] = None
-    # total_usage_percent_by_metal_layers: Optional[Dict[str, float]] = None
+# ============================================================
+# Physical entities
+# ============================================================
 
-    # # Congestion heatmaps (images)
-    # horizontal_congestion: Optional[Any] = None
-    # vertical_congestion: Optional[Any] = None
-    # total_congestion: Optional[Any] = None
-
-    # # Density maps (all images)
-    # pin_density: Optional[Any] = None
-    # net_density: Optional[Any] = None
-    # cell_density: Optional[Any] = None
-    # drv_locations: Optional[Any] = None
-
-    # # Simple int field
-    # no_of_drvs: Optional[int] = None
-
-
-
+@dataclass(slots=True)
 class PortEntity(BaseEntity):
-    """Named input/output port and its physical + electrical attributes."""
+    """Named IO port."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    name: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    name: str = field(metadata={"pk": True})
 
     direction: str
-
     x: Optional[float] = None
     y: Optional[float] = None
 
 
+@dataclass(slots=True)
 class GateEntity(BaseEntity):
-    """Placed gate instance, including physical bounds and pin counts."""
+    """Placed gate instance."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    name: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    name: str = field(metadata={"pk": True})
 
     standard_cell: str
-
     x_min: Optional[float] = None
     y_min: Optional[float] = None
     x_max: Optional[float] = None
     y_max: Optional[float] = None
 
-    no_of_inputs: int
-    no_of_outputs: int
+    no_of_inputs: int = 0
+    no_of_outputs: int = 0
 
 
+@dataclass(slots=True)
 class StandardCellEntity(BaseEntity):
-    """Standard-cell library definition and its electrical characteristics."""
+    """Standard cell library entry."""
 
-    name: str = Field(metadata={"pk": True})
+    name: str = field(metadata={"pk": True})
     width: float
     height: float
 
@@ -249,15 +235,15 @@ class StandardCellEntity(BaseEntity):
     leakage_power_max: Optional[float] = None
 
 
+@dataclass(slots=True)
 class PinEntity(BaseEntity):
-    """Pin instance with timing and electrical details."""
+    """Pin instance."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    name: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    name: str = field(metadata={"pk": True})
 
     direction: str
-
     is_startpoint: bool
     is_endpoint: bool
 
@@ -280,56 +266,13 @@ class PinEntity(BaseEntity):
     switching_activity: Optional[float] = None
 
 
-class MetalSegmentEntity(BaseEntity):
-    """Single metal routing segment with coordinates and properties."""
+@dataclass(slots=True)
+class NetEntity(BaseEntity):
+    """Routed net."""
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    net_name: Optional[str] = Field(metadata={"pk": True})
-    name: str = Field(metadata={"pk": True})
-
-    metal_layer: str
-
-    x_min: Optional[float] = None
-    y_min: Optional[float] = None
-    x_max: Optional[float] = None
-    y_max: Optional[float] = None
-
-    x: Optional[float] = None
-    y: Optional[float] = None
-
-    length: Optional[float] = None
-    resistance: Optional[float] = None
-    capacitance: Optional[float] = None
-    rudy: Optional[float] = None
-
-
-class ViaEntity(BaseEntity):
-    """Via connecting routing layers at a physical coordinate."""
-
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    net_name: Optional[str] = Field(metadata={"pk": True})
-
-    via_layer: str
-
-    x_min: Optional[float] = None
-    y_min: Optional[float] = None
-    x_max: Optional[float] = None
-    y_max: Optional[float] = None
-
-
-class NetEntity(GraphEntity):
-    """Represents a routed net, including metal segments and vias."""
-
-    NODE_TYPES: ClassVar[Dict[str, type]] = {
-        "METALSEGMENT": MetalSegmentEntity,
-        "VIA": ViaEntity,
-    }
-
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    name: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    name: str = field(metadata={"pk": True})
 
     is_special_net: bool
     no_of_fanouts: int
@@ -345,22 +288,60 @@ class NetEntity(GraphEntity):
     capacitance: Optional[float] = None
     total_coupling_capacitance: Optional[float] = None
 
+    routing: Optional[Image2D] = None
+    routing_by_metal: Dict[str, Image2D] = field(default_factory=dict)
 
+
+@dataclass(slots=True)
+class NetArcEntity(BaseEntity):
+    """Timing arc across a routed net."""
+
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    startpoint: str = field(metadata={"pk": True})
+    endpoint: str = field(metadata={"pk": True})
+    path_type: str = field(metadata={"pk": True})
+    net_name: str = field(metadata={"pk": True})
+
+    delay: float = 0.0
+    arrival_time: float = 0.0
+    slew: float = 0.0
+    capacitance: Optional[float] = None
+
+
+@dataclass(slots=True)
+class CellArcEntity(BaseEntity):
+    """Logical timing arc through a cell."""
+
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    startpoint: str = field(metadata={"pk": True})
+    endpoint: str = field(metadata={"pk": True})
+    path_type: str = field(metadata={"pk": True})
+    gate_name: str = field(metadata={"pk": True})
+
+    delay: float = 0.0
+    arrival_time: float = 0.0
+    slew: float = 0.0
+
+
+# ============================================================
+# Graph-backed entities
+# ============================================================
+
+@dataclass(slots=True)
 class NetlistEntity(GraphEntity):
-    """Complete netlist with nodes, metrics, placement images, and timing data."""
+    """Complete design netlist."""
 
-    NODE_TYPES: ClassVar[Dict[str, type]] = {
+    NODE_TYPES: ClassVar[Dict[str, Type[BaseEntity]]] = {
         "GATE": GateEntity,
         "PORT": PortEntity,
         "PIN": PinEntity,
         "NET": NetEntity,
     }
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-
-    width: Optional[float] = None
-    height: Optional[float] = None
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
 
     no_of_inputs: int
     no_of_outputs: int
@@ -369,38 +350,61 @@ class NetlistEntity(GraphEntity):
     no_of_pins: int
     utilization: float
 
+    width: Optional[float] = None
+    height: Optional[float] = None
+
     cell_placement: Optional[Image2D] = None
     cell_placement_combinational: Optional[Image2D] = None
     cell_placement_sequential: Optional[Image2D] = None
     cell_placement_filler: Optional[Image2D] = None
     pin_placement: Optional[Image2D] = None
     routing: Optional[Image2D] = None
-
-    routing_by_metal: Dict[str, Image2D] = Field(default_factory=dict)
+    routing_by_metal: Dict[str, Image2D] = field(default_factory=dict)
 
     cell_metrics: Optional["CellMetricsEntity"] = None
     area_metrics: Optional["AreaMetricsEntity"] = None
     power_metrics: Optional["PowerMetricsEntity"] = None
     timing_metrics: Optional["TimingMetricsEntity"] = None
 
-    timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = Field(default_factory=dict)
-    clock_trees: Dict[str, "ClockTreeEntity"] = Field(default_factory=dict)
+    timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = field(default_factory=dict)
+    clock_trees: Dict[str, "ClockTreeEntity"] = field(default_factory=dict)
     power_delivery_network: Optional["PDNEntity"] = None
 
 
-class ClockTreeEntity(GraphEntity):
-    """Clock tree extracted from a netlist, including buffers and sinks."""
+@dataclass(slots=True)
+class PDNEntity(BaseEntity):
+    """Power distribution network: routing + IR drop + EM maps."""
 
-    NODE_TYPES: ClassVar[Dict[str, type]] = {
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+
+    routing_vdd: Optional[Image2D] = None
+    routing_vss: Optional[Image2D] = None
+    ir_drop_vdd: Optional[Image2D] = None
+    ir_drop_vss: Optional[Image2D] = None
+    em_vdd: Optional[Image2D] = None
+    em_vss: Optional[Image2D] = None
+
+
+@dataclass(slots=True)
+class ClockTreeEntity(GraphEntity):
+    """
+    Clock tree extracted from a netlist.
+
+    Graph nodes/edges live in GraphEntity._graph. NODE_TYPES is used to validate
+    node typing when you add nodes with (type=..., entity=...).
+    """
+
+    NODE_TYPES: ClassVar[Dict[str, Type[BaseEntity]]] = {
         "GATE": GateEntity,
         "PORT": PortEntity,
-        "PIN":  PinEntity,
-        "NET":  NetEntity,
+        "PIN": PinEntity,
+        "NET": NetEntity,
     }
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    clock_source: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    clock_source: str = field(metadata={"pk": True})
 
     no_of_buffers: int = 0
     no_of_clock_sinks: int = 0
@@ -411,23 +415,12 @@ class ClockTreeEntity(GraphEntity):
     pin_placement: Optional[Image2D] = None
     routing: Optional[Image2D] = None
 
-    routing_by_metal: Dict[str, Image2D] = Field(default_factory=dict)
+    routing_by_metal: Dict[str, Image2D] = field(default_factory=dict)
 
-    def load_from_netlist(self, netlist, clock_source: str, dff_cells: List[str]):
+    def load_from_netlist(self, netlist: GraphEntity, clock_source: str, dff_cells: List[str]) -> None:
         """
-        Extract the clock tree from a full design netlist.
-
-        This performs a directed traversal starting from the specified
-        `clock_source` node and identifies all nodes reachable along the
-        clock distribution network. The resulting induced subgraph is then
-        stored in `self._graph`.
-
-        Args:
-            netlist (GraphEntity): The complete netlist to extract from.
-            clock_source (str): Name of the root node of the clock tree.
-            dff_cells (List[str]): List of standard-cell names that represent
-                sequential elements (e.g., flip-flops). These nodes are counted
-                as clock sinks and are not further traversed.
+        Extract a clock tree subgraph from a full netlist by traversing fanout from
+        clock_source until sequential sinks are reached.
         """
         self.no_of_buffers = 0
         self.no_of_clock_sinks = 0
@@ -436,22 +429,13 @@ class ClockTreeEntity(GraphEntity):
         cts_nodes = self._traverse_cts(netlist, clock_source, dff_cells)
         self._graph = netlist.subgraph(cts_nodes).copy()
 
-    def _traverse_cts(self, netlist, node: str, dff_cells: List[str]) -> List[str]:
+    def _traverse_cts(self, netlist: GraphEntity, node: str, dff_cells: List[str]) -> List[str]:
         """
-        Perform a DFS-style traversal to collect all clock distribution nodes.
+        Traverse reachable clock-distribution nodes.
 
-        This helper identifies which nodes belong to the clock tree by
-        recursively following outgoing edges until:
-        - A flip-flop is reached (counted as a sink)
-        - No further clock-propagating nodes are found
-
-        Args:
-            netlist (GraphEntity): Source netlist containing all nodes.
-            node (str): Current node to evaluate.
-            dff_cells (List[str]): Standard-cell names considered sequential.
-
-        Returns:
-            List[str]: Ordered list of nodes belonging to the clock tree.
+        Counts:
+          - buffers: gate nodes along the tree (excluding sequential sinks)
+          - sinks: sequential gate nodes whose standard_cell is in dff_cells
         """
         traversed = [node]
         stack = [node]
@@ -466,13 +450,14 @@ class ClockTreeEntity(GraphEntity):
                 node_data = netlist.nodes[out_node]
 
                 if (
-                    node_data["type"] == "GATE"
-                    and node_data["entity"].standard_cell in dff_cells
+                    node_data.get("type") == "GATE"
+                    and node_data.get("entity") is not None
+                    and getattr(node_data["entity"], "standard_cell", None) in dff_cells
                 ):
                     self.no_of_clock_sinks += 1
                     continue
 
-                if node_data["type"] == "GATE":
+                if node_data.get("type") == "GATE":
                     self.no_of_buffers += 1
 
                 stack.append(out_node)
@@ -480,66 +465,22 @@ class ClockTreeEntity(GraphEntity):
         return traversed
 
 
-class PDNEntity(BaseEntity):
-    """Power distribution network: routing + IR drop + EM maps."""
-
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-
-    routing_vdd: Optional[Image2D] = None
-    routing_vss: Optional[Image2D] = None
-    ir_drop_vdd: Optional[Image2D] = None
-    ir_drop_vss: Optional[Image2D] = None
-    em_vdd: Optional[Image2D] = None
-    em_vss: Optional[Image2D] = None
-
-
-class NetArcEntity(BaseEntity):
-    """Timing arc across a routed net."""
-
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    startpoint: str = Field(metadata={"pk": True})
-    endpoint: str = Field(metadata={"pk": True})
-    path_type: str = Field(metadata={"pk": True})
-    net_name: str = Field(metadata={"pk": True})
-
-    delay: float
-    arrival_time: float
-    slew: float
-    capacitance: Optional[float] = None
-
-
-class CellArcEntity(BaseEntity):
-    """Logical timing arc through a cell."""
-
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    startpoint: str = Field(metadata={"pk": True})
-    endpoint: str = Field(metadata={"pk": True})
-    path_type: str = Field(metadata={"pk": True})
-    gate_name: str = Field(metadata={"pk": True})
-
-    delay: float
-    arrival_time: float
-    slew: float
-
-
+@dataclass(slots=True)
 class TimingPathEntity(GraphEntity):
-    """Detailed timing path composed of net arcs, cell arcs, and pin sequence."""
+    """Detailed timing path graph."""
 
-    NODE_TYPES: ClassVar[Dict[str, type]] = {
+    NODE_TYPES: ClassVar[Dict[str, Type[BaseEntity]]] = {
         "PIN": PinEntity,
         "PORT": PortEntity,
         "NET_ARC": NetArcEntity,
         "CELL_ARC": CellArcEntity,
     }
 
-    flow_id: Optional[str] = Field(description="Primary key for the flow", metadata={"pk": True})
-    stage: Optional[str] = Field(metadata={"pk": True})
-    startpoint: str = Field(metadata={"pk": True})
-    endpoint: str = Field(metadata={"pk": True})
-    path_type: str = Field(metadata={"pk": True})
+    flow_id: Optional[str] = field(metadata={"pk": True})
+    stage: Optional[str] = field(metadata={"pk": True})
+    startpoint: str = field(metadata={"pk": True})
+    endpoint: str = field(metadata={"pk": True})
+    path_type: str = field(metadata={"pk": True})
 
     arrival_time: float
     required_time: float
@@ -549,20 +490,18 @@ class TimingPathEntity(GraphEntity):
     is_critical_path: bool
 
 
+# ============================================================
+# Schema metadata (dataclass-based)
+# ============================================================
+
 class SchemaMetadata:
     """
-    Central registry of Pydantic JSON-schema metadata for all EDA entities.
+    Central registry of all entity classes.
 
-    This class provides:
-      - A single source of truth for entity → schema mappings
-      - Utility functions to retrieve schemas and iterate over them
-      - Identification of which entities contain internal graphs
+    This replaces the old Pydantic-based schema registry.
     """
 
-    # ---------------------------------------------------------------
-    # Primary registry mapping entity names → model classes
-    # ---------------------------------------------------------------
-    _ENTITY_MODELS: ClassVar[Dict[str, type]] = {
+    _ENTITY_MODELS: ClassVar[Dict[str, Type[BaseEntity]]] = {
         "design_flows": DesignFlowEntity,
         "constraints": ConstraintEntity,
         "design_stages": DesignStageEntity,
@@ -573,8 +512,6 @@ class SchemaMetadata:
         "gates": GateEntity,
         "standard_cells": StandardCellEntity,
         "nets": NetEntity,
-        "metal_segments": MetalSegmentEntity,
-        "vias": ViaEntity,
         "pins": PinEntity,
         "timing_paths": TimingPathEntity,
         "net_arcs": NetArcEntity,
@@ -586,77 +523,50 @@ class SchemaMetadata:
         "routability_metrics": RoutabilityMetricsEntity,
     }
 
-    _SCHEMAS: ClassVar[Dict[str, Dict[str, Any]]] = {
-        name: model.model_json_schema().get("properties", {})
-        for name, model in _ENTITY_MODELS.items()
-    }
-
     _GRAPH_ENTITIES: ClassVar[List[str]] = [
         name
-        for name, model in _ENTITY_MODELS.items()
-        if issubclass(model, GraphEntity)
+        for name, cls in _ENTITY_MODELS.items()
+        if issubclass(cls, GraphEntity)
     ]
 
     @classmethod
-    def items(cls) -> List[Tuple[str, Dict[str, Any]]]:
-        """
-        Returns:
-            List of (entity_name, schema_properties) tuples for all entities.
-        """
-        return list(cls._SCHEMAS.items())
+    def items(cls) -> List[Tuple[str, Type[BaseEntity]]]:
+        return list(cls._ENTITY_MODELS.items())
 
     @classmethod
-    def get_schema(cls, name: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieve the JSON-schema of a specific entity.
-
-        Args:
-            name (str): Name of the entity (e.g., "nets", "timing_paths").
-
-        Returns:
-            dict | None: The schema properties, or None if not registered.
-        """
-        return cls._SCHEMAS.get(name)
+    def get_columns(cls, entity_name: str) -> List[str]:
+        model = cls._ENTITY_MODELS.get(entity_name)
+        if model is None:
+            return []
+        return [
+            f.name
+            for f in fields(model)
+        ]
 
     @classmethod
     def get_pk_columns(cls, entity_name: str) -> List[str]:
-        """
-        Return the list of primary-key fields for a given entity.
-
-        Primary keys are detected via:
-            Field(..., metadata={"pk": True})
-
-        Args:
-            entity_name (str): Name of the entity.
-
-        Returns:
-            List[str]: List of primary-key column names.
-        """
-        schema = cls.get_schema(entity_name)
-        if schema is None:
+        model = cls._ENTITY_MODELS.get(entity_name)
+        if model is None:
             return []
-
-        pk_cols = []
-        for col_name, col_info in schema.items():
-            meta = col_info.get("metadata", {})
-            if meta.get("pk") is True:
-                pk_cols.append(col_name)
-
-        return pk_cols
+        return [
+            f.name
+            for f in fields(model)
+            if f.metadata.get("pk") is True
+        ]
 
     @classmethod
     def is_graph_entity(cls, entity_name: str) -> bool:
-        """
-        Check whether the specified entity is GraphEntity-based.
-
-        Args:
-            entity_name (str): The name of the entity to check.
-
-        Returns:
-            bool: True if the entity contains an internal directed graph.
-        """
         return entity_name in cls._GRAPH_ENTITIES
 
-# Rebuild all Pydantic models (resolve forward references)
-for model in SchemaMetadata._ENTITY_MODELS.values():
-    model.model_rebuild()
+    @classmethod
+    def get_model(cls, name: str) -> Optional[Type]:
+        """Return the entity class for a given name."""
+        return cls._ENTITY_MODELS.get(name)
+
+    @classmethod
+    def get_fields(cls, name: str):
+        """Return dataclass fields for an entity."""
+        model = cls.get_model(name)
+        if model is None:
+            return None
+        return fields(model)

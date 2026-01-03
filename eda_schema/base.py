@@ -1,468 +1,377 @@
 import re
-from typing import List, Optional, Tuple, Dict, Any, Type
+from functools import lru_cache
+from dataclasses import dataclass, field, fields, Field, InitVar
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints
+)
 
-from pydantic import BaseModel, ConfigDict, ValidationError
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
-from pydantic import GetJsonSchemaHandler
-
+import numpy as np
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-import numpy as np
-import pyarrow as pa
 
 
-def resolve_schema_type_and_nullable(col_info: Dict[str, Any]) -> Tuple[Optional[str], bool]:
+# ============================================================
+# Type helpers
+# ============================================================
+
+def _is_optional_type(tp: Any) -> bool:
+    return get_origin(tp) is Union and type(None) in get_args(tp)
+
+def _unwrap_optional_type(tp: Any) -> Any:
+    return next(t for t in get_args(tp) if t is not type(None))
+
+@lru_cache(maxsize=None)
+def _get_type_hints_cached(cls) -> Dict[str, Any]:
     """
-    Resolve primitive type, nullability, and primary-key status from a
-    Pydantic JSON Schema field definition.
+    Cached version of typing.get_type_hints().
+    Called once per entity class, never per instance.
+    """
+    return get_type_hints(cls, include_extras=True)
 
-    Args:
-        col_info (Dict[str, Any]):
-            JSON Schema fragment for one field.
+def _is_image_type(tp: Any) -> bool:
+    """Return True if tp is Image2D or Optional[Image2D]."""
+    if tp is Image2D:
+        return True
+    if _is_optional_type(tp):
+        return _unwrap_optional_type(tp) is Image2D
+    return False
+
+
+@lru_cache(maxsize=None)
+def _resolve_field_type_and_nullable_cached(
+    model_cls: Type,
+    field_name: str,
+    field_metadata_items: tuple,
+) -> Tuple[Optional[str], bool, bool]:
+    """
+    Resolve primitive json type + nullability + pk, cached per (class, field_name, pk-flag).
 
     Returns:
-        (json_type, nullable, is_pk):
-            - json_type: "string", "integer", "number", "boolean", or None
-            - nullable: True if null is allowed
-            - is_pk: True if field metadata marks it as a primary key
+        (json_type, nullable, is_pk)
+          - json_type: "string" | "integer" | "number" | "boolean" | None
+          - nullable: True if Optional[...] / Union[..., None]
+          - is_pk: True if field.metadata includes {"pk": True}
     """
-    nullable = False
-    json_type = None
+    hints = _get_type_hints_cached(model_cls)
+    tp = hints.get(field_name)  # prefer resolved type hints
 
-    # Extract primitive type + nullability
-    if "type" in col_info:
-        t = col_info["type"]
-        if isinstance(t, list):
-            for v in t:
-                if v == "null":
-                    nullable = True
-                else:
-                    json_type = v
+    if tp is None:
+        # Fallback shouldn't normally happen, but keep it safe:
+        # if get_type_hints can't resolve for some reason, we don't know.
+        nullable = False
+        json_type = None
+    else:
+        nullable = False
+        if _is_optional_type(tp):
+            nullable = True
+            tp = _unwrap_optional_type(tp)
+
+        if tp is str:
+            json_type = "string"
+        elif tp is int:
+            json_type = "integer"
+        elif tp is float:
+            json_type = "number"
+        elif tp is bool:
+            json_type = "boolean"
         else:
-            json_type = t
+            json_type = None
 
-    elif "anyOf" in col_info:
-        for variant in col_info["anyOf"]:
-            vtype = variant.get("type")
-            if vtype == "null":
-                nullable = True
-            elif vtype:
-                json_type = vtype
-
-    # Extract PK flag from metadata
-    metadata = col_info.get("metadata", {})
-    is_pk = bool(metadata.get("pk"))
-
+    is_pk = bool(dict(field_metadata_items).get("pk", False))
     return json_type, nullable, is_pk
 
 
+def resolve_field_type_and_nullable(
+    model_cls: Type,
+    f: Field,
+) -> Tuple[Optional[str], bool, bool]:
+    """
+    Public wrapper for field resolution.
+
+    Args:
+        model_cls: The dataclass class that owns the field.
+        f: A dataclasses.Field instance.
+
+    Returns:
+        (json_type, nullable, is_pk)
+    """
+    return _resolve_field_type_and_nullable_cached(
+        model_cls,
+        f.name,
+        tuple(f.metadata.items()),
+    )
+
+
+def _is_image_field(model_cls: Type, f: Field) -> bool:
+    """
+    Return True if this dataclass field is Image2D or Optional[Image2D].
+
+    Uses cached get_type_hints() so it works with:
+        from __future__ import annotations
+    """
+    hints = _get_type_hints_cached(model_cls)
+    tp = hints.get(f.name, f.type)
+    return _is_image_type(tp)
+
+
+# ============================================================
+# Image2D (runtime-only, NumPy-native)
+# ============================================================
+
 class Image2D(np.ndarray):
-    """2D NumPy array wrapper with Pydantic integration."""
+    """
+    2D NumPy array with lightweight runtime validation and plotting support.
 
-    # ---------- ndarray construction ----------
+    This class is intentionally:
+    - Pydantic-free
+    - Serialization-agnostic
+    - Validation-on-demand
+    """
+
     def __new__(cls, input_array):
-        if not isinstance(input_array, np.ndarray):
-            raise TypeError("Image2D expects a numpy ndarray")
-
-        if input_array.ndim != 2:
-            raise ValueError("Image2D must be 2D")
-
         obj = np.asarray(input_array).view(cls)
         return obj
 
     def __array_finalize__(self, obj):
-        # Called after view casting
         pass
 
-    # ---------- Pydantic validation ----------
-    @staticmethod
-    def _validate_python(value, _info=None):
-        if isinstance(value, Image2D):
-            return value
-        if isinstance(value, np.ndarray):
-            return Image2D(value)
-        if isinstance(value, list):
-            return Image2D(np.array(value))
-        raise TypeError("Expected numpy.ndarray or 2D list")
+    def validate(self) -> None:
+        """Validate Image2D invariants."""
+        if not isinstance(self, np.ndarray):
+            raise TypeError("Image2D must be a numpy ndarray")
+        if self.ndim != 2:
+            raise ValueError("Image2D must be 2D")
+        if self.size == 0:
+            raise ValueError("Image2D cannot be empty")
 
-    @staticmethod
-    def _serialize(value: "Image2D"):
-        return np.asarray(value).tolist()
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type, handler):
-        base_schema = core_schema.list_schema(
-            core_schema.list_schema(core_schema.float_schema())
-        )
-
-        return core_schema.no_info_wrap_validator_function(
-            function=cls._validate_python,
-            schema=core_schema.json_or_python_schema(
-                json_schema=base_schema,
-                python_schema=base_schema,
-                serialization=core_schema.plain_serializer_function_ser_schema(
-                    cls._serialize,
-                    when_used="always"
-                ),
-            ),
-        )
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, schema, handler):
-        json_schema = handler(schema)
-        json_schema.update({
-            "type": "array",
-            "items": {"type": "array", "items": {"type": "number"}},
-            "description": "2D numeric matrix (image)",
-        })
-        return json_schema
-
-    def plot(self, filename: str, invert_mask: bool = False, cmap="gray") -> None:
+    def plot(self, filename: str, invert_mask: bool = False, cmap: str = "gray") -> None:
         """
-        Save an image to disk.
+        Save the image to disk.
 
         Supports:
-            - binary masks (2D arrays of 0/1)
-            - scalar fields (2D float arrays, e.g., RUDY)
-            - RGB images (H,W,3)
-
-        Args:
-            filename (str): Output path.
-            invert_mask (bool): Only applies to binary masks.
-            cmap (str): Colormap for scalar maps.
+        - Binary masks
+        - Scalar heatmaps
         """
-        if self.ndim == 3:
-            # RGB image as-is
-            rgb = self
-        elif self.ndim == 2:
-            unique_vals = np.unique(self)
-            if unique_vals.size <= 2:
-                # Case 1: binary mask
-                mask = self.astype(np.uint8)
-                if invert_mask:
-                    mask = 1 - mask
+        unique_vals = np.unique(self)
 
-                rgb = np.zeros((*mask.shape, 3), dtype=np.uint8)
-                rgb[mask == 1] = [255, 255, 255]
-            else:
-                # Case 2: scalar map (e.g., RUDY)
-                norm = (self - self.min()) / (self.max() - self.min() + 1e-12)
-                rgba = plt.cm.get_cmap(cmap)(norm)  # returns RGBA float map
-                rgb = (rgba[:, :, :3] * 255).astype(np.uint8)
+        if unique_vals.size <= 2:
+            mask = self.astype(np.uint8)
+            if invert_mask:
+                mask = 1 - mask
+            rgb = np.zeros((*mask.shape, 3), dtype=np.uint8)
+            rgb[mask == 1] = [255, 255, 255]
         else:
-            raise ValueError("Image must be 2D or 3D.")
+            norm = (self - self.min()) / (self.max() - self.min() + 1e-12)
+            rgba = plt.cm.get_cmap(cmap)(norm)
+            rgb = (rgba[:, :, :3] * 255).astype(np.uint8)
 
-        # Render with Matplotlib
         h, w = rgb.shape[:2]
         fig = plt.figure(figsize=(w / 100, h / 100), frameon=False)
         ax = plt.Axes(fig, [0, 0, 1, 1])
         fig.add_axes(ax)
         ax.axis("off")
         ax.imshow(rgb)
-
         plt.savefig(filename, dpi=100, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
 
-class BaseEntity(BaseModel):
-    """Base class for EDA-schema entities with automatic Arrow type tracking."""
+# ============================================================
+# BaseEntity (dataclass + shallow validation)
+# ============================================================
 
-    model_config = ConfigDict(
-        extra="allow",
-        arbitrary_types_allowed=True,
-        validate_assignment=True,
-    )
+@lru_cache(maxsize=None)
+def _class_schema_metadata(
+    cls: Type,
+) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
+    """
+    Compute and cache per-class schema metadata:
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize the entity and collect property keys mapped to Arrow types.
-        """
-        super().__init__(*args, **kwargs)
+      - tabular keys: primitive fields (string/integer/number/boolean)
+      - primary keys: fields marked with metadata {"pk": True}
+      - image keys: Image2D or Optional[Image2D] fields
 
+    Returns:
+        (tabular_keys, primary_keys, image_keys) as tuples (immutable + cheap).
+    """
+    tabular: list[str] = []
+    primary: list[str] = []
+    image: list[str] = []
+
+    for f in fields(cls):
+        json_type, _, is_pk = resolve_field_type_and_nullable(cls, f)
+
+        if json_type is not None:
+            tabular.append(f.name)
+        if is_pk:
+            primary.append(f.name)
+        if _is_image_field(cls, f):
+            image.append(f.name)
+
+    return (tuple(tabular), tuple(primary), tuple(image))
+
+
+@dataclass(slots=True)
+class BaseEntity:
+    """
+    Runtime base entity.
+
+    Responsibilities:
+    - Shallow type validation
+    - Primary-key discovery
+    - Tabular field extraction
+    - Image field extraction
+    """
+
+    _tabular_keys: List[str] = field(init=False, repr=False)
+    _primary_keys: List[str] = field(init=False, repr=False)
+    _image_keys: List[str] = field(init=False, repr=False)
+
+    def __post_init__(self):
         self._tabular_keys = []
         self._primary_keys = []
         self._image_keys = []
-        for name, schema in self.model_json_schema()["properties"].items():
-            data_type, _, is_pk = resolve_schema_type_and_nullable(schema)
-            if data_type and data_type not in ["array", "object"]:
-                self._tabular_keys.append(name)
-            if is_pk:
-                self._primary_keys.append(name)
-            if data_type == "array" and self._is_image_field(schema):
-                self._image_keys.append(name)
 
-    @staticmethod
-    def _is_image_field(field_schema: dict) -> bool:
-        """
-        Identify whether a field corresponds to an Image2D type.
+        self._tabular_keys, self._primary_keys, self._image_keys = _class_schema_metadata(type(self))
+        self._post_init_hook()
 
-        This checks the JSON schema generated by Pydantic and looks for the
-        Image2D-specific description ("2D numeric matrix (image)"). The method
-        handles both direct Image2D fields and wrapped schemas such as
-        Optional[Image2D] or Union[Image2D, None], which appear under `anyOf`.
-
-        Args:
-            field_schema (dict): JSON schema for a single model field.
-
-        Returns:
-            bool: True if the field stores an Image2D; otherwise False.
-        """
-        desc = "2D numeric matrix (image)"
-
-        if field_schema.get("description") == desc:
-            return True
-
-        for sub in field_schema.get("anyOf", []):
-            if isinstance(sub, dict) and sub.get("description") == desc:
-                return True
-
-        return False
-
+    def _post_init_hook(self) -> None:
+        """Optional hook for subclasses."""
+        pass
 
     @classmethod
     def load(cls, data: Dict[str, Any]) -> "BaseEntity":
-        """
-        Instantiate the entity from raw field values.
+        """Instantiate and validate an entity from raw data."""
+        obj = cls(**data)
+        return obj
 
-        Args:
-            data (dict): Field → value mapping.
+    def validate_types(self) -> None:
+        """Perform shallow runtime type checking."""
+        for f in fields(self):
+            value = getattr(self, f.name)
+            expected = f.type
 
-        Returns:
-            BaseEntity: A populated entity instance.
+            if value is None:
+                continue
 
-        Raises:
-            ValidationError: If fields fail Pydantic validation.
-        """
-        try:
-            return cls(**data)
-        except ValidationError as e:
-            raise e
+            if _is_optional_type(expected):
+                expected = _unwrap_optional_type(expected)
+
+            if expected is int and isinstance(value, bool):
+                raise TypeError(f"{f.name} expected int, got bool")
+
+            if not isinstance(value, expected):
+                raise TypeError(
+                    f"{f.name} expected {expected}, got {type(value)}"
+                )
+
+    def validate(self) -> None:
+        """Override in subclasses for domain-specific validation."""
+        self.validate_types()
 
     def get_tabular_data(self) -> Dict[str, Any]:
-        """
-        Return all Arrow-compatible tabular fields for this entity.
+        """Return Arrow-compatible primitive fields."""
+        return {k: getattr(self, k) for k in self._tabular_keys}
 
-        Returns:
-            dict: {field_name → value} for all fields mapped to primitive
-                Arrow types (string, integer, float, boolean).
-        """
-        model_data = self.model_dump()
-        return {k: model_data[k] for k in self._tabular_keys}
-
-    def get_image_data(self) -> Dict[str, Any]:
-        """
-        Return a dictionary mapping image field names to their stored values.
-
-        Returns:
-            dict: {image_field_name → Image2D or None}
-        """
-        result = {}
-        for key in self._image_keys:
-            result[key] = getattr(self, key, None)
-        return result
+    def get_image_data(self) -> Dict[str, Optional[Image2D]]:
+        """Return all Image2D fields."""
+        return {k: getattr(self, k, None) for k in self._image_keys}
 
     def __repr__(self):
-        return str(self.get_tabular_data())
+        return f"{self.__class__.__name__}({self.get_tabular_data()})"
 
     __str__ = __repr__
 
 
+# ============================================================
+# GraphEntity (pure NetworkX, runtime-only)
+# ============================================================
+
 class GraphEntity(BaseEntity):
     """
-    Base class containing an internal directed NetworkX graph.
-    Child classes may define NODE_TYPES to enforce node → entity class mapping.
+    Runtime graph-backed entity.
+
+    - Owns a directed NetworkX graph
+    - Optionally enforces node typing
     """
 
     NODE_TYPES: Dict[str, Type[BaseEntity]] = {}
+    graph_data: InitVar[Optional[Dict[str, Any]]] = None
 
-    def __init__(self, graph_dict: Optional[Dict[str, Any]] = None, **data):
-        """
-        Initialize the entity and optionally load a serialized graph structure.
-
-        Args:
-        graph_dict (dict | None):
-            Optional serialized representation of a graph, produced by
-            `graph_dict()`. If provided, the graph will be reconstructed
-            immediately.
-            **data: Base entity field values.
-        """
-        super().__init__(**data)
+    def _post_init_hook(self):
         self._graph = nx.DiGraph()
-        if graph_dict is not None:
-            self.load_graph_dict(graph_dict)
 
-    def _validate_node(self, node_id: str, attrs: Dict[str, Any]):
-        """
-        Validate that a node satisfies declared NODE_TYPES.
+        if self.graph_data is not None:
+            self.load_graph_data(self.graph_data)
 
-        Args:
-            node_id (str): Node identifier.
-            attrs (dict): Attributes including 'type' and 'entity'.
-
-        Raises:
-            ValueError: If required attributes are missing or invalid.
-            TypeError: If the entity does not match the required class.
-        """
+    def _validate_node(self, node_id: str, attrs: Dict[str, Any]) -> None:
         if not self.NODE_TYPES:
             return
 
         node_type = attrs.get("type")
         entity = attrs.get("entity")
 
-        if node_type is None:
-            raise ValueError(f"Node '{node_id}' missing required field 'type'.")
-        if entity is None:
-            raise ValueError(f"Node '{node_id}' missing required field 'entity'.")
-
         if node_type not in self.NODE_TYPES:
-            allowed = ", ".join(self.NODE_TYPES.keys())
             raise ValueError(
-                f"Node '{node_id}' has invalid type '{node_type}'. Allowed: {allowed}"
+                f"Node '{node_id}' has invalid type '{node_type}'. "
+                f"Allowed: {list(self.NODE_TYPES)}"
             )
 
-        required_cls = self.NODE_TYPES[node_type]
-        if not isinstance(entity, required_cls):
+        expected_cls = self.NODE_TYPES[node_type]
+        if entity is not None and not isinstance(entity, expected_cls):
             raise TypeError(
-                f"Node '{node_id}' type '{node_type}' requires entity of type "
-                f"{required_cls.__name__}, but got {type(entity).__name__}"
+                f"Node '{node_id}' expects {expected_cls.__name__}, "
+                f"got {type(entity).__name__}"
             )
 
     @property
     def nodes(self):
-        """Return a NodeView of graph nodes."""
         return self._graph.nodes
 
     @property
     def edges(self):
-        """Return an EdgeView of graph edges."""
         return self._graph.edges
 
-    def add_node(self, node: str, **attrs):
-        """
-        Add a validated node to the graph.
-
-        Args:
-            node (str): Node name.
-            **attrs: Node metadata including type/entity.
-        """
-        self._validate_node(node, attrs)
-        self._graph.add_node(node, **attrs)
+    def add_node(self, node_id: str, **attrs):
+        self._validate_node(node_id, attrs)
+        self._graph.add_node(node_id, **attrs)
 
     def add_edge(self, u: str, v: str, **attrs):
-        """
-        Add a directed edge.
-
-        Args:
-            u (str): Source node.
-            v (str): Destination node.
-            **attrs: Additional edge metadata.
-        """
         self._graph.add_edge(u, v, **attrs)
 
-    def predecessors(self, node):
-        """
-        Return all predecessor nodes.
-
-        Args:
-            node (str): Target node.
-
-        Returns:
-            iterator: Predecessor node iterator.
-        """
+    def predecessors(self, node: str):
         return self._graph.predecessors(node)
 
-    def successors(self, node):
-        """
-        Return all successor nodes.
-
-        Args:
-            node (str): Target node.
-
-        Returns:
-            iterator: Successor node iterator.
-        """
+    def successors(self, node: str):
         return self._graph.successors(node)
 
     def subgraph(self, nodes):
-        """
-        Extract a subgraph induced by the selected nodes.
-
-        Args:
-            nodes (Iterable[str]): Nodes to include in the subgraph.
-
-        Returns:
-            networkx.DiGraph: View of the subgraph.
-        """
         return self._graph.subgraph(nodes)
 
     def get_graph_data(self) -> Dict[str, Any]:
-        """
-        Return a serializable representation of the entity's graph structure.
-
-        The returned dictionary includes:
-            - nodes: List of node identifiers.
-            - node_types: Mapping of each node → its type.
-            - edges: List of edges represented as [u, v] node pairs.
-
-        Returns:
-            dict: Graph data suitable for JSON serialization.
-        """
+        nodes = list(self.nodes)
         return {
-            "nodes": list(self.nodes),
-            "node_types": {n: self.nodes[n]["type"] for n in self.nodes},
-            "edges": [list(edge) for edge in self.edges],
+            "nodes": nodes,
+            "node_types": [self.nodes[n].get("type") for n in nodes],
+            "edges": [[u, v] for u, v in self.edges],
         }
 
-
     def load_graph_data(self, data: Dict[str, Any]) -> None:
-        """
-        Reconstruct the internal NetworkX graph from a serialized graph dictionary.
-
-        Args:
-            data (dict):
-                A dictionary with the exact structure returned by `get_graph_data()`:
-                    {
-                        "nodes": [str, ...],
-                        "node_types": [str, ...],
-                        "edges": [[str, str], ...]
-                    }
-        """
         g = nx.DiGraph()
-        for node_name, node_type in zip(data["nodes"], data["node_types"]):
-            g.add_node(node_name, type=node_type, entity=None)
-
+        for node, ntype in zip(data["nodes"], data["node_types"]):
+            g.add_node(node, type=ntype, entity=None)
         for u, v in data["edges"]:
             g.add_edge(u, v)
-
         self._graph = g
-
-    def get_node_inputs(self, node: str) -> List[str]:
-        """
-        List all predecessor nodes.
-
-        Args:
-            node (str): Node identifier.
-
-        Returns:
-            list[str]: Incoming neighbors.
-        """
-        return list(self._graph.predecessors(node))
-
-    def get_node_outputs(self, node: str) -> List[str]:
-        """
-        List all successor nodes.
-
-        Args:
-            node (str): Node identifier.
-
-        Returns:
-            list[str]: Outgoing neighbors.
-        """
-        return list(self._graph.successors(node))
 
     def bfs_traverse(
         self,
@@ -470,41 +379,27 @@ class GraphEntity(BaseEntity):
         fanin: bool = True,
         fanout: bool = True,
         depth_limit: int = -1,
-        _traversed: Optional[List[str]] = None,
+        _visited: Optional[List[str]] = None,
         _level: int = 0,
     ) -> List[str]:
-        """
-        Perform a breadth-first traversal from a root node.
-
-        Args:
-            node (str): Start node.
-            fanin (bool): Include predecessors.
-            fanout (bool): Include successors.
-            depth_limit (int): Maximum depth, -1 for unlimited.
-            _traversed (list): Internal accumulator.
-            _level (int): Recursion depth (internal).
-
-        Returns:
-            list[str]: Traversal order.
-        """
         if depth_limit == _level:
             return []
 
-        traversed = _traversed or [node]
-
+        visited = _visited or [node]
         neighbors = []
+
         if fanin:
             neighbors.extend(self._graph.predecessors(node))
         if fanout:
             neighbors.extend(self._graph.successors(node))
 
-        new_nodes = [n for n in neighbors if n not in traversed]
-        traversed.extend(new_nodes)
+        new_nodes = [n for n in neighbors if n not in visited]
+        visited.extend(new_nodes)
 
-        for nxt in new_nodes:
-            self.bfs_traverse(nxt, fanin, fanout, depth_limit, traversed, _level + 1)
+        for n in new_nodes:
+            self.bfs_traverse(n, fanin, fanout, depth_limit, visited, _level + 1)
 
-        return traversed
+        return visited
 
     def dfs_traverse(
         self,
@@ -512,40 +407,26 @@ class GraphEntity(BaseEntity):
         fanin: bool = True,
         fanout: bool = True,
         depth_limit: int = -1,
-        _traversed: Optional[List[str]] = None,
+        _visited: Optional[List[str]] = None,
         _level: int = 0,
     ) -> List[str]:
-        """
-        Perform a depth-first traversal from a root node.
-
-        Args:
-            node (str): Start node.
-            fanin (bool): Include predecessors.
-            fanout (bool): Include successors.
-            depth_limit (int): Maximum recursion depth, -1 for unlimited.
-            _traversed (list): Internal accumulator.
-            _level (int): Current recursion depth.
-
-        Returns:
-            list[str]: DFS visitation order.
-        """
         if depth_limit == _level:
             return []
 
-        traversed = _traversed or [node]
-
+        visited = _visited or [node]
         neighbors = []
+
         if fanin:
             neighbors.extend(self._graph.predecessors(node))
         if fanout:
             neighbors.extend(self._graph.successors(node))
 
-        for nxt in neighbors:
-            if nxt not in traversed:
-                traversed.append(nxt)
-                self.dfs_traverse(nxt, fanin, fanout, depth_limit, traversed, _level + 1)
+        for n in neighbors:
+            if n not in visited:
+                visited.append(n)
+                self.dfs_traverse(n, fanin, fanout, depth_limit, visited, _level + 1)
 
-        return traversed
+        return visited
 
     def plot(
         self,
@@ -553,76 +434,34 @@ class GraphEntity(BaseEntity):
         show: bool = True,
         filter_regex: Optional[str] = None,
     ):
-        """
-        Visualize graph with colors based on this entity's NODE_TYPES mapping.
-        Automatically handles PORT input/output colors.
-        """
-        if filter_regex:
-            nodes = [n for n in self.nodes if not re.match(filter_regex, n)]
-            graph = self._graph.subgraph(nodes)
-        else:
-            graph = self._graph
+        graph = (
+            self._graph.subgraph(
+                [n for n in self.nodes if not re.match(filter_regex, n)]
+            )
+            if filter_regex
+            else self._graph
+        )
 
-        # Color palette for each node type
-        # NODE_TYPES is class-level mapping in each GraphEntity subclass.
         base_colors = [
-            "#2CA02C",  # green
-            "#FF7F0E",  # orange
-            "#9467BD",  # purple
-            "#8C564B",  # brown
-            "#E377C2",  # pink
-            "#7F7F7F",  # gray
-            "#BCBD22",  # olive
-            "#17BECF",  # cyan
+            "#2CA02C", "#FF7F0E", "#9467BD", "#8C564B",
+            "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF",
         ]
 
-        # Assign each NODE_TYPES key a color
         type_list = list(self.NODE_TYPES.keys())
-        color_map_by_type = {
-            t: base_colors[i % len(base_colors)] for i, t in enumerate(type_list)
+        color_map = {
+            t: base_colors[i % len(base_colors)]
+            for i, t in enumerate(type_list)
         }
 
-        # Special override for PORT directions
-        input_color = "#D62728"  # red
-        output_color = "#1F77B4" # blue
-
-        node_colors = []
-        for node in graph.nodes:
-            data = graph.nodes[node]
-            ntype = data.get("type")
-            entity = data.get("entity")
-
-            # PORTs with direction override
-            if ntype == "PORT" and hasattr(entity, "direction"):
-                if entity.direction == "INPUT":
-                    node_colors.append(input_color)
-                    continue
-                if entity.direction == "OUTPUT":
-                    node_colors.append(output_color)
-                    continue
-
-            # Default based on NODE_TYPES
-            node_colors.append(color_map_by_type.get(ntype, "#7F7F7F"))
-
-        legend_handles = []
-        # Add PORT input/output first
-        if "PORT" in type_list:
-            legend_handles.append(
-                mpatches.Patch(color=input_color, label="PORT INPUT")
-            )
-            legend_handles.append(
-                mpatches.Patch(color=output_color, label="PORT OUTPUT")
-            )
-
-        # Add legend for all other NODE_TYPES
-        for ntype, color in color_map_by_type.items():
-            if ntype != "PORT":  # already handled separately
-                legend_handles.append(mpatches.Patch(color=color, label=ntype))
+        node_colors = [
+            color_map.get(graph.nodes[n].get("type"), "#7F7F7F")
+            for n in graph.nodes
+        ]
 
         try:
             pos = graphviz_layout(graph, prog="dot")
         except Exception:
-            pos = nx.spring_layout(graph)  # fallback
+            pos = nx.spring_layout(graph)
 
         nx.draw(
             graph,
@@ -633,10 +472,7 @@ class GraphEntity(BaseEntity):
             font_size=8,
         )
 
-        plt.legend(handles=legend_handles, loc="best")
-
         if figpath:
             plt.savefig(figpath, bbox_inches="tight")
         if show:
             plt.show()
-        plt.close()
