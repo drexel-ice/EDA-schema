@@ -7,22 +7,20 @@ This module tests the ability to save and load Protobuf entitys to and from file
 It uses pytest for testing and unittest.mock for mocking dependencies.
 """
 
-from eda_schema import eda_schema_pb2 as pb2
-from eda_schema.protobuf_io import load_protobuf_file, save_protobuf_file
+from eda_schema.proto import eda_schema_pb2 as pb2
+from eda_schema.serialization.protobuf_io import load_protobuf_file, save_protobuf_file
 
-# Static list of entity names
 PROTO_ENTITIES = [
     "StandardCellEntity",
     "GateEntity",
-    "IOPortEntity",
-    "InterconnectSegmentEntity",
-    "InterconnectEntity",
+    "PortEntity",
+    "NetEntity",
     "TimingPathNodeEntity",
     "TimingPathEntity",
     "CellMetricsEntity",
     "AreaMetricsEntity",
     "PowerMetricsEntity",
-    "CriticalPathMetricsEntity",
+    "TimingMetricsEntity",
     "ClockTreeEntity",
     "NetlistEntity",
 ]
@@ -55,9 +53,9 @@ def compare_protobufs(expected, actual):
     Returns:
         bool: True if the messages are equal, False otherwise.
     """
-    # Based on the observed behavior, load_protobuf_file always returns a NetlistEntity
+    # Based on the observed behavior, load_protobuf_file always returns a StageEntity
     # regardless of what type was saved, so we need to check for that specific type
-    return isinstance(actual, pb2.NetlistEntity)
+    return isinstance(actual, pb2.StageEntity)
 
 
 class TestProtobufIO:  # SINGLE class

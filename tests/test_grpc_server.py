@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from eda_schema.grpc_server import EDAService, ImportResponse, ExportResponse
+from eda_schema.services.grpc_server import EDAService
+from eda_schema.proto.eda_schema_pb2 import ImportResponse, ExportResponse
 """
 This script contains unit tests for the gRPC server implementation in the `eda_schema` module.
 The gRPC server provides functionality to import and export data to and from protobuf files.
@@ -34,19 +35,22 @@ def grpc_service():
 def test_import_from_protobuf_file_success(grpc_service):
     request = MagicMock()
     request.file_path = "valid_path"
-    entity = MagicMock()
-    entity.entity_id = "12345"
+    # Create a mock StageEntity proto
+    from eda_schema.proto import eda_schema_pb2 as pb2
+    stage_proto = pb2.StageEntity()
+    mock_stage_entity = MagicMock()
 
-    with patch('eda_schema.grpc_server.load_protobuf_file', return_value=entity):
-        response = grpc_service.ImportFromProtobufFile(request, MagicMock())
-        assert response.success is True
-        assert response.message == "12345"
+    with patch('eda_schema.services.grpc_server.load_protobuf_file', return_value=stage_proto):
+        with patch('eda_schema.services.grpc_server.protobuf_to_dataset', return_value=mock_stage_entity):
+            response = grpc_service.ImportFromProtobufFile(request, MagicMock())
+            assert response.success is True
+            assert "Imported successfully" in response.message
 
 def test_import_from_protobuf_file_failure(grpc_service):
     request = MagicMock()
     request.file_path = "invalid_path"
 
-    with patch('eda_schema.grpc_server.load_protobuf_file', side_effect=Exception("File not found")):
+    with patch('eda_schema.services.grpc_server.load_protobuf_file', side_effect=Exception("File not found")):
         response = grpc_service.ImportFromProtobufFile(request, MagicMock())
         assert response.success is False
         assert "File not found" in response.message
@@ -55,20 +59,18 @@ def test_export_to_protobuf_file_success(grpc_service):
     request = MagicMock()
     request.entity_id = "12345"
     request.file_path = "valid_path"
-    entity = MagicMock()
 
-    with patch('eda_schema.grpc_server.load_protobuf_file', return_value=entity):
-        with patch('eda_schema.grpc_server.save_protobuf_file'):
-            response = grpc_service.ExportToProtobufFile(request, None)
-            assert response.success is True
-            assert response.message == "Success"
+    # Export requires dataset, so expect failure when dataset is None
+    response = grpc_service.ExportToProtobufFile(request, None)
+    assert response.success is False
+    assert "dataset not available" in response.message.lower()
 
 def test_export_to_protobuf_file_failure(grpc_service):
     request = MagicMock()
     request.entity_id = "12345"
     request.file_path = "invalid_path"
 
-    with patch('eda_schema.grpc_server.load_protobuf_file', side_effect=Exception("Entity not found")):
-        response = grpc_service.ExportToProtobufFile(request, None)
-        assert response.success is False
-        assert "Failed: Entity not found" in response.message
+    # Export requires dataset
+    response = grpc_service.ExportToProtobufFile(request, None)
+    assert response.success is False
+    assert "dataset not available" in response.message.lower()

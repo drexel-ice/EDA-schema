@@ -28,14 +28,15 @@
 #   - Reads: 
 #       ./protos/eda_schema.proto          # Proto file defining messages & services
 #   - Writes:
-#       ./eda_schema/eda_schema_pb2.py     # Generated Python message classes
-#       ./eda_schema/eda_schema_pb2_grpc.py# Generated gRPC service classes
+#       ./eda_schema/proto/eda_schema_pb2.py     # Generated Python message classes
+#       ./eda_schema/proto/eda_schema_pb2_grpc.py# Generated gRPC service classes
 #
 # Expected Project Structure:
 #   /eda-schema-internal/
 #   ├── eda_schema/
-#   │   ├── eda_schema_pb2.py  [output file]
-#   │   ├── eda_schema_pb2_grpc.py [output file]
+#   │   ├── proto/
+#   │   │   ├── eda_schema_pb2.py  [output file]
+#   │   │   └── eda_schema_pb2_grpc.py [output file]
 #   │   └── (other source files)
 #   ├── protos/
 #   │   └── eda_schema.proto
@@ -49,7 +50,7 @@ find . -type f -name "*.pyc" -exec rm -f {} +
 echo "Cleaned all .pyc files and __pycache__ directories."
 
 PROTO_PATH="./protos"
-PROTO_DIR="eda_schema"
+PROTO_DIR="eda_schema/proto"
 PROTO_FILE="eda_schema.proto"
 
   # List the existing files before regeneration
@@ -85,7 +86,7 @@ python -m grpc_tools.protoc \
 echo "Files regenerated:"
 if [[ -f ./${PROTO_DIR}/eda_schema_pb2.py && -f ./${PROTO_DIR}/eda_schema_pb2_grpc.py ]]; then
   echo "Auto-Patching the Generated File because Python thinks eda_schema_pb2 is a top-level module, not part of the eda_schema package."
-  sed -i '' 's/^import eda_schema_pb2/from . import eda_schema_pb2/' eda_schema/eda_schema_pb2_grpc.py
+  sed -i 's/^import eda_schema_pb2/from . import eda_schema_pb2/' eda_schema/proto/eda_schema_pb2_grpc.py
   echo "SHA sums of newly generated files:"
   NEW_SHA_SUM_PB2=$(sha256sum ./${PROTO_DIR}/eda_schema_pb2.py | awk '{print $1}')
   NEW_SHA_SUM_PB2_GRPC=$(sha256sum ./${PROTO_DIR}/eda_schema_pb2_grpc.py | awk '{print $1}')

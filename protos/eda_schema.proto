@@ -19,65 +19,118 @@ message StandardCellEntity {
     bool is_sequential = 6;
     bool is_inverter = 7;
     bool is_buffer = 8;
-    float drive_strength = 9;
-    float input_capacitance_min = 10;
-    float input_capacitance_max = 11;
-    float output_capacitance_min = 12;
-    float output_capacitance_max = 13;
-    float leakage_power_min = 14;
-    float leakage_power_max = 15;
+    bool is_filler = 9;
+    bool is_diode = 10;
+    int32 drive_strength = 11;
+    float input_capacitance_min = 12;
+    float input_capacitance_max = 13;
+    float output_capacitance_min = 14;
+    float output_capacitance_max = 15;
+    float leakage_power_min = 16;
+    float leakage_power_max = 17;
 }
 
 // Gate Entity
 message GateEntity {
     string name = 1;
-    StandardCellEntity standard_cell = 2;
-    int32 no_of_fanins = 3;
-    int32 no_of_fanouts = 4;
-    float x = 5;
-    float y = 6;
+    string standard_cell = 2;  // Changed: string instead of StandardCellEntity
+    int32 no_of_inputs = 3;
+    int32 no_of_outputs = 4;
+    float x_min = 5;  // Changed: x_min instead of x
+    float y_min = 6;  // Changed: y_min instead of y
+    float x_max = 7;  // Added
+    float y_max = 8;  // Added
+    string flow_id = 9;  // Added
+    string stage = 10;  // Added
 }
 
-// IO Port Entity
-message IOPortEntity {
+// Port Entity (renamed from IOPortEntity)
+message PortEntity {
     string name = 1;
     string direction = 2;
     float x = 3;
     float y = 4;
     float capacitance = 5;
+    string flow_id = 6;  // Added
+    string stage = 7;  // Added
 }
 
-// Interconnect Segment Entity
-message InterconnectSegmentEntity {
-    string name = 1;
-    float length = 2;
-    float x1 = 3;
-    float y1 = 4;
-    float x2 = 5;
-    float y2 = 6;
-    float midpoint_x = 7;
-    float midpoint_y = 8;
-    float rudy = 9;
-    float resistance = 10;
-    float capacitance = 11;
+message PinEntity {
+    string pin_name = 1;
+    string type = 2;
+    string direction = 3;
+    bool is_in_clk = 4;
+    bool is_startpoint = 5;
+    bool is_endpoint = 6;
+    string cell_name = 7;
+    string net_name = 8;
+    float setup_rise_slew = 9;
+    float setup_fall_slew = 10;
+    float hold_rise_slew = 11;
+    float hold_fall_slew = 12;
+    float setup_rise_slack = 13;
+    float setup_fall_slack = 14;
+    float hold_rise_slack = 15;
+    float hold_fall_slack = 16;
+    float setup_rise_arrival = 17;
+    float setup_fall_arrival = 18;
+    float hold_rise_arrival = 19;
+    float hold_fall_arrival = 20;
+    float load_capacitance = 21;
+    float ir_drop = 22;
+    float switching_activity = 23;
+    string flow_id = 24;  // Added
+    string stage = 25;  // Added
+    string name = 26;  // Added (renamed from pin_name in Python)
+    float x_min = 27;  // Added
+    float y_min = 28;  // Added
+    float x_max = 29;  // Added
+    float y_max = 30;  // Added
 }
 
-// Interconnect Graph Entity
-message InterconnectEntity {
+// Metal Segment Entity
+message MetalSegmentEntity {
     string name = 1;
-    int32 no_of_inputs = 2;
-    int32 no_of_outputs = 3;
+    string metal_layer = 2;  // Fixed: was duplicate field 1
+    float length = 3;  // Fixed: was field 2
+    float x1 = 4;  // Fixed: was field 3
+    float y1 = 5;  // Fixed: was field 4
+    float x2 = 6;  // Fixed: was field 5
+    float y2 = 7;  // Fixed: was field 6
+    float midpoint_x = 8;  // Fixed: was field 7
+    float midpoint_y = 9;  // Fixed: was field 8
+    float rudy = 10;  // Fixed: was field 9
+    float resistance = 11;  // Fixed: was field 10
+    float capacitance = 12;  // Fixed: was field 11
+}
+
+// Via Entity
+message ViaEntity {
+    string name = 1;
+    string via_layer = 2;  // Fixed: was duplicate field 1
+    float x1 = 3;  // Fixed: was field 3
+    float y1 = 4;  // Fixed: was field 4
+    float x2 = 5;  // Fixed: was field 5
+    float y2 = 6;  // Fixed: was field 6
+}
+
+// Net Entity (renamed from InterconnectEntity)
+message NetEntity {
+    string name = 1;
+    bool is_special_net = 2;  // Added
+    int32 no_of_fanouts = 3;  // Changed: was no_of_inputs/no_of_outputs
     float x_min = 4;
     float y_min = 5;
     float x_max = 6;
     float y_max = 7;
     float length = 8;
     float hpwl = 9;
-    float rudy = 10;
-    float resistance = 11;
-    float capacitance = 12;
-    repeated InterconnectSegmentEntity interconnect_segments = 13;
-    repeated EdgeEntity edges = 14;
+    float resistance = 10;
+    float capacitance = 11;
+    float total_coupling_capacitance = 12;  // Added
+    string flow_id = 13;  // Added
+    string stage = 14;  // Added
+    // Removed: metal_segments, vias, edges (not in Python NetEntity)
 }
 
 // Timing Path Node Entity
@@ -102,11 +155,18 @@ message TimingPathEntity {
     float arrival_time = 4;
     float required_time = 5;
     float slack = 6;
-    int32 no_of_gates = 7;
+    int32 no_of_pins = 7;  // Changed: was no_of_gates
     bool is_critical_path = 8;
+    string flow_id = 9;  // Added
+    string stage = 10;  // Added
+    repeated TimingPathNodeEntity timing_nodes = 11;  // Fixed: was field 9
+    repeated EdgeEntity edges = 12;  // Fixed: was field 10
+}
 
-    repeated TimingPathNodeEntity timing_nodes = 9;
-    repeated EdgeEntity edges = 10;
+// Timing Graph Entity
+message TimingGraphEntity {
+    repeated PinEntity pins = 1;
+    repeated EdgeEntity edges = 2;
 }
 
 // Cell Metrics Entity
@@ -147,15 +207,16 @@ message PowerMetricsEntity {
     float total_power = 7;
 }
 
-// Critical Path Metrics Entity
-message CriticalPathMetricsEntity {
-    string startpoint = 1;
-    string endpoint = 2;
+// Timing Metrics Entity
+message TimingMetricsEntity {
+    float total_negative_slack = 1;
+    float worst_slack = 2;
     float worst_arrival_time = 3;
-    float worst_slack = 4;
-    float total_negative_slack = 5;
-    int32 no_of_timing_paths = 6;
-    int32 no_of_slack_violations = 7;
+    float worst_required_time = 4;
+    string critical_path_startpoint = 5;
+    string critical_path_endpoint = 6;
+    int32 no_of_endpoints = 7;
+    int32 no_of_violating_endpoints = 8;
 }
 
 // Clock Tree Entity
@@ -163,61 +224,66 @@ message ClockTreeEntity {
     string clock_source = 1;
     int32 no_of_buffers = 2;
     int32 no_of_clock_sinks = 3;
-
-    repeated IOPortEntity io_ports = 4;
+    repeated PortEntity ports = 4;  // Changed: PortEntity instead of IOPortEntity
     repeated GateEntity gates = 5;
-    repeated InterconnectEntity interconnects = 6;
+    repeated NetEntity nets = 6;  // Changed: NetEntity instead of InterconnectEntity
     repeated EdgeEntity edges = 7;
 }
 
 // Netlist Graph Entity
 message NetlistEntity {
-    float width = 1;
-    float height = 2;
-    int32 no_of_inputs = 3;
-    int32 no_of_outputs = 4;
-    int32 no_of_cells = 5;
-    int32 no_of_nets = 6;
-    float utilization = 7;
-    float cell_density = 8;
-    float pin_density = 9;
-    float net_density = 10;
-
-    CellMetricsEntity cell_metrics = 11;
-    AreaMetricsEntity area_metrics = 12;
-    PowerMetricsEntity power_metrics = 13;
-    CriticalPathMetricsEntity critical_path_metrics = 14;
-
-    repeated TimingPathEntity timing_paths = 15;
+    string flow_id = 1;  // Added
+    string stage = 2;  // Added
+    float width = 3;  // Changed: was field 1
+    float height = 4;  // Changed: was field 2
+    int32 no_of_inputs = 5;  // Changed: was field 3
+    int32 no_of_outputs = 6;  // Changed: was field 4
+    int32 no_of_cells = 7;  // Changed: was field 5
+    int32 no_of_nets = 8;  // Changed: was field 6
+    int32 no_of_pins = 9;  // Added
+    float utilization = 10;  // Changed: was field 7
+    float cell_density = 11;  // Changed: was field 8
+    float pin_density = 12;  // Changed: was field 9
+    float net_density = 13;  // Changed: was field 10
+    TimingGraphEntity timing_graph = 14;  // Fixed: was field 15
+    repeated TimingPathEntity timing_paths = 15;  // Fixed: was duplicate field 15
     repeated ClockTreeEntity clock_trees = 16;
-    repeated IOPortEntity io_ports = 17;
+    repeated PortEntity ports = 17;  // Changed: PortEntity instead of IOPortEntity, renamed from io_ports
     repeated GateEntity gates = 18;
-    repeated InterconnectEntity interconnects = 19;
+    repeated NetEntity nets = 19;  // Changed: NetEntity instead of InterconnectEntity, renamed from interconnects
     repeated EdgeEntity edges = 20;
 }
 
-// EDA-Schema Service
-service EdaSchemaService {
-    rpc GetNetlistGraph (Empty) returns (NetlistEntity);
-    rpc GetCellMetrics (Empty) returns (CellMetricsEntity);
-    rpc GetAreaMetrics (Empty) returns (AreaMetricsEntity);
-    rpc GetPowerMetrics (Empty) returns (PowerMetricsEntity);
-    rpc GetCriticalPathMetrics (Empty) returns (CriticalPathMetricsEntity);
-    rpc GetStandardCell (Empty) returns (StandardCellEntity);
-    rpc GetGate (Empty) returns (GateEntity);
-    rpc GetIOPort (Empty) returns (IOPortEntity);
-    rpc GetInterconnectGraph (Empty) returns (InterconnectEntity);
-    rpc GetTimingPathGraph (Empty) returns (TimingPathEntity);
+message ConstraintsEntity {
+    int32 clock_count = 1;
+    float input_delay = 2;
+    float output_delay = 3;
+    float max_transition = 4;
+    float max_fanout = 5;
+    float max_capacitance = 6;
 }
 
-message EntityMessage {
+message StageEntity {
     string name = 1;
-    int32 id = 2;
-    string type = 3; 
+    NetlistEntity netlist = 2;  // Changed: netlist instead of netlists, fixed field number
+    CellMetricsEntity cell_metrics = 3;  // Fixed: was field 11
+    AreaMetricsEntity area_metrics = 4;  // Fixed: was field 12
+    PowerMetricsEntity power_metrics = 5;  // Fixed: was field 13
+    TimingMetricsEntity timing_metrics = 6;  // Fixed: was field 14
 }
 
+message FlowEntity {
+    string name = 1;
+    string version = 2;
+    string date = 3;
+    string design_type = 4;
+    ConstraintsEntity constraints = 5;  // Fixed: was field 20
+    repeated StageEntity stages = 6;  // Changed: stages instead of stage, fixed field number
+}
+
+// Service Request/Response messages
 message ImportRequest {
-    string filename = 1;
+    string file_path = 1;
 }
 
 message ImportResponse {
@@ -226,17 +292,25 @@ message ImportResponse {
 }
 
 message ExportRequest {
-    string filename = 1;
+    string entity_id = 1;
+    string file_path = 2;
 }
 
 message ExportResponse {
     bool success = 1;
     string message = 2;
-    string status = 3; // <-- ADD THIS
-   
 }
 
-service EDAService {
-    rpc ImportMethod (ImportRequest) returns (ImportResponse);
-    rpc ExportMethod (ExportRequest) returns (ExportResponse);
+// EDA-Schema Service
+service EdaSchemaService {
+    rpc GetNetlistGraph (Empty) returns (NetlistEntity);
+    rpc GetCellMetrics (Empty) returns (CellMetricsEntity);
+    rpc GetAreaMetrics (Empty) returns (AreaMetricsEntity);
+    rpc GetPowerMetrics (Empty) returns (PowerMetricsEntity);
+    rpc GetTimingMetrics (Empty) returns (TimingMetricsEntity);  // Changed: TimingMetrics instead of CriticalPathMetrics
+    rpc GetStandardCell (Empty) returns (StandardCellEntity);
+    rpc GetGate (Empty) returns (GateEntity);
+    rpc GetPort (Empty) returns (PortEntity);  // Changed: Port instead of IOPort
+    rpc GetNet (Empty) returns (NetEntity);  // Changed: Net instead of InterconnectGraph
+    rpc GetTimingPathGraph (Empty) returns (TimingPathEntity);
 }

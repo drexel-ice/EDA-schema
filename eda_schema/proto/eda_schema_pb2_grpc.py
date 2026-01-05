@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import eda_schema_pb2 as eda__schema__pb2
+from . import eda_schema_pb2 as eda__schema__pb2
 
 GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
@@ -55,10 +55,10 @@ class EdaSchemaServiceStub(object):
                 request_serializer=eda__schema__pb2.Empty.SerializeToString,
                 response_deserializer=eda__schema__pb2.PowerMetricsEntity.FromString,
                 _registered_method=True)
-        self.GetCriticalPathMetrics = channel.unary_unary(
-                '/edaschema.EdaSchemaService/GetCriticalPathMetrics',
+        self.GetTimingMetrics = channel.unary_unary(
+                '/edaschema.EdaSchemaService/GetTimingMetrics',
                 request_serializer=eda__schema__pb2.Empty.SerializeToString,
-                response_deserializer=eda__schema__pb2.CriticalPathMetricsEntity.FromString,
+                response_deserializer=eda__schema__pb2.TimingMetricsEntity.FromString,
                 _registered_method=True)
         self.GetStandardCell = channel.unary_unary(
                 '/edaschema.EdaSchemaService/GetStandardCell',
@@ -70,15 +70,15 @@ class EdaSchemaServiceStub(object):
                 request_serializer=eda__schema__pb2.Empty.SerializeToString,
                 response_deserializer=eda__schema__pb2.GateEntity.FromString,
                 _registered_method=True)
-        self.GetIOPort = channel.unary_unary(
-                '/edaschema.EdaSchemaService/GetIOPort',
+        self.GetPort = channel.unary_unary(
+                '/edaschema.EdaSchemaService/GetPort',
                 request_serializer=eda__schema__pb2.Empty.SerializeToString,
-                response_deserializer=eda__schema__pb2.IOPortEntity.FromString,
+                response_deserializer=eda__schema__pb2.PortEntity.FromString,
                 _registered_method=True)
-        self.GetInterconnectGraph = channel.unary_unary(
-                '/edaschema.EdaSchemaService/GetInterconnectGraph',
+        self.GetNet = channel.unary_unary(
+                '/edaschema.EdaSchemaService/GetNet',
                 request_serializer=eda__schema__pb2.Empty.SerializeToString,
-                response_deserializer=eda__schema__pb2.InterconnectEntity.FromString,
+                response_deserializer=eda__schema__pb2.NetEntity.FromString,
                 _registered_method=True)
         self.GetTimingPathGraph = channel.unary_unary(
                 '/edaschema.EdaSchemaService/GetTimingPathGraph',
@@ -115,8 +115,9 @@ class EdaSchemaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetCriticalPathMetrics(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def GetTimingMetrics(self, request, context):
+        """Changed: TimingMetrics instead of CriticalPathMetrics
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -133,14 +134,16 @@ class EdaSchemaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetIOPort(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def GetPort(self, request, context):
+        """Changed: Port instead of IOPort
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetInterconnectGraph(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def GetNet(self, request, context):
+        """Changed: Net instead of InterconnectGraph
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -174,10 +177,10 @@ def add_EdaSchemaServiceServicer_to_server(servicer, server):
                     request_deserializer=eda__schema__pb2.Empty.FromString,
                     response_serializer=eda__schema__pb2.PowerMetricsEntity.SerializeToString,
             ),
-            'GetCriticalPathMetrics': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetCriticalPathMetrics,
+            'GetTimingMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTimingMetrics,
                     request_deserializer=eda__schema__pb2.Empty.FromString,
-                    response_serializer=eda__schema__pb2.CriticalPathMetricsEntity.SerializeToString,
+                    response_serializer=eda__schema__pb2.TimingMetricsEntity.SerializeToString,
             ),
             'GetStandardCell': grpc.unary_unary_rpc_method_handler(
                     servicer.GetStandardCell,
@@ -189,15 +192,15 @@ def add_EdaSchemaServiceServicer_to_server(servicer, server):
                     request_deserializer=eda__schema__pb2.Empty.FromString,
                     response_serializer=eda__schema__pb2.GateEntity.SerializeToString,
             ),
-            'GetIOPort': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetIOPort,
+            'GetPort': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPort,
                     request_deserializer=eda__schema__pb2.Empty.FromString,
-                    response_serializer=eda__schema__pb2.IOPortEntity.SerializeToString,
+                    response_serializer=eda__schema__pb2.PortEntity.SerializeToString,
             ),
-            'GetInterconnectGraph': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetInterconnectGraph,
+            'GetNet': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNet,
                     request_deserializer=eda__schema__pb2.Empty.FromString,
-                    response_serializer=eda__schema__pb2.InterconnectEntity.SerializeToString,
+                    response_serializer=eda__schema__pb2.NetEntity.SerializeToString,
             ),
             'GetTimingPathGraph': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTimingPathGraph,
@@ -325,7 +328,7 @@ class EdaSchemaService(object):
             _registered_method=True)
 
     @staticmethod
-    def GetCriticalPathMetrics(request,
+    def GetTimingMetrics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -338,9 +341,9 @@ class EdaSchemaService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/edaschema.EdaSchemaService/GetCriticalPathMetrics',
+            '/edaschema.EdaSchemaService/GetTimingMetrics',
             eda__schema__pb2.Empty.SerializeToString,
-            eda__schema__pb2.CriticalPathMetricsEntity.FromString,
+            eda__schema__pb2.TimingMetricsEntity.FromString,
             options,
             channel_credentials,
             insecure,
@@ -406,7 +409,7 @@ class EdaSchemaService(object):
             _registered_method=True)
 
     @staticmethod
-    def GetIOPort(request,
+    def GetPort(request,
             target,
             options=(),
             channel_credentials=None,
@@ -419,9 +422,9 @@ class EdaSchemaService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/edaschema.EdaSchemaService/GetIOPort',
+            '/edaschema.EdaSchemaService/GetPort',
             eda__schema__pb2.Empty.SerializeToString,
-            eda__schema__pb2.IOPortEntity.FromString,
+            eda__schema__pb2.PortEntity.FromString,
             options,
             channel_credentials,
             insecure,
@@ -433,7 +436,7 @@ class EdaSchemaService(object):
             _registered_method=True)
 
     @staticmethod
-    def GetInterconnectGraph(request,
+    def GetNet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -446,9 +449,9 @@ class EdaSchemaService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/edaschema.EdaSchemaService/GetInterconnectGraph',
+            '/edaschema.EdaSchemaService/GetNet',
             eda__schema__pb2.Empty.SerializeToString,
-            eda__schema__pb2.InterconnectEntity.FromString,
+            eda__schema__pb2.NetEntity.FromString,
             options,
             channel_credentials,
             insecure,
@@ -476,121 +479,6 @@ class EdaSchemaService(object):
             '/edaschema.EdaSchemaService/GetTimingPathGraph',
             eda__schema__pb2.Empty.SerializeToString,
             eda__schema__pb2.TimingPathEntity.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-
-class EDAServiceStub(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.ImportMethod = channel.unary_unary(
-                '/edaschema.EDAService/ImportMethod',
-                request_serializer=eda__schema__pb2.ImportRequest.SerializeToString,
-                response_deserializer=eda__schema__pb2.ImportResponse.FromString,
-                _registered_method=True)
-        self.ExportMethod = channel.unary_unary(
-                '/edaschema.EDAService/ExportMethod',
-                request_serializer=eda__schema__pb2.ExportRequest.SerializeToString,
-                response_deserializer=eda__schema__pb2.ExportResponse.FromString,
-                _registered_method=True)
-
-
-class EDAServiceServicer(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def ImportMethod(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ExportMethod(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_EDAServiceServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'ImportMethod': grpc.unary_unary_rpc_method_handler(
-                    servicer.ImportMethod,
-                    request_deserializer=eda__schema__pb2.ImportRequest.FromString,
-                    response_serializer=eda__schema__pb2.ImportResponse.SerializeToString,
-            ),
-            'ExportMethod': grpc.unary_unary_rpc_method_handler(
-                    servicer.ExportMethod,
-                    request_deserializer=eda__schema__pb2.ExportRequest.FromString,
-                    response_serializer=eda__schema__pb2.ExportResponse.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'edaschema.EDAService', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('edaschema.EDAService', rpc_method_handlers)
-
-
- # This class is part of an EXPERIMENTAL API.
-class EDAService(object):
-    """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def ImportMethod(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/edaschema.EDAService/ImportMethod',
-            eda__schema__pb2.ImportRequest.SerializeToString,
-            eda__schema__pb2.ImportResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ExportMethod(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/edaschema.EDAService/ExportMethod',
-            eda__schema__pb2.ExportRequest.SerializeToString,
-            eda__schema__pb2.ExportResponse.FromString,
             options,
             channel_credentials,
             insecure,
