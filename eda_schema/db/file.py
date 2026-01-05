@@ -4,10 +4,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 from eda_schema.db.base import BaseDB
 from eda_schema import entity
+from eda_schema.base import Image2D
+from eda_schema.errors import DataNotFoundError
 
 
 class FileDB(BaseDB):
@@ -47,6 +50,10 @@ class FileDB(BaseDB):
         """Return the graph storage directory for an entity."""
         return self._entity_dir(entity_name) / "graphs"
 
+    def _image_dir(self, entity_name: str) -> Path:
+        """Return the image storage directory for an entity."""
+        return self._entity_dir(entity_name) / "images"
+
     # ------------------------------------------------------------------
     # Table creation
     # ------------------------------------------------------------------
@@ -73,8 +80,8 @@ class FileDB(BaseDB):
         """
         Create tables for all entities defined in SchemaMetadata.
         """
-        for entity_name, schema in entity.SchemaMetadata.items():
-            columns = list(schema.keys())
+        for entity_name, model_cls in entity.SchemaMetadata.items():
+            columns = entity.SchemaMetadata.get_columns(entity_name)
             is_graph = entity.SchemaMetadata.is_graph_entity(entity_name)
 
             self._create_table(
@@ -133,9 +140,22 @@ class FileDB(BaseDB):
             entity_name (str): Name of the entity.
             row (dict): The row to append.
         """
-        df = pd.DataFrame([row])
+        table_path = self._table_path(entity_name)
+
+        # Read existing table to get column order
+        if table_path.exists():
+            existing_df = pd.read_csv(table_path)
+            columns = existing_df.columns.tolist()
+        else:
+            # If table doesn't exist, use columns from schema
+            columns = entity.SchemaMetadata.get_columns(entity_name)
+
+        # Create DataFrame with correct column order
+        row_ordered = {col: row.get(col) for col in columns}
+        df = pd.DataFrame([row_ordered])
+
         df.to_csv(
-            self._table_path(entity_name),
+            table_path,
             mode="a",
             index=False,
             header=False,
@@ -198,3 +218,60 @@ class FileDB(BaseDB):
             raise ValueError(f"No rows match filters: {filters}")
 
         return df.iloc[0]
+
+    # ------------------------------------------------------------------
+    # Image Storage
+    # ------------------------------------------------------------------
+    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+        """
+        Store an Image2D associated with an entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            image_name (str): Name of the image field (e.g. "cell_placement").
+            image (Image2D): The image to store.
+            **key_fields: Primary key values identifying the row
+                        (e.g. flow_id="X", stage="Y").
+
+        Returns:
+            None
+        """
+        # Ensure the image directory exists
+        image_dir = self._image_dir(entity_name)
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        # Construct filename from field + primary keys
+        key_str = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        path = image_dir / f"{image_name}__{key_str}.npz"
+
+        # Save as compressed numpy array
+        np.savez_compressed(path, image)
+
+    def get_image(self, entity_name: str, field: str, **key_fields) -> Image2D:
+        """
+        Retrieve an Image2D stored for a specific entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            field (str): Name of the stored image field.
+            **key_fields: Primary key values identifying the row.
+
+        Returns:
+            Image2D: The loaded image.
+
+        Raises:
+            DataNotFoundError: If the image file does not exist.
+        """
+        # Construct expected path
+        image_dir = self._image_dir(entity_name)
+        key_str = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        path = image_dir / f"{field}__{key_str}.npz"
+
+        # Check if file exists
+        if not path.exists():
+            raise DataNotFoundError(entity_name=f"{entity_name}:{field}")
+
+        # Load and return wrapped Image2D
+        data = np.load(path)
+        arr = data['arr_0']  # np.savez_compressed saves as 'arr_0'
+        return Image2D(arr)

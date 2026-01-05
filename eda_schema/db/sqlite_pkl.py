@@ -3,12 +3,13 @@ import sqlite3
 import dill
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 from eda_schema import entity
 from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
-from eda_schema.base import resolve_field_type_and_nullable
+from eda_schema.base import resolve_field_type_and_nullable, Image2D
 
 
 def sqlite_type_from_type(type_name: Optional[str]) -> Optional[str]:
@@ -44,6 +45,9 @@ class SQLitePickleDB(BaseDB):
             data_dir (str | Path): Base directory for the SQLite DB and graph files.
         """
         data_dir = Path(data_dir)
+        data_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
+        self.data_dir = data_dir  # Store for image methods
         self.conn = sqlite3.connect(data_dir / "tabular.db")
         self.cursor = self.conn.cursor()
 
@@ -57,15 +61,15 @@ class SQLitePickleDB(BaseDB):
         Returns:
             None
         """
-        for entity_name, model in entity.SchemaMetadata.items():
+        for entity_name, model_cls in entity.SchemaMetadata.items():
             columns = []
             for field in entity.SchemaMetadata.get_fields(entity_name):
-                type_name, is_nullable, _ = resolve_field_type_and_nullable(field)
+                type_name, is_nullable, _ = resolve_field_type_and_nullable(model_cls, field)
                 sqlite_type = sqlite_type_from_type(type_name)
                 if sqlite_type is None:
                     continue
                 null_constraint = "NULL" if is_nullable else "NOT NULL"
-                columns.append(f"{f.name} {sqlite_type} {null_constraint}")
+                columns.append(f"{field.name} {sqlite_type} {null_constraint}")
 
             if not columns:
                 continue
@@ -77,34 +81,64 @@ class SQLitePickleDB(BaseDB):
 
         self.conn.commit()
 
-    def add_graph_data(self, entity_name: str, graph: Any, key: str):
+    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields):
         """
         Store graph data as a pickle file.
 
         Args:
             entity_name (str): Name of the entity.
             graph (Any): Graph object to store.
-            key (str): Unique graph identifier.
+            key (str, optional): Unique graph identifier (legacy API).
+            **key_fields: Primary key values (new API, for consistency with ParquetDB).
 
         Returns:
             None
+
+        Note:
+            Supports both legacy `key: str` API and new `**key_fields` API
+            for consistency with ParquetDB.
         """
+        # Support new API: construct key from key_fields
+        if key is None:
+            if key_fields:
+                # Construct key from sorted key_fields for consistency
+                key = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+            else:
+                raise ValueError("Either 'key' or 'key_fields' must be provided")
+
         filepath = self.graph_dir / f"{entity_name}_{key}.pkl"
         with filepath.open("wb") as f:
             dill.dump(graph, f)
 
-    def get_graph_data(self, entity_name: str, key: str):
+    def get_graph_data(self, entity_name: str, key: str = None, **key_fields):
         """
         Load stored graph data.
 
         Args:
             entity_name (str): Name of the entity.
-            key (str): Unique graph identifier.
+            key (str, optional): Unique graph identifier (legacy API).
+            **key_fields: Primary key values (new API, used by BaseDB.get_entity).
 
         Returns:
             Any: Loaded graph object.
+
+        Note:
+            Supports both legacy `key: str` API and new `**key_fields` API
+            for compatibility with BaseDB.get_entity(). When called from
+            BaseDB.get_entity(), key_fields will be provided and key will be None.
         """
+        # Support new API: construct key from key_fields (used by BaseDB.get_entity)
+        if key is None:
+            if key_fields:
+                # Construct key from sorted key_fields for consistency
+                key = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+            else:
+                raise ValueError("Either 'key' or 'key_fields' must be provided")
+
         filepath = self.graph_dir / f"{entity_name}_{key}.pkl"
+        if not filepath.exists():
+            raise DataNotFoundError(entity_name=f"{entity_name} (graph key={key})")
+
         with filepath.open("rb") as f:
             return dill.load(f)
 
@@ -175,13 +209,13 @@ class SQLitePickleDB(BaseDB):
         df = pd.read_sql_query(query, self.conn, params=params)
 
         # Convert boolean fields
-        schema_meta = entity.SchemaMetadata.get_schema(entity_name)
-        for col in df.columns:
-            field_meta = schema_meta.get(col, {})
-            type_name = field_meta.get("type")
-
-            if type_name == "boolean" or (isinstance(type_name, list) and "boolean" in type_name):
-                df[col] = df[col].astype(bool)
+        model_cls = entity.SchemaMetadata.get_model(entity_name)
+        if model_cls is not None:
+            for field in entity.SchemaMetadata.get_fields(entity_name):
+                if field.name in df.columns:
+                    type_name, _, _ = resolve_field_type_and_nullable(model_cls, field)
+                    if type_name == "boolean":
+                        df[field.name] = df[field.name].astype(bool)
 
         return df
 
@@ -259,3 +293,64 @@ class SQLitePickleDB(BaseDB):
             raise DataNotFoundError(entity_name=key)
 
         return netlist_obj
+
+    # ------------------------------------------------------------------
+    # Image Storage
+    # ------------------------------------------------------------------
+    def _image_dir(self, entity_name: str) -> Path:
+        """Get the directory where images for an entity are stored."""
+        return self.data_dir / "images" / entity_name
+
+    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+        """
+        Store an Image2D associated with an entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            image_name (str): Name of the image field (e.g. "cell_placement").
+            image (Image2D): The image to store.
+            **key_fields: Primary key values identifying the row
+                        (e.g. flow_id="X", stage="Y").
+
+        Returns:
+            None
+        """
+        # Ensure the image directory exists
+        image_dir = self._image_dir(entity_name)
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        # Construct filename from field + primary keys
+        key_str = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        path = image_dir / f"{image_name}__{key_str}.npz"
+
+        # Save as compressed numpy array
+        np.savez_compressed(path, image)
+
+    def get_image(self, entity_name: str, field: str, **key_fields) -> Image2D:
+        """
+        Retrieve an Image2D stored for a specific entity row.
+
+        Args:
+            entity_name (str): Name of the entity.
+            field (str): Name of the stored image field.
+            **key_fields: Primary key values identifying the row.
+
+        Returns:
+            Image2D: The loaded image.
+
+        Raises:
+            DataNotFoundError: If the image file does not exist.
+        """
+        # Construct expected path
+        image_dir = self._image_dir(entity_name)
+        key_str = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        path = image_dir / f"{field}__{key_str}.npz"
+
+        # Check if file exists
+        if not path.exists():
+            raise DataNotFoundError(entity_name=f"{entity_name}:{field}")
+
+        # Load and return wrapped Image2D
+        data = np.load(path)
+        arr = data['arr_0']  # np.savez_compressed saves as 'arr_0'
+        return Image2D(arr)
