@@ -1,4 +1,5 @@
 import pandas as pd
+from dataclasses import asdict
 
 
 class NetlistCellMapper(dict):
@@ -320,10 +321,17 @@ class NetlistBufferChecker:
                 - bool: True if buffering was added, False otherwise.
                 - list: List of added buffering nodes, if any.
         """
-        fanout_df = pd.DataFrame([
-            self.netlist1.nodes[node]["entity"].asdict()
-            for node in sorted(self.netlist1.successors(net))
-        ])
+        fanout_data = []
+        for node in sorted(self.netlist1.successors(net)):
+            entity_obj = self.netlist1.nodes[node]["entity"]
+            # Extract name attribute from entity (works for GateEntity, PinEntity, etc.)
+            if hasattr(entity_obj, "name"):
+                fanout_data.append({"name": entity_obj.name})
+            elif hasattr(entity_obj, "pin_name"):  # PinEntity uses pin_name
+                fanout_data.append({"name": entity_obj.pin_name})
+            else:
+                fanout_data.append({"name": node})  # Fallback to node name
+        fanout_df = pd.DataFrame(fanout_data)
 
         phase1_nodes = [net] + list(fanout_df.name) if not fanout_df.empty else []
         phase2_nodes, fanout_nodes, node_queue = [net], list(fanout_df.name), [net]
@@ -498,19 +506,19 @@ def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
     for net in nets_name_not_matched:
         phase2_neighbors = phase2_nets.get(net)
         if net in buffer_added_nets:
-            phase2_df["names_not_match_buffer_added"][net] = True
-            phase2_df["names_match_neighbors_not_match_remaining"][net] = False
+            phase2_df.loc[net, "names_not_match_buffer_added"] = True
+            phase2_df.loc[net, "names_match_neighbors_not_match_remaining"] = False
         elif phase2_netlist.nodes[list(phase2_netlist.predecessors(net))[0]]["type"] == "GATE" and phase2_cells.cell_is_constant_logic(list(phase2_netlist.predecessors(net))[0]):
-            phase2_df["names_not_match_conb"][net] = True
+            phase2_df.loc[net, "names_not_match_conb"] = True
         elif buffer_checker.net_is_buffered_at_output(net)[0]:
-            phase2_df["names_not_match_buffer_added_output"][net] = True
+            phase2_df.loc[net, "names_not_match_buffer_added_output"] = True
             buffered_net = buffer_checker.net_is_buffered_at_output(net)[1]
             if buffered_net in nets_name_matched_not_resolved:
                 nets_name_matched_not_resolved.remove(buffered_net)
-            phase2_df["names_match_neighbors_not_match_buffered"][buffered_net] = True
-            phase2_df["names_match_neighbors_not_match_remaining"][buffered_net] = False
+            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_buffered"] = True
+            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_remaining"] = False
         else:
-            phase2_df["names_not_match_remaining"][net] = True
+            phase2_df.loc[net, "names_not_match_remaining"] = True
 
     for column in phase2_df.columns:
         if column == "net":

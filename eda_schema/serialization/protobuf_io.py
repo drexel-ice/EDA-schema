@@ -12,6 +12,8 @@ Changes:
 - Replaced hardcoded schema with dynamic schema generation from proto definitions.
 """
 
+from dataclasses import fields as dataclass_fields
+
 from eda_schema.proto import eda_schema_pb2 as pb2
 import eda_schema.entity as eda_schema_entity
 from eda_schema.errors import ValidationError
@@ -130,15 +132,10 @@ def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
             # Skip unsupported or complex types
             continue
 
-        # Ensure the EDA-schema entity has the corresponding attribute
-        try:
-            assert hasattr(edaschema_entity, field.name)
-        except AssertionError as exc:
-            entity_name = type(edaschema_entity).__name__
-            print(f"Warning: {field.name} not found in EDA-schema entity {entity_name}")
-            raise ValidationError(
-                f"Field {field.name} not found in EDA-schema entity {entity_name}"
-            ) from exc
+        # Skip if the EDA-schema entity doesn't have the corresponding attribute
+        if not hasattr(edaschema_entity, field.name):
+            # Skip fields that don't exist in the entity (e.g., optional proto fields)
+            continue
 
         # Get the value from the EDA-schema entity
         value = getattr(edaschema_entity, field.name)
@@ -190,7 +187,7 @@ def dataset_to_protobuf(_dataset, stage_entity):  # pylint: disable=too-many-bra
 
     # Convert nodes
     if stage_entity.netlist:
-        for node in stage_entity.netlist:
+        for node in stage_entity.netlist.nodes:
             node_type = stage_entity.netlist.nodes[node]['type']
             node_entity = stage_entity.netlist.nodes[node]['entity']
             if node_type == 'PORT':
@@ -230,9 +227,13 @@ def _extract_proto_fields(pb2_entity):
         if not field_type:
             # Skip unsupported or complex types
             continue
-        value = getattr(pb2_entity, field.name)
-        # Include all values (including 0, False, empty string) for required fields
-        if value or field_type in ('int', 'float', 'bool'):
+        value = getattr(pb2_entity, field.name, None)
+        # Include all values (including 0, False, empty string, None) for numeric/bool types
+        # For strings, only include non-empty values
+        if field_type in ('int', 'float', 'bool'):
+            # Always include numeric and bool values, even if 0 or False
+            data_dict[field.name] = value
+        elif value:  # For strings and other types, only include if truthy
             data_dict[field.name] = value
     return data_dict
 
@@ -244,8 +245,17 @@ def protobuf_to_eda_schema(edaschema_entity, pb2_entity):
         edaschema_entity: The EDA-schema entity to populate.
         pb2_entity: An instance of the Protobuf message containing source data.
     """
+
     data_dict = _extract_proto_fields(pb2_entity)
-    edaschema_entity.load(data_dict)
+
+    # Filter out fields that don't exist in the entity's dataclass
+    entity_field_names = {f.name for f in dataclass_fields(type(edaschema_entity))}
+    filtered_dict = {k: v for k, v in data_dict.items() if k in entity_field_names}
+
+    # Update the entity with the extracted fields
+    for key, value in filtered_dict.items():
+        if hasattr(edaschema_entity, key):
+            setattr(edaschema_entity, key, value)
 
 def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
     """
