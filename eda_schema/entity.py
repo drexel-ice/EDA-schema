@@ -26,6 +26,12 @@ class DesignStages(str, Enum):
 
     @classmethod
     def tolist(cls):
+        """
+        Get a list of all stage values.
+
+        Returns:
+            list: List of stage string values.
+        """
         return [stage.value for stage in cls]
 
 # ============================================================
@@ -419,8 +425,14 @@ class ClockTreeEntity(GraphEntity):
 
     def load_from_netlist(self, netlist: GraphEntity, clock_source: str, dff_cells: List[str]) -> None:
         """
-        Extract a clock tree subgraph from a full netlist by traversing fanout from
-        clock_source until sequential sinks are reached.
+        Extract a clock tree subgraph from a full netlist.
+
+        Traverses fanout from clock_source until sequential sinks are reached.
+
+        Args:
+            netlist: Full netlist graph entity.
+            clock_source: Starting node identifier for clock tree.
+            dff_cells: List of sequential cell names to identify as sinks.
         """
         self.no_of_buffers = 0
         self.no_of_clock_sinks = 0
@@ -436,6 +448,14 @@ class ClockTreeEntity(GraphEntity):
         Counts:
           - buffers: gate nodes along the tree (excluding sequential sinks)
           - sinks: sequential gate nodes whose standard_cell is in dff_cells
+
+        Args:
+            netlist: Full netlist graph entity.
+            node: Starting node identifier.
+            dff_cells: List of sequential cell names to identify as sinks.
+
+        Returns:
+            list: List of traversed node identifiers.
         """
         traversed = [node]
         stack = [node]
@@ -531,10 +551,25 @@ class SchemaMetadata:
 
     @classmethod
     def items(cls) -> List[Tuple[str, Type[BaseEntity]]]:
+        """
+        Get all entity name-class pairs.
+
+        Returns:
+            list: List of (entity_name, entity_class) tuples.
+        """
         return list(cls._ENTITY_MODELS.items())
 
     @classmethod
     def get_columns(cls, entity_name: str) -> List[str]:
+        """
+        Get all column names for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            list: List of field/column names.
+        """
         model = cls._ENTITY_MODELS.get(entity_name)
         if model is None:
             return []
@@ -545,6 +580,15 @@ class SchemaMetadata:
 
     @classmethod
     def get_pk_columns(cls, entity_name: str) -> List[str]:
+        """
+        Get primary key column names for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            list: List of primary key field names.
+        """
         model = cls._ENTITY_MODELS.get(entity_name)
         if model is None:
             return []
@@ -556,6 +600,15 @@ class SchemaMetadata:
 
     @classmethod
     def is_graph_entity(cls, entity_name: str) -> bool:
+        """
+        Check if an entity is a graph entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            bool: True if the entity is a graph entity, False otherwise.
+        """
         return entity_name in cls._GRAPH_ENTITIES
 
     @classmethod

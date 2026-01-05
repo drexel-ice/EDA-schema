@@ -2,39 +2,120 @@ import pandas as pd
 
 
 class NetlistCellMapper(dict):
+    """
+    Maps netlist gate nodes to their standard cell types.
+
+    Acts as a dictionary mapping node names to their cell type strings.
+    """
     def __init__(self, netlist):
         """
-        Extracts node information from a netlist and returns a dictionary of nodes mapped to their
-        cell types.
+        Extract node information from a netlist.
+
+        Creates a dictionary mapping gate nodes to their standard cell types.
+
+        Args:
+            netlist: Netlist entity containing nodes to map.
         """
         for node, node_info in netlist.nodes.items():
             if node_info.get("type") == "GATE":
                 self[node] = node_info["entity"].standard_cell.split("__")[-1]
 
     def cell_is_delay(self, cell):
+        """
+        Check if a cell is a delay/buffer cell.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is a delay or buffer cell, False otherwise.
+        """
         cell_type = self[cell]
         return any(keyword in cell_type for keyword in ["buf", "dly"])
 
     def cell_is_filler(self, cell):
+        """
+        Check if a cell is a filler cell.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is a filler, False otherwise.
+        """
         return "fill" in self[cell]
 
     def cell_is_tapcell(self, cell):
+        """
+        Check if a cell is a tap cell.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is a tap cell, False otherwise.
+        """
         return "tapvpwrvgnd" in self[cell]
 
     def cell_is_antenna(self, cell):
+        """
+        Check if a cell is an antenna diode.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is an antenna diode, False otherwise.
+        """
         return "diode" in self[cell]
 
     @staticmethod
     def cell_is_cloned(cell):
+        """
+        Check if a cell name indicates it is a cloned cell.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell name contains "clone", False otherwise.
+        """
         return "clone" in cell
 
     def cell_is_constant_logic(self, cell):
+        """
+        Check if a cell is constant logic.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is constant logic, False otherwise.
+        """
         return "conb" in self[cell]
 
     def strip_sizing_info(self, cell):
+        """
+        Remove sizing information from a cell type string.
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            str: Cell type with sizing information removed.
+        """
         return self[cell].split("_")[0].replace("clk", "").replace("lp", "")
 
     def is_non_functional_cell(self, cell):
+        """
+        Check if a cell is non-functional (filler, tap, or antenna).
+
+        Args:
+            cell: Cell node identifier.
+
+        Returns:
+            bool: True if the cell is non-functional, False otherwise.
+        """
         return self.cell_is_filler(cell) or self.cell_is_tapcell(cell) or self.cell_is_antenna(cell)
 
 
@@ -140,8 +221,16 @@ def compare_netlists_by_cells(phase1_netlist, phase2_netlist):
 class NetlistNetMapper(dict):
     """
     Maps netlist nodes to their respective connections.
+
+    Acts as a dictionary mapping net/port nodes to sorted lists of connected nodes.
     """
     def __init__(self, netlist):
+        """
+        Initialize the net mapper from a netlist.
+
+        Args:
+            netlist: Netlist entity to extract net connections from.
+        """
         super().__init__()
         self._netlist = netlist
         self._phase_cells = NetlistCellMapper(netlist)
@@ -152,6 +241,15 @@ class NetlistNetMapper(dict):
                                     self._get_connected_node_info(netlist.successors(node)))
 
     def _get_connected_node_info(self, connected_nodes):
+        """
+        Extract information about connected nodes.
+
+        Args:
+            connected_nodes: Iterator over connected node identifiers.
+
+        Returns:
+            list: List of (node, cell_type) tuples for functional gates and IO ports.
+        """
         node_info = []
         for node in connected_nodes:
             node_type = self._netlist.nodes[node]["type"]
@@ -164,10 +262,28 @@ class NetlistNetMapper(dict):
         return node_info
 
     def strip_neighbor_sizing_info(self, net):
+        """
+        Remove sizing information from neighbor cell types.
+
+        Args:
+            net: Net node identifier.
+
+        Returns:
+            list: List of (node, stripped_cell_type) tuples.
+        """
         return [(node, self._phase_cells.strip_sizing_info(node) if node in self._phase_cells else node_type)
                 for node, node_type in self.get(net)]
 
     def strip_neighbor_delay(self, net):
+        """
+        Normalize delay cells to "delay" type.
+
+        Args:
+            net: Net node identifier.
+
+        Returns:
+            list: List of (node, normalized_type) tuples where delay cells are marked as "delay".
+        """
         return [(node, "delay" if node in self._phase_cells and self._phase_cells.cell_is_delay(node) else node_type)
                 for node, node_type in self.get(net)]
 
@@ -180,6 +296,13 @@ class NetlistBufferChecker:
         netlist2 (eda_schema.entity.NetlistEntity): The netlist of the second phase.
     """
     def __init__(self, netlist1, netlist2):
+        """
+        Initialize the buffer checker with two netlists.
+
+        Args:
+            netlist1: First phase netlist entity.
+            netlist2: Second phase netlist entity.
+        """
         self.netlist1 = netlist1
         self.netlist2 = netlist2
         self.phase1_cells = NetlistCellMapper(netlist1)

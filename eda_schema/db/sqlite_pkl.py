@@ -292,7 +292,15 @@ class SQLitePickleDB(BaseDB):
     # Image Storage
     # ------------------------------------------------------------------
     def _image_dir(self, entity_name: str) -> Path:
-        """Get the directory where images for an entity are stored."""
+        """
+        Get the directory where images for an entity are stored.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            Path: Directory containing image NPZ files for the entity.
+        """
         return self.data_dir / "images" / entity_name
 
     def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
