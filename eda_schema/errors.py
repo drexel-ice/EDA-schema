@@ -18,7 +18,10 @@ class DataNotFoundError(EDASchemaError):
     """
     Exception raised when requested data is not found in the database or storage.
     """
-    def __init__(self, entity_name=None, message="Requested data not found."):
-        if entity_name:
-            message = f"Data not found for entity '{entity_name}'."
+    def __init__(self, entity_name=None, message=None):
+        if message is None:
+            if entity_name:
+                message = f"Data not found for entity '{entity_name}'."
+            else:
+                message = "Requested data not found."
         super().__init__(message)

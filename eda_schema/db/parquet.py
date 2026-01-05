@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -261,8 +262,31 @@ class ParquetDB(BaseDB):
 
         Returns:
             pd.DataFrame: Filtered table data.
+
+        Raises:
+            FileNotFoundError: If the table file does not exist.
+            DataNotFoundError: If the entity is not found.
         """
-        table = _load_arrow_table(self._table_path(entity_name))
+        # Ensure writers are closed before reading to prevent corruption errors
+        self._ensure_writers_closed()
+
+        table_path = self._table_path(entity_name)
+        if not table_path.exists():
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Table file not found: {table_path}. "
+                       f"Did you call create_dataset_tables() first?"
+            )
+
+        try:
+            table = _load_arrow_table(table_path)
+        except Exception as e:
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Failed to read table from {table_path}: {e}. "
+                       f"This may occur if writers weren't closed before reading. "
+                       f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
+            ) from e
 
         if filters:
             mask = None
@@ -312,11 +336,15 @@ class ParquetDB(BaseDB):
             pd.Series: Matching row.
 
         Raises:
-            DataNotFoundError: If no row matches the filters.
+            DataNotFoundError: If no row matches the filters or entity not found.
         """
         df = self.get_table_data(entity_name, **filters)
         if df.empty:
-            raise DataNotFoundError(entity_name=entity_name)
+            filter_str = ", ".join(f"{k}={v!r}" for k, v in filters.items())
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"No row found matching filters: {filter_str}"
+            )
         return df.iloc[0]
 
     # --------------------------------------------------------------
@@ -484,17 +512,42 @@ class ParquetDB(BaseDB):
 
         Raises:
             ValueError: If PKs are missing.
-            DataNotFoundError: If no matching graph row exists.
+            DataNotFoundError: If the graph data is not found.
         """
-        table = _load_arrow_table(self._graph_path(entity_name))
+        # Ensure writers are closed before reading
+        self._ensure_writers_closed()
+
+        graph_path = self._graph_path(entity_name)
+        if not graph_path.exists():
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Graph file not found: {graph_path}. "
+                       f"Did you call create_dataset_tables() and add graph data?"
+            )
 
         pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
+        if not pk_cols:
+            raise ValueError(
+                f"Entity '{entity_name}' has no defined primary-key fields. "
+                f"Cannot retrieve graph data without primary keys."
+            )
 
         missing = [pk for pk in pk_cols if pk not in key_fields]
         if missing:
             raise ValueError(
-                f"Missing primary-key fields for '{entity_name}': {missing}"
+                f"Missing primary-key fields for '{entity_name}': {missing}. "
+                f"Required: {pk_cols}. Provided: {list(key_fields.keys())}"
             )
+
+        try:
+            table = _load_arrow_table(graph_path)
+        except Exception as e:
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Failed to read graph data from {graph_path}: {e}. "
+                       f"This may occur if writers weren't closed before reading. "
+                       f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
+            ) from e
 
         mask = None
         for pk in pk_cols:
@@ -504,8 +557,10 @@ class ParquetDB(BaseDB):
         filtered = table.filter(mask)
 
         if filtered.num_rows == 0:
+            key_str = ", ".join(f"{k}={v!r}" for k, v in key_fields.items())
             raise DataNotFoundError(
-                entity_name=f"{entity_name} (graph key={key_fields})"
+                entity_name=entity_name,
+                message=f"No graph data found for '{entity_name}' with keys: {key_str}"
             )
 
         return json.loads(filtered["graph_json"][0].as_py())
@@ -563,7 +618,12 @@ class ParquetDB(BaseDB):
         # Ensure the file exists
         # --------------------------------------------------------------
         if not path.exists():
-            raise DataNotFoundError(entity_name=f"{entity_name}:{image_name}")
+            key_str = ", ".join(f"{k}={v!r}" for k, v in key_fields.items())
+            raise DataNotFoundError(
+                entity_name=f"{entity_name}:{image_name}",
+                message=f"Image '{image_name}' not found for entity '{entity_name}' "
+                       f"with keys: {key_str}. Expected path: {path}"
+            )
 
         # --------------------------------------------------------------
         # Load and return wrapped Image2D
@@ -575,12 +635,65 @@ class ParquetDB(BaseDB):
     def close(self):
         """
         Close all active Parquet writers and release file handles.
-        """
-        for writer in self._writers.values():
-            writer.close()
 
-        for writer in self._graph_writers.values():
-            writer.close()
+        This method should be called after all write operations are complete
+        to ensure data is flushed to disk. Alternatively, use the context manager:
+
+        ```python
+        with ParquetDB(data_home) as db:
+            # All operations here
+            # Writers are automatically closed on exit
+        ```
+        """
+        for entity_name, writer in list(self._writers.items()):
+            try:
+                writer.close()
+            except Exception as e:
+                # Log but don't fail - try to close remaining writers
+                import warnings
+                warnings.warn(
+                    f"Error closing writer for entity '{entity_name}': {e}",
+                    RuntimeWarning
+                )
+
+        for entity_name, writer in list(self._graph_writers.items()):
+            try:
+                writer.close()
+            except Exception as e:
+                import warnings
+                warnings.warn(
+                    f"Error closing graph writer for entity '{entity_name}': {e}",
+                    RuntimeWarning
+                )
 
         self._writers.clear()
         self._graph_writers.clear()
+
+    def __enter__(self):
+        """Context manager entry - returns self."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Context manager exit - automatically closes all writers.
+
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
+
+        Returns:
+            False to propagate exceptions, True to suppress them
+        """
+        self.close()
+        return False  # Don't suppress exceptions
+
+    def _ensure_writers_closed(self):
+        """
+        Internal method to ensure writers are closed before read operations.
+
+        This is called automatically before read operations to prevent
+        "Parquet magic bytes not found" errors.
+        """
+        if self._writers or self._graph_writers:
+            self.close()
