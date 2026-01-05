@@ -81,63 +81,57 @@ class SQLitePickleDB(BaseDB):
 
         self.conn.commit()
 
-    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields):
+    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
         """
         Store graph data as a pickle file.
 
         Args:
             entity_name (str): Name of the entity.
             graph (Any): Graph object to store.
-            key (str, optional): Unique graph identifier (legacy API).
-            **key_fields: Primary key values (new API, for consistency with ParquetDB).
+            key (str, optional): Unique graph identifier (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API, for consistency with ParquetDB).
 
         Returns:
             None
 
         Note:
-            Supports both legacy `key: str` API and new `**key_fields` API
-            for consistency with ParquetDB.
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
         """
-        # Support new API: construct key from key_fields
-        if key is None:
-            if key_fields:
-                # Construct key from sorted key_fields for consistency
-                key = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
-            else:
-                raise ValueError("Either 'key' or 'key_fields' must be provided")
-
-        filepath = self.graph_dir / f"{entity_name}_{key}.pkl"
+        resolved_key = self._resolve_graph_key(key, key_fields)
+        filepath = self.graph_dir / f"{entity_name}_{resolved_key}.pkl"
         with filepath.open("wb") as f:
             dill.dump(graph, f)
 
-    def get_graph_data(self, entity_name: str, key: str = None, **key_fields):
+    def get_graph_data(self, entity_name: str, key: str = None, **key_fields) -> Any:
         """
         Load stored graph data.
 
         Args:
             entity_name (str): Name of the entity.
-            key (str, optional): Unique graph identifier (legacy API).
-            **key_fields: Primary key values (new API, used by BaseDB.get_entity).
+            key (str, optional): Unique graph identifier (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API, used by BaseDB.get_entity).
 
         Returns:
             Any: Loaded graph object.
 
-        Note:
-            Supports both legacy `key: str` API and new `**key_fields` API
-            for compatibility with BaseDB.get_entity(). When called from
-            BaseDB.get_entity(), key_fields will be provided and key will be None.
-        """
-        # Support new API: construct key from key_fields (used by BaseDB.get_entity)
-        if key is None:
-            if key_fields:
-                # Construct key from sorted key_fields for consistency
-                key = "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
-            else:
-                raise ValueError("Either 'key' or 'key_fields' must be provided")
+        Raises:
+            DataNotFoundError: If graph data is not found.
 
-        filepath = self.graph_dir / f"{entity_name}_{key}.pkl"
+        Note:
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
+        """
+        resolved_key = self._resolve_graph_key(key, key_fields)
+        filepath = self.graph_dir / f"{entity_name}_{resolved_key}.pkl"
         if not filepath.exists():
-            raise DataNotFoundError(entity_name=f"{entity_name} (graph key={key})")
+            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+            )
 
         with filepath.open("rb") as f:
             return dill.load(f)
