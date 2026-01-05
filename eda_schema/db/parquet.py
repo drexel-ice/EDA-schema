@@ -77,6 +77,15 @@ def build_arrow_schema(entity_name: str) -> pa.Schema:
 
 @lru_cache(maxsize=128)
 def _load_arrow_table(path: Path) -> pa.Table:
+    """
+    Load an Arrow table from a Parquet file (cached).
+
+    Args:
+        path: Path to the Parquet file.
+
+    Returns:
+        pa.Table: Loaded Arrow table.
+    """
     return pq.read_table(path)
 
 
@@ -670,7 +679,12 @@ class ParquetDB(BaseDB):
         self._graph_writers.clear()
 
     def __enter__(self):
-        """Context manager entry - returns self."""
+        """
+        Context manager entry.
+
+        Returns:
+            ParquetDB: Self instance for use in 'with' statements.
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -678,15 +692,15 @@ class ParquetDB(BaseDB):
         Context manager exit - automatically closes all writers.
 
         Args:
-            exc_type: Exception type if an exception occurred
-            exc_val: Exception value if an exception occurred
-            exc_tb: Exception traceback if an exception occurred
+            exc_type: Exception type (if any).
+            exc_val: Exception value (if any).
+            exc_tb: Exception traceback (if any).
 
         Returns:
-            False to propagate exceptions, True to suppress them
+            bool: False to propagate exceptions, True to suppress them.
         """
         self.close()
-        return False  # Don't suppress exceptions
+        return False
 
     def _ensure_writers_closed(self):
         """

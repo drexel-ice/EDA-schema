@@ -39,19 +39,51 @@ class FileDB(BaseDB):
     # Helpers
     # ------------------------------------------------------------------
     def _entity_dir(self, entity_name: str) -> Path:
-        """Return the directory for an entity."""
+        """
+        Get the directory path for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            Path: Directory where the entity's data is stored.
+        """
         return self.data_home / entity_name
 
     def _table_path(self, entity_name: str) -> Path:
-        """Return the CSV table path for an entity."""
+        """
+        Get the CSV table path for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            Path: Path to the CSV file for the entity's table data.
+        """
         return self._entity_dir(entity_name) / "table.csv"
 
     def _graph_dir(self, entity_name: str) -> Path:
-        """Return the graph storage directory for an entity."""
+        """
+        Get the graph storage directory for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            Path: Directory containing graph JSON files for the entity.
+        """
         return self._entity_dir(entity_name) / "graphs"
 
     def _image_dir(self, entity_name: str) -> Path:
-        """Return the image storage directory for an entity."""
+        """
+        Get the image storage directory for an entity.
+
+        Args:
+            entity_name: Name of the entity.
+
+        Returns:
+            Path: Directory containing image NPZ files for the entity.
+        """
         return self._entity_dir(entity_name) / "images"
 
     # ------------------------------------------------------------------

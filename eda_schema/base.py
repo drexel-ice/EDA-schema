@@ -25,21 +25,54 @@ import matplotlib.pyplot as plt
 # ============================================================
 
 def _is_optional_type(tp: Any) -> bool:
+    """
+    Check if a type is Optional (Union with None).
+
+    Args:
+        tp: Type to check.
+
+    Returns:
+        bool: True if the type is Optional, False otherwise.
+    """
     return get_origin(tp) is Union and type(None) in get_args(tp)
 
 def _unwrap_optional_type(tp: Any) -> Any:
+    """
+    Extract the non-None type from an Optional type.
+
+    Args:
+        tp: Optional type to unwrap.
+
+    Returns:
+        The non-None type from the Optional.
+    """
     return next(t for t in get_args(tp) if t is not type(None))
 
 @lru_cache(maxsize=None)
 def _get_type_hints_cached(cls) -> Dict[str, Any]:
     """
     Cached version of typing.get_type_hints().
+
     Called once per entity class, never per instance.
+
+    Args:
+        cls: Class to get type hints for.
+
+    Returns:
+        dict: Dictionary mapping field names to their types.
     """
     return get_type_hints(cls, include_extras=True)
 
 def _is_image_type(tp: Any) -> bool:
-    """Return True if tp is Image2D or Optional[Image2D]."""
+    """
+    Check if a type is Image2D or Optional[Image2D].
+
+    Args:
+        tp: Type to check.
+
+    Returns:
+        bool: True if the type is Image2D or Optional[Image2D], False otherwise.
+    """
     if tp is Image2D:
         return True
     if _is_optional_type(tp):
@@ -54,13 +87,20 @@ def _resolve_field_type_and_nullable_cached(
     field_metadata_items: tuple,
 ) -> Tuple[Optional[str], bool, bool]:
     """
-    Resolve primitive json type + nullability + pk, cached per (class, field_name, pk-flag).
+    Resolve primitive JSON type, nullability, and primary key flag.
+
+    Cached per (class, field_name, pk-flag) for performance.
+
+    Args:
+        model_cls: The dataclass class that owns the field.
+        field_name: Name of the field.
+        field_metadata_items: Field metadata as a tuple of (key, value) pairs.
 
     Returns:
-        (json_type, nullable, is_pk)
-          - json_type: "string" | "integer" | "number" | "boolean" | None
-          - nullable: True if Optional[...] / Union[..., None]
-          - is_pk: True if field.metadata includes {"pk": True}
+        tuple: (json_type, nullable, is_pk) where:
+            - json_type: "string" | "integer" | "number" | "boolean" | None
+            - nullable: True if Optional[...] / Union[..., None]
+            - is_pk: True if field.metadata includes {"pk": True}
     """
     hints = _get_type_hints_cached(model_cls)
     tp = hints.get(field_name)  # prefer resolved type hints
@@ -103,7 +143,10 @@ def resolve_field_type_and_nullable(
         f: A dataclasses.Field instance.
 
     Returns:
-        (json_type, nullable, is_pk)
+        tuple: (json_type, nullable, is_pk) where:
+            - json_type: "string" | "integer" | "number" | "boolean" | None
+            - nullable: True if Optional[...] / Union[..., None]
+            - is_pk: True if field.metadata includes {"pk": True}
     """
     return _resolve_field_type_and_nullable_cached(
         model_cls,
@@ -114,10 +157,17 @@ def resolve_field_type_and_nullable(
 
 def _is_image_field(model_cls: Type, f: Field) -> bool:
     """
-    Return True if this dataclass field is Image2D or Optional[Image2D].
+    Check if a dataclass field is Image2D or Optional[Image2D].
 
     Uses cached get_type_hints() so it works with:
         from __future__ import annotations
+
+    Args:
+        model_cls: The dataclass class that owns the field.
+        f: A dataclasses.Field instance.
+
+    Returns:
+        bool: True if the field is Image2D or Optional[Image2D], False otherwise.
     """
     hints = _get_type_hints_cached(model_cls)
     tp = hints.get(f.name, f.type)
@@ -139,10 +189,25 @@ class Image2D(np.ndarray):
     """
 
     def __new__(cls, input_array):
+        """
+        Create a new Image2D instance from an input array.
+
+        Args:
+            input_array: Array-like object to convert to Image2D.
+
+        Returns:
+            Image2D: New Image2D instance.
+        """
         obj = np.asarray(input_array).view(cls)
         return obj
 
     def __array_finalize__(self, obj):
+        """
+        Finalize array creation (NumPy hook).
+
+        Args:
+            obj: Source object if array was created from another array.
+        """
         pass
 
     def validate(self) -> None:
@@ -156,11 +221,16 @@ class Image2D(np.ndarray):
 
     def plot(self, filename: str, invert_mask: bool = False, cmap: str = "gray") -> None:
         """
-        Save the image to disk.
+        Save the image to disk as a PNG file.
 
         Supports:
-        - Binary masks
-        - Scalar heatmaps
+        - Binary masks (2 unique values)
+        - Scalar heatmaps (more than 2 unique values)
+
+        Args:
+            filename: Path where the image will be saved.
+            invert_mask: If True, invert binary masks (0->1, 1->0).
+            cmap: Colormap name for heatmaps (default: "gray").
         """
         unique_vals = np.unique(self)
 
@@ -194,14 +264,16 @@ def _class_schema_metadata(
     cls: Type,
 ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
     """
-    Compute and cache per-class schema metadata:
+    Compute and cache per-class schema metadata.
 
-      - tabular keys: primitive fields (string/integer/number/boolean)
-      - primary keys: fields marked with metadata {"pk": True}
-      - image keys: Image2D or Optional[Image2D] fields
+    Args:
+        cls: The dataclass class to analyze.
 
     Returns:
-        (tabular_keys, primary_keys, image_keys) as tuples (immutable + cheap).
+        tuple: (tabular_keys, primary_keys, image_keys) as tuples where:
+            - tabular_keys: Primitive fields (string/integer/number/boolean)
+            - primary_keys: Fields marked with metadata {"pk": True}
+            - image_keys: Image2D or Optional[Image2D] fields
     """
     tabular: list[str] = []
     primary: list[str] = []
@@ -250,7 +322,15 @@ class BaseEntity:
 
     @classmethod
     def load(cls, data: Dict[str, Any]) -> "BaseEntity":
-        """Instantiate and validate an entity from raw data."""
+        """
+        Instantiate and validate an entity from raw data.
+
+        Args:
+            data: Dictionary of field names to values.
+
+        Returns:
+            BaseEntity: Newly instantiated entity instance.
+        """
         obj = cls(**data)
         return obj
 
@@ -318,14 +398,30 @@ class BaseEntity:
         self.validate_types()
 
     def get_tabular_data(self) -> Dict[str, Any]:
-        """Return Arrow-compatible primitive fields."""
+        """
+        Return Arrow-compatible primitive fields.
+
+        Returns:
+            dict: Dictionary of field names to primitive values (string/int/float/bool).
+        """
         return {k: getattr(self, k) for k in self._tabular_keys}
 
     def get_image_data(self) -> Dict[str, Optional[Image2D]]:
-        """Return all Image2D fields."""
+        """
+        Return all Image2D fields.
+
+        Returns:
+            dict: Dictionary of field names to Image2D values (or None if not set).
+        """
         return {k: getattr(self, k, None) for k in self._image_keys}
 
     def __repr__(self):
+        """
+        Return a string representation of the entity.
+
+        Returns:
+            str: String representation showing class name and tabular data.
+        """
         return f"{self.__class__.__name__}({self.get_tabular_data()})"
 
     __str__ = __repr__
@@ -374,29 +470,89 @@ class GraphEntity(BaseEntity):
 
     @property
     def nodes(self):
+        """
+        Get the graph nodes.
+
+        Returns:
+            NetworkX NodeView: View of all nodes in the graph.
+        """
         return self._graph.nodes
 
     @property
     def edges(self):
+        """
+        Get the graph edges.
+
+        Returns:
+            NetworkX EdgeView: View of all edges in the graph.
+        """
         return self._graph.edges
 
     def add_node(self, node_id: str, **attrs):
+        """
+        Add a node to the graph.
+
+        Args:
+            node_id: Unique identifier for the node.
+            **attrs: Additional attributes to attach to the node.
+        """
         self._validate_node(node_id, attrs)
         self._graph.add_node(node_id, **attrs)
 
     def add_edge(self, u: str, v: str, **attrs):
+        """
+        Add an edge to the graph.
+
+        Args:
+            u: Source node identifier.
+            v: Target node identifier.
+            **attrs: Additional attributes to attach to the edge.
+        """
         self._graph.add_edge(u, v, **attrs)
 
     def predecessors(self, node: str):
+        """
+        Get predecessors of a node.
+
+        Args:
+            node: Node identifier.
+
+        Returns:
+            Iterator: Iterator over predecessor nodes.
+        """
         return self._graph.predecessors(node)
 
     def successors(self, node: str):
+        """
+        Get successors of a node.
+
+        Args:
+            node: Node identifier.
+
+        Returns:
+            Iterator: Iterator over successor nodes.
+        """
         return self._graph.successors(node)
 
     def subgraph(self, nodes):
+        """
+        Get a subgraph containing only the specified nodes.
+
+        Args:
+            nodes: Iterable of node identifiers to include.
+
+        Returns:
+            NetworkX DiGraph: Subgraph containing only the specified nodes.
+        """
         return self._graph.subgraph(nodes)
 
     def get_graph_data(self) -> Dict[str, Any]:
+        """
+        Serialize the graph to a dictionary format.
+
+        Returns:
+            dict: Dictionary containing "nodes", "node_types", and "edges" keys.
+        """
         nodes = list(self.nodes)
         return {
             "nodes": nodes,
@@ -405,6 +561,12 @@ class GraphEntity(BaseEntity):
         }
 
     def load_graph_data(self, data: Dict[str, Any]) -> None:
+        """
+        Load graph data from a dictionary format.
+
+        Args:
+            data: Dictionary containing "nodes", "node_types", and "edges" keys.
+        """
         g = nx.DiGraph()
         for node, ntype in zip(data["nodes"], data["node_types"]):
             g.add_node(node, type=ntype, entity=None)
@@ -421,6 +583,20 @@ class GraphEntity(BaseEntity):
         _visited: Optional[List[str]] = None,
         _level: int = 0,
     ) -> List[str]:
+        """
+        Traverse the graph using breadth-first search.
+
+        Args:
+            node: Starting node identifier.
+            fanin: If True, traverse incoming edges (predecessors).
+            fanout: If True, traverse outgoing edges (successors).
+            depth_limit: Maximum depth to traverse (-1 for unlimited).
+            _visited: Internal parameter for tracking visited nodes.
+            _level: Internal parameter for tracking current depth.
+
+        Returns:
+            list: List of visited node identifiers in BFS order.
+        """
         if depth_limit == _level:
             return []
 
@@ -449,6 +625,20 @@ class GraphEntity(BaseEntity):
         _visited: Optional[List[str]] = None,
         _level: int = 0,
     ) -> List[str]:
+        """
+        Traverse the graph using depth-first search.
+
+        Args:
+            node: Starting node identifier.
+            fanin: If True, traverse incoming edges (predecessors).
+            fanout: If True, traverse outgoing edges (successors).
+            depth_limit: Maximum depth to traverse (-1 for unlimited).
+            _visited: Internal parameter for tracking visited nodes.
+            _level: Internal parameter for tracking current depth.
+
+        Returns:
+            list: List of visited node identifiers in DFS order.
+        """
         if depth_limit == _level:
             return []
 
@@ -473,6 +663,14 @@ class GraphEntity(BaseEntity):
         show: bool = True,
         filter_regex: Optional[str] = None,
     ):
+        """
+        Plot the graph using matplotlib.
+
+        Args:
+            figpath: Optional path to save the figure. If None, figure is not saved.
+            show: If True, display the plot using plt.show().
+            filter_regex: Optional regex pattern to filter out nodes matching the pattern.
+        """
         graph = (
             self._graph.subgraph(
                 [n for n in self.nodes if not re.match(filter_regex, n)]

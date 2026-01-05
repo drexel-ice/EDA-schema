@@ -17,11 +17,23 @@ class StandardCellData(dict[str, entity.StandardCellEntity]):
     """
 
     def __init__(self, *args, **kwargs) -> None:
+        """
+        Initialize StandardCellData container.
+
+        Args:
+            *args: Positional arguments passed to dict.__init__.
+            **kwargs: Keyword arguments passed to dict.__init__.
+        """
         super().__init__(*args, **kwargs)
         self.seq_cells: list[str] = []
 
     def add_cell(self, std_cell: entity.StandardCellEntity) -> None:
-        """Insert a standard cell and update sequential tracking."""
+        """
+        Insert a standard cell and update sequential tracking.
+
+        Args:
+            std_cell: Standard cell entity to add.
+        """
         self[std_cell.name] = std_cell
         if getattr(std_cell, "is_sequential", False):
             self.seq_cells.append(std_cell.name)
@@ -80,7 +92,11 @@ class Dataset(dict):
         return loaded
 
     def dump_standard_cells(self):
-        """Dump standard cell data into the database."""
+        """
+        Dump standard cell data into the database.
+
+        Writes all standard cells from self.standard_cells to the database.
+        """
         for std_cell in self.standard_cells.values():
             self.db.add_table_row("standard_cells", std_cell.get_tabular_data())
 
