@@ -256,15 +256,54 @@ class BaseEntity:
 
     def validate_types(self) -> None:
         """Perform shallow runtime type checking."""
+        # Get resolved type hints (handles string annotations from __future__ import annotations)
+        type_hints = _get_type_hints_cached(type(self))
+        
         for f in fields(self):
             value = getattr(self, f.name)
-            expected = f.type
+            # Use resolved type hint if available, otherwise fall back to field.type
+            expected = type_hints.get(f.name, f.type)
 
             if value is None:
                 continue
 
+            # Handle Optional types
             if _is_optional_type(expected):
                 expected = _unwrap_optional_type(expected)
+
+            # Handle generic types (Dict, List, etc.)
+            origin = get_origin(expected)
+            if origin is not None:
+                # For generic types, validate the outer structure
+                if origin is dict or origin is Dict:
+                    if not isinstance(value, dict):
+                        raise TypeError(
+                            f"{f.name} expected dict, got {type(value)}"
+                        )
+                    # Skip deep validation of key/value types for complex generics
+                    # (e.g., Dict[str, Image2D] - we can't easily validate Image2D values)
+                elif origin is list or origin is List:
+                    # Accept both list and tuple for List types (tuples are immutable sequences)
+                    if not isinstance(value, (list, tuple)):
+                        raise TypeError(
+                            f"{f.name} expected list or tuple, got {type(value)}"
+                        )
+                    # Skip deep validation of item types for complex generics
+                elif origin is tuple or origin is Tuple:
+                    if not isinstance(value, tuple):
+                        raise TypeError(
+                            f"{f.name} expected tuple, got {type(value)}"
+                        )
+                # For other generic types, skip validation to avoid errors
+                # (e.g., Union types, complex nested generics)
+                continue
+
+            # For non-generic types, use isinstance
+            # Skip validation if expected is not a type (e.g., forward references, string annotations)
+            if not isinstance(expected, type):
+                # This can happen with forward references or other complex type annotations
+                # Skip validation for these cases
+                continue
 
             if expected is int and isinstance(value, bool):
                 raise TypeError(f"{f.name} expected int, got bool")
