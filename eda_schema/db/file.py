@@ -93,38 +93,70 @@ class FileDB(BaseDB):
     # ------------------------------------------------------------------
     # Graph Operations
     # ------------------------------------------------------------------
-    def add_graph_data(self, entity_name: str, graph: Any, key: str):
+    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
         """
         Add graph data to the database.
 
         Args:
             entity_name (str): Name of the entity.
             graph: Graph object containing the data (must define graph_dict()).
-            key (str): Unique identifier for the graph data.
+            key (str, optional): Unique identifier for the graph data (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API).
+
+        Returns:
+            None
+
+        Note:
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
         """
-        key = key.replace("/", "_")
+        resolved_key = self._resolve_graph_key(key, key_fields).replace("/", "_")
         graph_path = self._graph_dir(entity_name)
         graph_path.mkdir(exist_ok=True)
 
-        out_path = graph_path / f"{key}.json"
+        out_path = graph_path / f"{resolved_key}.json"
+        # Handle both dict and object with graph_dict() method
+        if isinstance(graph, dict):
+            graph_data = graph
+        elif hasattr(graph, 'graph_dict'):
+            graph_data = graph.graph_dict()
+        else:
+            raise TypeError(
+                f"Graph must be a dict or an object with graph_dict() method, "
+                f"got {type(graph)}"
+            )
         with out_path.open("w") as f:
-            json.dump(graph.graph_dict(), f)
+            json.dump(graph_data, f)
 
-    def get_graph_data(self, entity_name: str, key: str) -> Dict[str, Any]:
+    def get_graph_data(self, entity_name: str, key: str = None, **key_fields) -> Dict[str, Any]:
         """
         Retrieve graph data from the database.
 
         Args:
             entity_name (str): Name of the entity.
-            key (str): Unique identifier for the graph data.
+            key (str, optional): Unique identifier for the graph data (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API, used by BaseDB.get_entity).
 
         Returns:
             dict: Graph data dictionary.
+
+        Raises:
+            DataNotFoundError: If graph data is not found.
+
+        Note:
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
         """
-        key = key.replace("/", "_")
-        graph_file = self._graph_dir(entity_name) / f"{key}.json"
+        resolved_key = self._resolve_graph_key(key, key_fields).replace("/", "_")
+        graph_file = self._graph_dir(entity_name) / f"{resolved_key}.json"
         if not graph_file.exists():
-            raise FileNotFoundError(f"Graph not found: {graph_file}")
+            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+            )
 
         with graph_file.open() as f:
             return json.load(f)

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+import warnings
 import pandas as pd
 
 from eda_schema import entity
@@ -35,25 +36,27 @@ class BaseDB(ABC):
     # Graph Storage
     # ------------------------------------------------------------------
     @abstractmethod
-    def add_graph_data(self, entity_name: str, graph: Any, key: str) -> None:
+    def add_graph_data(self, entity_name: str, graph: Any, **key_fields) -> None:
         """
         Store graph data for a graph-based entity.
 
         Args:
             entity_name (str): Name of the entity (e.g. "netlists").
-            graph (Any): Graph object (typically a NetworkX DiGraph).
-            key (str): Unique identifier for the graph record.
+            graph (Any): Graph object (typically a NetworkX DiGraph or dict).
+            **key_fields: Primary-key values identifying the graph record
+                        (e.g. flow_id="X", stage="Y").
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_graph_data(self, entity_name: str, key: str) -> Dict[str, Any]:
+    def get_graph_data(self, entity_name: str, **key_fields) -> Dict[str, Any]:
         """
-        Retrieve a stored graph for a given entity and key.
+        Retrieve a stored graph for a given entity and key fields.
 
         Args:
             entity_name (str): Name of the graph entity.
-            key (str): Unique identifier for the graph.
+            **key_fields: Primary-key values identifying the graph
+                        (e.g. flow_id="X", stage="Y").
 
         Returns:
             dict: Graph data in dictionary form, suitable for reconstruction.
@@ -169,9 +172,54 @@ class BaseDB(ABC):
             )
 
     # ------------------------------------------------------------------
+    # Helper methods for graph key resolution
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _resolve_graph_key(key: Optional[str], key_fields: Dict[str, Any]) -> str:
+        """
+        Resolve graph key from either legacy 'key' parameter or new 'key_fields'.
+
+        This helper method standardizes key construction across all database backends
+        that support backward compatibility with the legacy 'key: str' API.
+
+        Args:
+            key: Legacy key string (optional, deprecated).
+            key_fields: Primary key fields dictionary (preferred).
+
+        Returns:
+            str: Resolved key string constructed from key_fields or returned from key.
+
+        Raises:
+            ValueError: If neither key nor key_fields are provided, or if key is empty.
+        """
+        if key is None:
+            if not key_fields:
+                raise ValueError(
+                    "Either 'key' (legacy) or 'key_fields' (primary keys) must be provided. "
+                    "Use **key_fields for consistency with other backends."
+                )
+            # Construct key from sorted key_fields for consistency
+            return "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        elif key_fields:
+            # If both provided, key_fields takes precedence
+            warnings.warn(
+                "Both 'key' and 'key_fields' provided. Using 'key_fields'. "
+                "The 'key' parameter is deprecated.",
+                DeprecationWarning,
+                stacklevel=3
+            )
+            return "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
+        elif not key:
+            raise ValueError(
+                "Either 'key' (legacy) or 'key_fields' (primary keys) must be provided. "
+                "Use **key_fields for consistency with other backends."
+            )
+        return key
+
+    # ------------------------------------------------------------------
     # Combined entity
     # ------------------------------------------------------------------
-    def get_entity(self, entity_name: str, **key_fields):
+    def get_entity(self, entity_name: str, **key_fields) -> Any:
         """
         Retrieve a fully constructed entity instance, including its graph if applicable.
         Requires all primary-key fields to be supplied via key_fields.

@@ -1,8 +1,11 @@
+from typing import Any, Dict, List
+
 import pandas as pd
 from pymongo import MongoClient
 
 from eda_schema import entity
 from eda_schema.db.base import BaseDB
+from eda_schema.errors import DataNotFoundError
 
 
 class MongoDB(BaseDB, MongoClient):
@@ -42,37 +45,73 @@ class MongoDB(BaseDB, MongoClient):
 
         self.db["metadata"].insert_many(metadata)
 
-    def add_graph_data(self, entity_name: str, graph, key: str):
+    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
         """
         Store graph data for an entity.
 
         Args:
             entity_name (str): Name of the entity.
-            graph: Graph object with a graph_dict() method.
-            key (str): Unique graph identifier.
+            graph: Graph object with a graph_dict() method or dict.
+            key (str, optional): Unique graph identifier (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API).
 
         Returns:
             None
+
+        Note:
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
         """
+        resolved_key = self._resolve_graph_key(key, key_fields)
+
+        # Handle both dict and object with graph_dict() method
+        if isinstance(graph, dict):
+            graph_data = graph
+        elif hasattr(graph, 'graph_dict'):
+            graph_data = graph.graph_dict()
+        else:
+            raise TypeError(
+                f"Graph must be a dict or an object with graph_dict() method, "
+                f"got {type(graph)}"
+            )
+
         self.db[f"{entity_name}_graph"].insert_one({
-            "key": key,
-            **graph.graph_dict()
+            "key": resolved_key,
+            **graph_data
         })
 
-    def get_graph_data(self, entity_name: str, key: str):
+    def get_graph_data(self, entity_name: str, key: str = None, **key_fields) -> Dict[str, Any]:
         """
         Retrieve graph data for an entity.
 
         Args:
             entity_name (str): Name of the entity.
-            key (str): Unique graph identifier.
+            key (str, optional): Unique graph identifier (legacy API, deprecated).
+            **key_fields: Primary key values (preferred API, used by BaseDB.get_entity).
 
         Returns:
-            dict | None: Graph data dictionary if found, else None.
-        """
-        return self.db[f"{entity_name}_graph"].find_one({"key": key})
+            dict: Graph data dictionary.
 
-    def add_table_row(self, entity_name: str, row: dict):
+        Raises:
+            DataNotFoundError: If graph data is not found.
+
+        Note:
+            Supports both legacy `key: str` API (deprecated) and new `**key_fields` API.
+            The `key` parameter is maintained for backward compatibility but will be
+            removed in a future version. Use `**key_fields` instead.
+        """
+        resolved_key = self._resolve_graph_key(key, key_fields)
+        result = self.db[f"{entity_name}_graph"].find_one({"key": resolved_key})
+        if result is None:
+            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            raise DataNotFoundError(
+                entity_name=entity_name,
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+            )
+        return result
+
+    def add_table_row(self, entity_name: str, row: Dict[str, Any]) -> None:
         """
         Insert a single row into an entity table.
 
@@ -85,7 +124,7 @@ class MongoDB(BaseDB, MongoClient):
         """
         self.db[f"{entity_name}_tabular"].insert_one(row)
 
-    def add_table_data(self, entity_name: str, data: list):
+    def add_table_data(self, entity_name: str, data: List[Dict[str, Any]]) -> None:
         """
         Insert multiple rows into an entity table.
 
