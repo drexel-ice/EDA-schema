@@ -1,0 +1,115 @@
+2026-01-05 20:19:14,724 - OpenROADDataLoader - INFO - Initializing OpenROADDataLoader.
+2026-01-05 20:19:14,724 - OpenROADDataLoader - INFO - Loading LEF file: /mnt/eda-datagen_v1.2/eda-datagen/tool_scripts/openroad/flow/platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
+2026-01-05 20:19:14,724 - OpenROADDataLoader - INFO - Parsing LEF: /mnt/eda-datagen_v1.2/eda-datagen/tool_scripts/openroad/flow/platforms/sky130hd/lef/sky130_fd_sc_hd_merged.lef
+2026-01-05 20:19:15,147 - OpenROADDataLoader - INFO - Loading Liberty file: /mnt/eda-datagen_v1.2/OpenROAD-flow-scripts/flow/platforms/sky130hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+2026-01-05 20:19:23,628 - OpenROADDataLoader - INFO - Liberty cached → dataset/test/c2a89c1a212e6e6d739e2eefb939e889f05657b2.pkl
+2026-01-05 20:19:23,628 - OpenROADDataLoader - INFO - Extracting standard cell data.
+2026-01-05 20:19:23,639 - OpenROADDataLoader - INFO - Standard cell data extraction completed.
+2026-01-05 20:19:24,870 - OpenROADDataLoader - INFO - Starting extraction for 1 circuits
+2026-01-05 20:19:24,889 - OpenROADDataLoader - INFO - [floorplan] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,889 - OpenROADDataLoader - INFO - [floorplan] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,889 - OpenROADDataLoader - INFO - [global_place] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,890 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/2_floorplan.def
+2026-01-05 20:19:24,890 - OpenROADDataLoader - INFO - [place_resized] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,890 - OpenROADDataLoader - INFO - [global_place] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,890 - OpenROADDataLoader - INFO - [detailed_place] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,891 - OpenROADDataLoader - INFO - [cts] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,891 - OpenROADDataLoader - INFO - [place_resized] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,891 - OpenROADDataLoader - INFO - [global_route] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,892 - OpenROADDataLoader - INFO - [detailed_route] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,897 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_3_place_gp.def
+2026-01-05 20:19:24,897 - OpenROADDataLoader - INFO - [final] START stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,897 - OpenROADDataLoader - INFO - [detailed_place] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,918 - OpenROADDataLoader - INFO - [cts] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,923 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_4_place_resized.def
+2026-01-05 20:19:24,923 - OpenROADDataLoader - INFO - [global_route] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,924 - OpenROADDataLoader - INFO - [detailed_route] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:24,928 - OpenROADDataLoader - INFO - [final] Parsing DEF | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:25,298 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_5_place_dp.def
+2026-01-05 20:19:25,376 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/4_cts.def
+2026-01-05 20:19:25,388 - OpenROADDataLoader - INFO - [floorplan] DEF loading complete for gcd-000001
+2026-01-05 20:19:25,388 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_1_grt.def
+2026-01-05 20:19:25,406 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_2_route.def
+2026-01-05 20:19:25,421 - OpenROADDataLoader - INFO - Parsing DEF: /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/6_final.def
+2026-01-05 20:19:27,338 - OpenROADDataLoader - INFO - [floorplan] Clock tree size: 71
+2026-01-05 20:19:27,720 - OpenROADDataLoader - INFO - [floorplan] NetlistEntity built | cells=312 | nets=272 | pins=797 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:27,730 - OpenROADDataLoader - INFO - [floorplan] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:28,140 - OpenROADDataLoader - INFO - [floorplan] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:28,163 - OpenROADDataLoader - INFO - [floorplan] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:28,221 - OpenROADDataLoader - INFO - [floorplan] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/2_floorplan_timing_min.json
+2026-01-05 20:19:28,547 - OpenROADDataLoader - INFO - [floorplan] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/2_floorplan_timing_max.json
+2026-01-05 20:19:29,491 - OpenROADDataLoader - INFO - [global_route] DEF loading complete for gcd-000001
+2026-01-05 20:19:30,135 - OpenROADDataLoader - INFO - [floorplan] Timing paths: 299 extracted
+2026-01-05 20:19:30,179 - OpenROADDataLoader - INFO - [floorplan] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:30,638 - OpenROADDataLoader - INFO - [place_resized] DEF loading complete for gcd-000001
+2026-01-05 20:19:30,643 - OpenROADDataLoader - INFO - [cts] DEF loading complete for gcd-000001
+2026-01-05 20:19:30,902 - OpenROADDataLoader - INFO - [global_place] DEF loading complete for gcd-000001
+2026-01-05 20:19:30,968 - OpenROADDataLoader - INFO - [detailed_place] DEF loading complete for gcd-000001
+2026-01-05 20:19:31,809 - OpenROADDataLoader - INFO - [detailed_route] DEF loading complete for gcd-000001
+2026-01-05 20:19:32,090 - OpenROADDataLoader - INFO - [place_resized] Clock tree size: 71
+2026-01-05 20:19:32,154 - OpenROADDataLoader - INFO - [global_place] Clock tree size: 71
+2026-01-05 20:19:32,154 - OpenROADDataLoader - INFO - [final] DEF loading complete for gcd-000001
+2026-01-05 20:19:32,156 - OpenROADDataLoader - INFO - [place_resized] NetlistEntity built | cells=266 | nets=325 | pins=903 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,161 - OpenROADDataLoader - INFO - [place_resized] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,161 - OpenROADDataLoader - INFO - [detailed_place] Clock tree size: 71
+2026-01-05 20:19:32,162 - OpenROADDataLoader - INFO - [cts] Clock tree size: 91
+2026-01-05 20:19:32,174 - OpenROADDataLoader - INFO - [global_place] NetlistEntity built | cells=213 | nets=272 | pins=797 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,174 - OpenROADDataLoader - INFO - [detailed_place] NetlistEntity built | cells=266 | nets=325 | pins=903 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,175 - OpenROADDataLoader - INFO - [place_resized] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,175 - OpenROADDataLoader - INFO - [global_place] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,177 - OpenROADDataLoader - INFO - [detailed_place] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,177 - OpenROADDataLoader - INFO - [place_resized] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,178 - OpenROADDataLoader - INFO - [cts] NetlistEntity built | cells=340 | nets=399 | pins=1053 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,185 - OpenROADDataLoader - INFO - [place_resized] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_4_place_resized_timing_min.json
+2026-01-05 20:19:32,190 - OpenROADDataLoader - INFO - [cts] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,193 - OpenROADDataLoader - INFO - [detailed_place] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,194 - OpenROADDataLoader - INFO - [detailed_place] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,194 - OpenROADDataLoader - INFO - [global_place] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,195 - OpenROADDataLoader - INFO - [detailed_place] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_5_place_dp_timing_min.json
+2026-01-05 20:19:32,200 - OpenROADDataLoader - INFO - [global_place] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,219 - OpenROADDataLoader - INFO - [cts] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,219 - OpenROADDataLoader - INFO - [global_place] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_3_place_gp_timing_min.json
+2026-01-05 20:19:32,235 - OpenROADDataLoader - INFO - [cts] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,259 - OpenROADDataLoader - INFO - [place_resized] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_4_place_resized_timing_max.json
+2026-01-05 20:19:32,265 - OpenROADDataLoader - INFO - [cts] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/4_cts_timing_min.json
+2026-01-05 20:19:32,313 - OpenROADDataLoader - INFO - [detailed_place] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_5_place_dp_timing_max.json
+2026-01-05 20:19:32,332 - OpenROADDataLoader - INFO - [global_place] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/3_3_place_gp_timing_max.json
+2026-01-05 20:19:32,698 - OpenROADDataLoader - INFO - [place_resized] Timing paths: 283 extracted
+2026-01-05 20:19:32,709 - OpenROADDataLoader - INFO - [cts] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/4_cts_timing_max.json
+2026-01-05 20:19:32,709 - OpenROADDataLoader - INFO - [place_resized] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,765 - OpenROADDataLoader - INFO - [global_place] Timing paths: 309 extracted
+2026-01-05 20:19:32,790 - OpenROADDataLoader - INFO - [detailed_place] Timing paths: 288 extracted
+2026-01-05 20:19:32,825 - OpenROADDataLoader - INFO - [global_place] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:32,831 - OpenROADDataLoader - INFO - [detailed_place] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,123 - OpenROADDataLoader - INFO - [cts] Timing paths: 298 extracted
+2026-01-05 20:19:33,124 - OpenROADDataLoader - INFO - [cts] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,246 - OpenROADDataLoader - INFO - [global_route] Clock tree size: 91
+2026-01-05 20:19:33,257 - OpenROADDataLoader - INFO - [global_route] NetlistEntity built | cells=354 | nets=413 | pins=1081 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,258 - OpenROADDataLoader - INFO - [global_route] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,267 - OpenROADDataLoader - INFO - [global_route] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,269 - OpenROADDataLoader - INFO - [global_route] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,270 - OpenROADDataLoader - INFO - [global_route] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_1_grt_timing_min.json
+2026-01-05 20:19:33,334 - OpenROADDataLoader - INFO - [global_route] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_1_grt_timing_max.json
+2026-01-05 20:19:33,427 - OpenROADDataLoader - INFO - [global_route] Timing paths: 288 extracted
+2026-01-05 20:19:33,427 - OpenROADDataLoader - INFO - [global_route] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,649 - OpenROADDataLoader - INFO - [final] Clock tree size: 91
+2026-01-05 20:19:33,652 - OpenROADDataLoader - INFO - [final] NetlistEntity built | cells=1006 | nets=413 | pins=1081 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,652 - OpenROADDataLoader - INFO - [final] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,659 - OpenROADDataLoader - INFO - [detailed_route] Clock tree size: 91
+2026-01-05 20:19:33,661 - OpenROADDataLoader - INFO - [final] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,661 - OpenROADDataLoader - INFO - [final] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,662 - OpenROADDataLoader - INFO - [final] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/6_final_timing_min.json
+2026-01-05 20:19:33,662 - OpenROADDataLoader - INFO - [detailed_route] NetlistEntity built | cells=1006 | nets=413 | pins=1081 | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,681 - OpenROADDataLoader - INFO - [detailed_route] Computing cell & area metrics | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,717 - OpenROADDataLoader - INFO - [final] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/6_final_timing_max.json
+2026-01-05 20:19:33,811 - OpenROADDataLoader - INFO - [final] Timing paths: 287 extracted
+2026-01-05 20:19:33,811 - OpenROADDataLoader - INFO - [final] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,812 - OpenROADDataLoader - INFO - [detailed_route] Power & routability metrics computed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,812 - OpenROADDataLoader - INFO - [detailed_route] Parsing timing paths | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:33,812 - OpenROADDataLoader - INFO - [detailed_route] Loading MIN timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_2_route_timing_min.json
+2026-01-05 20:19:33,873 - OpenROADDataLoader - INFO - [detailed_route] Loading MAX timing paths from /home/ps937/datasets/test_gcd/gcd/id-000001/postprocessed/5_2_route_timing_max.json
+2026-01-05 20:19:34,168 - OpenROADDataLoader - INFO - [detailed_route] Timing paths: 288 extracted
+2026-01-05 20:19:34,168 - OpenROADDataLoader - INFO - [detailed_route] END stage | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:34,169 - OpenROADDataLoader - INFO - Adding to dataset | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:35,301 - OpenROADDataLoader - INFO - Dataset dump completed | flow=gcd-000001 | design=gcd
+2026-01-05 20:19:35,303 - OpenROADDataLoader - INFO - Design flow 'gcd-000001' successfully removed from dataset.
