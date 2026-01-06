@@ -1,11 +1,18 @@
 import pytest
 from eda_schema.dataset import Dataset
-from eda_schema.db import SQLitePickleDB
+from eda_schema.db import ParquetDB
 from eda_schema.utils.netlist_diff import compare_netlists_by_cells, compare_netlists_by_nets
 
 DATASET_DIR = "dataset/test"
-dataset = Dataset(SQLitePickleDB(DATASET_DIR))
-dataset.load_dataset(netlist_id='id-000001', load_timing_paths=False)
+FLOW_ID = 'gcd-000001'
+
+
+@pytest.fixture(scope="module")
+def dataset():
+    """Load dataset once per test module."""
+    dataset = Dataset(ParquetDB(DATASET_DIR))
+    dataset.load(flow_id=FLOW_ID)
+    return dataset
 
 
 @pytest.mark.parametrize(
@@ -212,9 +219,10 @@ dataset.load_dataset(netlist_id='id-000001', load_timing_paths=False)
         }),
     ]
 )
-def test_compare_netlists_by_cells(phase1, phase2, expected_result):
-    netlist1 = dataset[("gcd", 'id-000001', phase1)]
-    netlist2 = dataset[("gcd", 'id-000001', phase2)]
+def test_compare_netlists_by_cells(dataset, phase1, phase2, expected_result):
+    flow = dataset[FLOW_ID]
+    netlist1 = flow.stages[phase1].netlist
+    netlist2 = flow.stages[phase2].netlist
     _, _, result = compare_netlists_by_cells(netlist1, netlist2)
 
     assert result == expected_result
@@ -224,10 +232,10 @@ def test_compare_netlists_by_cells(phase1, phase2, expected_result):
     "phase1, phase2, expected_result",
     [
         ("floorplan", "global_place", {
-            'init_stage_count': 326,
-            'final_stage_count': 326,
-            'names_match': 326,
-            'names_match_neighbors_match': 326,
+            'init_stage_count': 272,
+            'final_stage_count': 272,
+            'names_match': 272,
+            'names_match_neighbors_match': 272,
             'names_match_neighbors_not_match': 0,
             'names_match_neighbors_not_match_resized': 0,
             'names_match_neighbors_not_match_delay': 0,
@@ -241,27 +249,27 @@ def test_compare_netlists_by_cells(phase1, phase2, expected_result):
             'removed_net': 0
         }),
         ("global_place", "place_resized", {
-            'init_stage_count': 326,
-            'final_stage_count': 379,
-            'names_match': 326,
-            'names_match_neighbors_match': 158,
-            'names_match_neighbors_not_match': 168,
-            'names_match_neighbors_not_match_resized': 115,
+            'init_stage_count': 272,
+            'final_stage_count': 325,
+            'names_match': 272,
+            'names_match_neighbors_match': 219,
+            'names_match_neighbors_not_match': 53,
+            'names_match_neighbors_not_match_resized': 0,
             'names_match_neighbors_not_match_delay': 0,
-            'names_match_neighbors_not_match_buffered': 53,
-            'names_match_neighbors_not_match_remaining': 0,
+            'names_match_neighbors_not_match_buffered': 35,
+            'names_match_neighbors_not_match_remaining': 18,
             'names_not_match': 53,
             'names_not_match_buffer_added': 35, # [INFO RSZ-0027] Inserted 35 input buffers.
-            'names_not_match_buffer_added_output': 18, # [INFO RSZ-0028] Inserted 18 output buffers.
+            'names_not_match_buffer_added_output': 0,
             'names_not_match_conb': 0,
-            'names_not_match_remaining': 0,
+            'names_not_match_remaining': 18,
             'removed_net': 0,
         }),
         ("place_resized", "detailed_place", {
-            'init_stage_count': 379,
-            'final_stage_count': 379,
-            'names_match': 379,
-            'names_match_neighbors_match': 379,
+            'init_stage_count': 325,
+            'final_stage_count': 325,
+            'names_match': 325,
+            'names_match_neighbors_match': 325,
             'names_match_neighbors_not_match': 0,
             'names_match_neighbors_not_match_resized': 0,
             'names_match_neighbors_not_match_delay': 0,
@@ -276,9 +284,10 @@ def test_compare_netlists_by_cells(phase1, phase2, expected_result):
         }),
     ]
 )
-def test_compare_netlists_by_nets(phase1, phase2, expected_result):
-    netlist1 = dataset[("gcd", 'id-000001', phase1)]
-    netlist2 = dataset[("gcd", 'id-000001', phase2)]
+def test_compare_netlists_by_nets(dataset, phase1, phase2, expected_result):
+    flow = dataset[FLOW_ID]
+    netlist1 = flow.stages[phase1].netlist
+    netlist2 = flow.stages[phase2].netlist
     _, _, result = compare_netlists_by_nets(netlist1, netlist2)
 
     assert result == expected_result
