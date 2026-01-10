@@ -313,7 +313,29 @@ class Dataset(dict):
         design_stage_entity.netlist = self.load_netlist(flow_id=flow_id, stage=stage)
         design_stage_entity.cell_metrics = self.db.get_entity("cell_metrics", flow_id=flow_id, stage=stage)
         design_stage_entity.area_metrics = self.db.get_entity("area_metrics", flow_id=flow_id, stage=stage)
-        design_stage_entity.power_metrics = self.db.get_entity("power_metrics", flow_id=flow_id, stage=stage)
+
+        # Load power metrics and apply migration (Watts -> μW) if needed
+        power_metrics = self.db.get_entity("power_metrics", flow_id=flow_id, stage=stage)
+        if power_metrics:
+            # Migration: Convert from Watts to μW if values are in old format (< 1.0)
+            # New parser outputs values in μW (typically > 100), old database has Watts (< 1.0)
+            if power_metrics.total_power is not None and power_metrics.total_power < 1.0:
+                # Convert all power values from Watts to μW (multiply by 1e6) and round
+                power_metrics.total_power = round(power_metrics.total_power * 1e6, 6)
+                if power_metrics.combinational_power is not None:
+                    power_metrics.combinational_power = round(power_metrics.combinational_power * 1e6, 6)
+                if power_metrics.sequential_power is not None:
+                    power_metrics.sequential_power = round(power_metrics.sequential_power * 1e6, 6)
+                if power_metrics.macro_power is not None:
+                    power_metrics.macro_power = round(power_metrics.macro_power * 1e6, 6)
+                if power_metrics.internal_power is not None:
+                    power_metrics.internal_power = round(power_metrics.internal_power * 1e6, 6)
+                if power_metrics.switching_power is not None:
+                    power_metrics.switching_power = round(power_metrics.switching_power * 1e6, 6)
+                if power_metrics.leakage_power is not None:
+                    power_metrics.leakage_power = round(power_metrics.leakage_power * 1e6, 6)
+        design_stage_entity.power_metrics = power_metrics
+
         design_stage_entity.routability_metrics = self.db.get_entity("routability_metrics", flow_id=flow_id, stage=stage)
         design_stage_entity.timing_metrics = self.db.get_entity("timing_metrics", flow_id=flow_id, stage=stage)
         return design_stage_entity
