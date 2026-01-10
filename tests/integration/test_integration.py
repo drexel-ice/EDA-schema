@@ -2,12 +2,14 @@
 Integration tests for eda_schema library.
 Tests complete workflows and multi-component interactions.
 """
+from pathlib import Path
+
 import pytest
 import numpy as np
-from pathlib import Path
 
 from eda_schema.dataset import Dataset
 from eda_schema.db import ParquetDB
+from eda_schema.db.parquet import _load_arrow_table
 from eda_schema import entity
 from eda_schema.base import Image2D
 from eda_schema.errors import DataNotFoundError
@@ -337,7 +339,6 @@ class TestErrorHandlingIntegration:
         db.close()
 
         # Clear cache to ensure fresh read
-        from eda_schema.db.parquet import _load_arrow_table
         _load_arrow_table.cache_clear()
 
         # Create new DB instance to avoid cache issues
