@@ -29,10 +29,13 @@ Usage:
     pytest -v tests/test_edaschema_to_protobuf.py
 """
 
+import math
 import os
-import pytest
 import tempfile
 from dataclasses import fields
+
+import pytest
+
 from eda_schema.entity import DesignStages
 from eda_schema.dataset import Dataset
 from eda_schema.db import ParquetDB
@@ -147,18 +150,20 @@ def is_proto_edaschema_equal(proto_obj, edaschema_entity):
         type_is_numeric = ('float' in type_str or 'int' in type_str) and 'str' not in type_str
 
         if proto_is_numeric or eda_is_numeric or type_is_numeric:
-            import math
             proto_val = float(proto_val) if proto_val is not None else 0.0
             eda_val = float(eda_val) if eda_val is not None else 0.0
             # Handle NaN values - both must be NaN to be equal
             if math.isnan(proto_val) and math.isnan(eda_val):
                 # Both are NaN, consider them equal
                 continue
-            elif math.isnan(proto_val) or math.isnan(eda_val):
+            if math.isnan(proto_val) or math.isnan(eda_val):
                 # One is NaN, the other isn't - not equal
                 is_match = False
             else:
-                rounded_match = round(proto_val, 2) == round(eda_val, 2)
+                # Use tolerance-based comparison for floating point values
+                # Protobuf uses float32, EDA schema uses float64, so we need tolerance
+                tolerance = 1e-3  # 0.001 tolerance
+                rounded_match = abs(proto_val - eda_val) < tolerance
                 is_match = is_match and rounded_match
         elif attr == "standard_cell":
             # standard_cell is now a string in both proto and entity
@@ -294,7 +299,7 @@ def test_convert_protobuf_to_edaschema(test_dataset, first_stage_entity, temp_pr
             assert original_type == reconstructed_type, \
                 f"Node {node_name} type mismatch: original={original_type}, reconstructed={reconstructed_type}"
 
-    eda_schema_edges = [edges for edges in netlist.edges]
+    eda_schema_edges = list(netlist.edges)
     proto_edges = [(edge.source, edge.target) for edge in netlist_proto.edges]
     assert len(eda_schema_edges) == len(netlist_proto.edges), "Number of edges in EDA schema and protobuf do not match"
     assert sorted(eda_schema_edges) == sorted(proto_edges), "Edges in EDA schema and protobuf do not match"
