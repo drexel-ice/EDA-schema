@@ -374,15 +374,18 @@ class Dataset(dict):
                 Mapping (startpoint, endpoint, path_type) → TimingPathEntity.
         """
         net_arc_df = self.db.get_table_data("net_arcs", flow_id=flow_id, stage=stage)
-        net_arc_dict = {
-            (row.startpoint, row.endpoint, row.path_type, row.net_name): row.to_dict()
-            for _, row in net_arc_df.iterrows()
-        }
+        net_arc_dict = {}
+        for _, row in net_arc_df.iterrows():
+            row_dict = row.to_dict()
+            key = (row.startpoint, row.endpoint, row.path_type, row.net_name)
+            net_arc_dict[key] = row_dict
+
         cell_arc_df = self.db.get_table_data("cell_arcs", flow_id=flow_id, stage=stage)
-        cell_arc_dict = {
-            (row.startpoint, row.endpoint, row.path_type, row.gate_name): row.to_dict()
-            for _, row in cell_arc_df.iterrows()
-        }
+        cell_arc_dict = {}
+        for _, row in cell_arc_df.iterrows():
+            row_dict = row.to_dict()
+            key = (row.startpoint, row.endpoint, row.path_type, row.gate_name)
+            cell_arc_dict[key] = row_dict
 
         timing_paths = {}
         df = self.db.get_table_data("timing_paths", flow_id=flow_id, stage=stage)
@@ -404,10 +407,12 @@ class Dataset(dict):
                     timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
                 elif node_type == "NET_ARC":
                     arc_key = (row.startpoint, row.endpoint, row.path_type, node)
-                    timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(**net_arc_dict[arc_key])
+                    if arc_key in net_arc_dict:
+                        timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(**net_arc_dict[arc_key])
                 elif node_type == "CELL_ARC":
                     arc_key = (row.startpoint, row.endpoint, row.path_type, node)
-                    timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(**cell_arc_dict[arc_key])
+                    if arc_key in cell_arc_dict:
+                        timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(**cell_arc_dict[arc_key])
 
             timing_paths[(row.startpoint, row.endpoint, row.path_type)] = timing_path_entity
 
