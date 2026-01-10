@@ -219,19 +219,14 @@ class Image2D(np.ndarray):
         if self.size == 0:
             raise ValueError("Image2D cannot be empty")
 
-    def plot(self, filename: str, invert_mask: bool = False, cmap: str = "gray") -> None:
-        """
-        Save the image to disk as a PNG file.
-
-        Supports:
-        - Binary masks (2 unique values)
-        - Scalar heatmaps (more than 2 unique values)
-
-        Args:
-            filename: Path where the image will be saved.
-            invert_mask: If True, invert binary masks (0->1, 1->0).
-            cmap: Colormap name for heatmaps (default: "gray").
-        """
+    def plot(
+        self,
+        filename: Optional[str] = None,
+        invert_mask: bool = False,
+        cmap: str = "gray",
+        ax: Optional[plt.Axes] = None,
+        title: Optional[str] = None,
+    ) -> None:
         unique_vals = np.unique(self)
 
         if unique_vals.size <= 2:
@@ -245,14 +240,27 @@ class Image2D(np.ndarray):
             rgba = plt.cm.get_cmap(cmap)(norm)
             rgb = (rgba[:, :, :3] * 255).astype(np.uint8)
 
-        h, w = rgb.shape[:2]
-        fig = plt.figure(figsize=(w / 100, h / 100), frameon=False)
-        ax = plt.Axes(fig, [0, 0, 1, 1])
-        fig.add_axes(ax)
+        if ax is None:
+            h, w = rgb.shape[:2]
+            fig = plt.figure(figsize=(w / 100, h / 100), frameon=False)
+            ax = plt.Axes(fig, [0, 0, 1, 1])
+            fig.add_axes(ax)
+        else:
+            fig = ax.figure
+
         ax.axis("off")
         ax.imshow(rgb)
-        plt.savefig(filename, dpi=100, bbox_inches="tight", pad_inches=0)
-        plt.close(fig)
+
+        if title:
+            ax.set_title(title)
+
+        if filename is not None:
+            fig.savefig(filename, dpi=100, bbox_inches="tight", pad_inches=0)
+        elif ax is None:
+            plt.show()
+
+        if ax is None:
+            plt.close(fig)
 
 
 # ============================================================
