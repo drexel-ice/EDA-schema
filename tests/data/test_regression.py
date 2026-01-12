@@ -1046,6 +1046,87 @@ def test_clock_tree_image_data(dataset, phase, clock_name, image_name, expected_
 
 
 @pytest.mark.parametrize(
+    "phase, metal_layer, expected_shape, expected_checksum",
+    [
+        # Format: (phase, metal_layer, (height, width), checksum)
+        # routing_by_metal is only available after detailed routing
+        ("detailed_route", "met1", (695, 695), 0x089927d7),
+        ("detailed_route", "met2", (695, 695), 0x6df04f86),
+        ("detailed_route", "met3", (695, 695), 0x1f9a2adb),
+        ("final", "met1", (695, 695), 0x089927d7),
+        ("final", "met2", (695, 695), 0x6df04f86),
+        ("final", "met3", (695, 695), 0x1f9a2adb),
+    ]
+)
+def test_netlist_routing_by_metal_data(dataset, phase, metal_layer, expected_shape, expected_checksum):
+    """Track netlist routing_by_metal image shapes and checksums for regression testing."""
+    netlist = get_netlist(dataset, phase)
+
+    if not netlist.routing_by_metal:
+        pytest.skip(f"routing_by_metal not available for phase {phase}")
+
+    if metal_layer not in netlist.routing_by_metal:
+        pytest.skip(f"Metal layer {metal_layer} not found in routing_by_metal for phase {phase}")
+
+    img = netlist.routing_by_metal[metal_layer]
+    if img is None:
+        pytest.skip(f"routing_by_metal[{metal_layer}] is None for phase {phase}")
+
+    actual_shape = img.shape
+    expected_height, expected_width = expected_shape
+
+    assert actual_shape == (expected_height, expected_width), \
+        f"Netlist routing_by_metal[{metal_layer}] shape changed in {phase}: {actual_shape} != {(expected_height, expected_width)}"
+
+    actual_checksum = zlib.crc32(img.tobytes())
+    assert actual_checksum == expected_checksum, \
+        f"Netlist routing_by_metal[{metal_layer}] checksum changed in {phase}: 0x{actual_checksum:08x} != 0x{expected_checksum:08x}"
+
+
+@pytest.mark.parametrize(
+    "phase, clock_name, metal_layer, expected_shape, expected_checksum",
+    [
+        # Format: (phase, clock_name, metal_layer, (height, width), checksum)
+        # routing_by_metal is only available after detailed routing
+        ("detailed_route", "clk", "met1", (695, 695), 0x5b09551a),
+        ("detailed_route", "clk", "met2", (695, 695), 0x2b95f13c),
+        ("detailed_route", "clk", "met3", (695, 695), 0x323468bc),
+        ("final", "clk", "met1", (695, 695), 0x5b09551a),
+        ("final", "clk", "met2", (695, 695), 0x2b95f13c),
+        ("final", "clk", "met3", (695, 695), 0x323468bc),
+    ]
+)
+def test_clock_tree_routing_by_metal_data(dataset, phase, clock_name, metal_layer, expected_shape, expected_checksum):
+    """Track clock tree routing_by_metal image shapes and checksums for regression testing."""
+    netlist = get_netlist(dataset, phase)
+
+    if not netlist.clock_trees or clock_name not in netlist.clock_trees:
+        pytest.skip(f"No clock tree '{clock_name}' for phase {phase}")
+
+    clock_tree = netlist.clock_trees[clock_name]
+
+    if not clock_tree.routing_by_metal:
+        pytest.skip(f"routing_by_metal not available for clock tree '{clock_name}' in phase {phase}")
+
+    if metal_layer not in clock_tree.routing_by_metal:
+        pytest.skip(f"Metal layer {metal_layer} not found in clock tree routing_by_metal for phase {phase}")
+
+    img = clock_tree.routing_by_metal[metal_layer]
+    if img is None:
+        pytest.skip(f"Clock tree routing_by_metal[{metal_layer}] is None for phase {phase}")
+
+    actual_shape = img.shape
+    expected_height, expected_width = expected_shape
+
+    assert actual_shape == (expected_height, expected_width), \
+        f"Clock tree {clock_name} routing_by_metal[{metal_layer}] shape changed in {phase}: {actual_shape} != {(expected_height, expected_width)}"
+
+    actual_checksum = zlib.crc32(img.tobytes())
+    assert actual_checksum == expected_checksum, \
+        f"Clock tree {clock_name} routing_by_metal[{metal_layer}] checksum changed in {phase}: 0x{actual_checksum:08x} != 0x{expected_checksum:08x}"
+
+
+@pytest.mark.parametrize(
     "cell_name, expected_values",
     [
         # Format: (cell_name, (width, height, is_sequential, is_buffer, is_inverter, is_filler, is_tapcell))

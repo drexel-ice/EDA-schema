@@ -171,6 +171,23 @@ class BaseDB(ABC):
                 **key_fields,
             )
 
+        # Handle Dict[str, Image2D] fields
+        dict_images = entity_obj.get_dict_image_data()
+        for dict_field_name, dict_value in dict_images.items():
+            if not dict_value:
+                continue
+            for key, image_obj in dict_value.items():
+                if image_obj is None:
+                    continue
+                # Store with naming scheme: field_name__dict_key
+                image_name = f"{dict_field_name}__{key}"
+                self.add_image(
+                    entity_name,
+                    image_name=image_name,
+                    image=image_obj,
+                    **key_fields,
+                )
+
     # ------------------------------------------------------------------
     # Helper methods for graph key resolution
     # ------------------------------------------------------------------
@@ -260,7 +277,9 @@ class BaseDB(ABC):
         # Load row from table using PKs
         # --------------------------------------------------------------
         row = self.get_table_row(entity_name, **key_fields)
-        obj = model_cls(**row.to_dict())
+        # Filter out internal metadata columns (start with _)
+        row_dict = {k: v for k, v in row.to_dict().items() if not k.startswith('_')}
+        obj = model_cls(**row_dict)
 
         # --------------------------------------------------------------
         # Attach graph (if graph entity)
@@ -295,5 +314,24 @@ class BaseDB(ABC):
                 setattr(obj, image_field, image)
             except DataNotFoundError:
                 setattr(obj, image_field, None)
+
+        # --------------------------------------------------------------
+        # Load Dict[str, Image2D] fields for this entity (if any exist)
+        # --------------------------------------------------------------
+        for dict_image_field in obj._dict_image_keys:
+            dict_value = {}
+            # Try to discover images by attempting to load with common patterns
+            # For now, we'll try a few common metal layer names
+            # A more robust solution would store a manifest, but this works for routing_by_metal
+            common_keys = ['met1', 'met2', 'met3', 'met4', 'met5', 'metal1', 'metal2', 'metal3', 'metal4', 'metal5']
+            for dict_key in common_keys:
+                try:
+                    image = self.get_image(entity_name, f"{dict_image_field}__{dict_key}", **key_fields)
+                    dict_value[dict_key] = image
+                except DataNotFoundError:
+                    pass
+            # Also try to discover by listing files if the backend supports it
+            # This is backend-specific, so we'll handle it in subclasses if needed
+            setattr(obj, dict_image_field, dict_value)
 
         return obj
