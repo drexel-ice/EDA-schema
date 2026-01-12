@@ -80,6 +80,30 @@ def _is_image_type(tp: Any) -> bool:
     return False
 
 
+def _is_dict_image_type(tp: Any) -> bool:
+    """
+    Check if a type is Dict[str, Image2D] or Optional[Dict[str, Image2D]].
+
+    Args:
+        tp: Type to check.
+
+    Returns:
+        bool: True if the type is Dict[str, Image2D] or Optional[Dict[str, Image2D]], False otherwise.
+    """
+    origin = get_origin(tp)
+    if origin is dict or origin is Dict:
+        args = get_args(tp)
+        if len(args) == 2:
+            key_type, value_type = args
+            # Check if key is str and value is Image2D
+            if key_type is str and _is_image_type(value_type):
+                return True
+    # Handle Optional[Dict[str, Image2D]]
+    if _is_optional_type(tp):
+        return _is_dict_image_type(_unwrap_optional_type(tp))
+    return False
+
+
 @lru_cache(maxsize=None)
 def _resolve_field_type_and_nullable_cached(
     model_cls: Type,
@@ -172,6 +196,25 @@ def _is_image_field(model_cls: Type, f: Field) -> bool:
     hints = _get_type_hints_cached(model_cls)
     tp = hints.get(f.name, f.type)
     return _is_image_type(tp)
+
+
+def _is_dict_image_field(model_cls: Type, f: Field) -> bool:
+    """
+    Check if a dataclass field is Dict[str, Image2D] or Optional[Dict[str, Image2D]].
+
+    Uses cached get_type_hints() so it works with:
+        from __future__ import annotations
+
+    Args:
+        model_cls: The dataclass class that owns the field.
+        f: A dataclasses.Field instance.
+
+    Returns:
+        bool: True if the field is Dict[str, Image2D] or Optional[Dict[str, Image2D]], False otherwise.
+    """
+    hints = _get_type_hints_cached(model_cls)
+    tp = hints.get(f.name, f.type)
+    return _is_dict_image_type(tp)
 
 
 # ============================================================
@@ -270,7 +313,7 @@ class Image2D(np.ndarray):
 @lru_cache(maxsize=None)
 def _class_schema_metadata(
     cls: Type,
-) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
+) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
     """
     Compute and cache per-class schema metadata.
 
@@ -278,14 +321,16 @@ def _class_schema_metadata(
         cls: The dataclass class to analyze.
 
     Returns:
-        tuple: (tabular_keys, primary_keys, image_keys) as tuples where:
+        tuple: (tabular_keys, primary_keys, image_keys, dict_image_keys) as tuples where:
             - tabular_keys: Primitive fields (string/integer/number/boolean)
             - primary_keys: Fields marked with metadata {"pk": True}
             - image_keys: Image2D or Optional[Image2D] fields
+            - dict_image_keys: Dict[str, Image2D] or Optional[Dict[str, Image2D]] fields
     """
     tabular: list[str] = []
     primary: list[str] = []
     image: list[str] = []
+    dict_image: list[str] = []
 
     for f in fields(cls):
         json_type, _, is_pk = resolve_field_type_and_nullable(cls, f)
@@ -296,8 +341,10 @@ def _class_schema_metadata(
             primary.append(f.name)
         if _is_image_field(cls, f):
             image.append(f.name)
+        elif _is_dict_image_field(cls, f):
+            dict_image.append(f.name)
 
-    return (tuple(tabular), tuple(primary), tuple(image))
+    return (tuple(tabular), tuple(primary), tuple(image), tuple(dict_image))
 
 
 @dataclass(slots=True)
@@ -315,13 +362,15 @@ class BaseEntity:
     _tabular_keys: List[str] = field(init=False, repr=False)
     _primary_keys: List[str] = field(init=False, repr=False)
     _image_keys: List[str] = field(init=False, repr=False)
+    _dict_image_keys: List[str] = field(init=False, repr=False)
 
     def __post_init__(self):
         self._tabular_keys = []
         self._primary_keys = []
         self._image_keys = []
+        self._dict_image_keys = []
 
-        self._tabular_keys, self._primary_keys, self._image_keys = _class_schema_metadata(type(self))
+        self._tabular_keys, self._primary_keys, self._image_keys, self._dict_image_keys = _class_schema_metadata(type(self))
         self._post_init_hook()
 
     def _post_init_hook(self) -> None:
@@ -422,6 +471,20 @@ class BaseEntity:
             dict: Dictionary of field names to Image2D values (or None if not set).
         """
         return {k: getattr(self, k, None) for k in self._image_keys}
+
+    def get_dict_image_data(self) -> Dict[str, Dict[str, Image2D]]:
+        """
+        Return all Dict[str, Image2D] fields.
+
+        Returns:
+            dict: Dictionary of field names to Dict[str, Image2D] values (or empty dict if not set).
+        """
+        result = {}
+        for k in self._dict_image_keys:
+            value = getattr(self, k, None)
+            if value is not None:
+                result[k] = value
+        return result
 
     def __repr__(self):
         """

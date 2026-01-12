@@ -314,6 +314,189 @@ class TestImageWorkflow:
         assert np.array_equal(cell_placement, retrieved.cell_placement)
         assert np.array_equal(routing, retrieved.routing)
 
+    def test_entity_with_routing_by_metal(self, temp_dir, sample_netlist_data):
+        """Test storing and retrieving entity with routing_by_metal dictionary images."""
+        db_path = Path(temp_dir) / "routing_by_metal_db"
+        db = ParquetDB(str(db_path))
+        db.create_dataset_tables()
+
+        netlist = entity.NetlistEntity(**sample_netlist_data)
+
+        # Create routing_by_metal dictionary with multiple metal layers
+        routing_met1 = Image2D(np.random.rand(50, 50))
+        routing_met2 = Image2D(np.random.rand(50, 50))
+        routing_met3 = Image2D(np.random.rand(50, 50))
+
+        netlist.routing_by_metal = {
+            'met1': routing_met1,
+            'met2': routing_met2,
+            'met3': routing_met3,
+        }
+
+        db.add_table_row('netlists', netlist.get_tabular_data())
+        graph_data = netlist.get_graph_data()
+        db.add_graph_data('netlists', graph_data,
+                         flow_id=netlist.flow_id, stage=netlist.stage)
+
+        # Add images using add_entity_images (should handle routing_by_metal)
+        db.add_entity_images('netlists', netlist)
+        db.close()
+
+        # Retrieve entity
+        retrieved = db.get_entity('netlists',
+                                 flow_id=netlist.flow_id,
+                                 stage=netlist.stage)
+
+        # routing_by_metal should be loaded as a dictionary
+        assert retrieved.routing_by_metal is not None
+        assert isinstance(retrieved.routing_by_metal, dict)
+        assert len(retrieved.routing_by_metal) == 3
+
+        # Verify all metal layers are present
+        assert 'met1' in retrieved.routing_by_metal
+        assert 'met2' in retrieved.routing_by_metal
+        assert 'met3' in retrieved.routing_by_metal
+
+        # Verify images match
+        assert np.array_equal(routing_met1, retrieved.routing_by_metal['met1'])
+        assert np.array_equal(routing_met2, retrieved.routing_by_metal['met2'])
+        assert np.array_equal(routing_met3, retrieved.routing_by_metal['met3'])
+
+        # Verify images are Image2D instances
+        assert isinstance(retrieved.routing_by_metal['met1'], Image2D)
+        assert isinstance(retrieved.routing_by_metal['met2'], Image2D)
+        assert isinstance(retrieved.routing_by_metal['met3'], Image2D)
+
+    def test_clock_tree_with_routing_by_metal(self, temp_dir, sample_netlist_data):
+        """Test storing and retrieving ClockTreeEntity with routing_by_metal dictionary images."""
+        db_path = Path(temp_dir) / "clock_tree_routing_db"
+        db = ParquetDB(str(db_path))
+        db.create_dataset_tables()
+
+        netlist = entity.NetlistEntity(**sample_netlist_data)
+        db.add_table_row('netlists', netlist.get_tabular_data())
+        graph_data = netlist.get_graph_data()
+        db.add_graph_data('netlists', graph_data,
+                         flow_id=netlist.flow_id, stage=netlist.stage)
+
+        # Create clock tree with routing_by_metal
+        clock_tree = entity.ClockTreeEntity(
+            flow_id=netlist.flow_id,
+            stage=netlist.stage,
+            clock_source='clk',
+        )
+
+        # Create routing_by_metal dictionary
+        routing_met1 = Image2D(np.random.rand(40, 40))
+        routing_met2 = Image2D(np.random.rand(40, 40))
+
+        clock_tree.routing_by_metal = {
+            'met1': routing_met1,
+            'met2': routing_met2,
+        }
+
+        # Add clock tree to netlist
+        netlist.clock_trees['clk'] = clock_tree
+
+        # Save clock tree
+        db.add_table_row('clock_trees', clock_tree.get_tabular_data())
+        clock_graph_data = clock_tree.get_graph_data()
+        db.add_graph_data('clock_trees', clock_graph_data,
+                         flow_id=clock_tree.flow_id,
+                         stage=clock_tree.stage,
+                         clock_source=clock_tree.clock_source)
+        db.add_entity_images('clock_trees', clock_tree)
+        db.close()
+
+        # Retrieve clock tree directly
+        retrieved_clock_tree = db.get_entity('clock_trees',
+                                            flow_id=clock_tree.flow_id,
+                                            stage=clock_tree.stage,
+                                            clock_source=clock_tree.clock_source)
+
+        # Verify routing_by_metal was loaded
+        assert retrieved_clock_tree.routing_by_metal is not None
+        assert isinstance(retrieved_clock_tree.routing_by_metal, dict)
+        assert len(retrieved_clock_tree.routing_by_metal) == 2
+
+        # Verify metal layers
+        assert 'met1' in retrieved_clock_tree.routing_by_metal
+        assert 'met2' in retrieved_clock_tree.routing_by_metal
+
+        # Verify images match
+        assert np.array_equal(routing_met1, retrieved_clock_tree.routing_by_metal['met1'])
+        assert np.array_equal(routing_met2, retrieved_clock_tree.routing_by_metal['met2'])
+
+    def test_routing_by_metal_empty_dict(self, temp_dir, sample_netlist_data):
+        """Test that empty routing_by_metal dictionary is handled correctly."""
+        db_path = Path(temp_dir) / "empty_routing_db"
+        db = ParquetDB(str(db_path))
+        db.create_dataset_tables()
+
+        netlist = entity.NetlistEntity(**sample_netlist_data)
+        # Set routing_by_metal to empty dict
+        netlist.routing_by_metal = {}
+
+        db.add_table_row('netlists', netlist.get_tabular_data())
+        graph_data = netlist.get_graph_data()
+        db.add_graph_data('netlists', graph_data,
+                         flow_id=netlist.flow_id, stage=netlist.stage)
+
+        # Add images (should handle empty dict gracefully)
+        db.add_entity_images('netlists', netlist)
+        db.close()
+
+        # Retrieve entity
+        retrieved = db.get_entity('netlists',
+                                 flow_id=netlist.flow_id,
+                                 stage=netlist.stage)
+
+        # routing_by_metal should be an empty dict
+        assert retrieved.routing_by_metal is not None
+        assert isinstance(retrieved.routing_by_metal, dict)
+        assert len(retrieved.routing_by_metal) == 0
+
+    def test_filedb_routing_by_metal(self, temp_dir, sample_netlist_data):
+        """Test routing_by_metal with FileDB backend."""
+        from eda_schema.db import FileDB
+
+        db_path = Path(temp_dir) / "filedb_routing"
+        db = FileDB(str(db_path))
+        db.create_dataset_tables()
+
+        netlist = entity.NetlistEntity(**sample_netlist_data)
+
+        # Create routing_by_metal dictionary
+        routing_met1 = Image2D(np.random.rand(30, 30))
+        routing_met2 = Image2D(np.random.rand(30, 30))
+
+        netlist.routing_by_metal = {
+            'met1': routing_met1,
+            'met2': routing_met2,
+        }
+
+        db.add_table_row('netlists', netlist.get_tabular_data())
+        graph_data = netlist.get_graph_data()
+        db.add_graph_data('netlists', graph_data,
+                         flow_id=netlist.flow_id, stage=netlist.stage)
+
+        # Add images
+        db.add_entity_images('netlists', netlist)
+
+        # Retrieve entity
+        retrieved = db.get_entity('netlists',
+                                 flow_id=netlist.flow_id,
+                                 stage=netlist.stage)
+
+        # Verify routing_by_metal was loaded
+        assert retrieved.routing_by_metal is not None
+        assert isinstance(retrieved.routing_by_metal, dict)
+        assert len(retrieved.routing_by_metal) == 2
+        assert 'met1' in retrieved.routing_by_metal
+        assert 'met2' in retrieved.routing_by_metal
+        assert np.array_equal(routing_met1, retrieved.routing_by_metal['met1'])
+        assert np.array_equal(routing_met2, retrieved.routing_by_metal['met2'])
+
 
 class TestErrorHandlingIntegration:
     """Test error handling in integrated workflows."""
