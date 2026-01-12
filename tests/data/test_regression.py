@@ -306,23 +306,31 @@ def test_specific_gate_data(dataset, phase, gate_name, expected_values):
 @pytest.mark.parametrize(
     "phase, net_name, expected_values",
     [
-        # Format: (phase, net_name, (no_of_fanouts, length, x_min, y_min, x_max, y_max, is_special_net))
-        ("floorplan", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("global_place", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("place_resized", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("detailed_place", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("cts", "clk", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("global_route", "clk", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("detailed_route", "clk", (1, 81320.0, 0.46, 47.94, 47.61, 81.94, False)),
-        ("final", "clk", (1, 81320.0, 0.46, 47.94, 47.61, 81.94, False)),
-        ("floorplan", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("global_place", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("place_resized", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("detailed_place", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("cts", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("global_route", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False)),
-        ("detailed_route", "_000_", (1, 7920.0, 54.97, 85.85, 61.87, 86.7, False)),
-        ("final", "_000_", (1, 7920.0, 54.97, 85.85, 61.87, 86.7, False)),
+        # Format: (phase, net_name, (no_of_fanouts, length, x_min, y_min, x_max, y_max, is_special_net, hpwl, resistance, capacitance, total_coupling_capacitance))
+        ("floorplan", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False, 0.0, 0.0, 0.0, 0.0)),
+        ("global_place", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False, 148.584, 0.0, 0.0, 0.0)),
+        ("place_resized", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False, 148.584, 0.0, 0.0, 0.0)),
+        ("detailed_place", "clk", (35, 0.0, 0.0, 0.0, 0.0, 0.0, False, 153.01, 0.0, 0.0, 0.0)),
+        ("cts", "clk", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 82.385, 0.0, 0.0, 0.0)),
+        ("global_route", "clk", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 82.385, 0.0, 0.0, 0.0)),
+        ("detailed_route", "clk", (1, 81320.0, 0.46, 47.94, 47.61, 81.94, False, 0.0, 16.013900, 12.243500, 1.857135)),
+        ("final", "clk", (1, 81320.0, 0.46, 47.94, 47.61, 81.94, False, 0.0, 16.013900, 12.243500, 1.857135)),
+        ("floorplan", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 0.0, 0.0, 0.0, 0.0)),
+        ("global_place", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 1.178, 0.0, 0.0, 0.0)),
+        ("place_resized", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 1.466, 0.0, 0.0, 0.0)),
+        ("detailed_place", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 4.07, 0.0, 0.0, 0.0)),
+        ("cts", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 8.6, 0.0, 0.0, 0.0)),
+        ("global_route", "_000_", (1, 0.0, 0.0, 0.0, 0.0, 0.0, False, 8.625, 0.0, 0.0, 0.0)),
+        ("detailed_route", "_000_", (1, 7920.0, 54.97, 85.85, 61.87, 86.7, False, 0.0, 21.148850, 1.968980, 1.234204)),
+        ("final", "_000_", (1, 7920.0, 54.97, 85.85, 61.87, 86.7, False, 0.0, 21.148850, 1.968980, 1.234204)),
+        ("floorplan", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 0.0, 0.0, 0.0, 0.0)),
+        ("global_place", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 16.998, 0.0, 0.0, 0.0)),
+        ("place_resized", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 21.818, 0.0, 0.0, 0.0)),
+        ("detailed_place", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 17.67, 0.0, 0.0, 0.0)),
+        ("cts", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 17.67, 0.0, 0.0, 0.0)),
+        ("global_route", "_038_", (2, 0.0, 0.0, 0.0, 0.0, 0.0, False, 17.67, 0.0, 0.0, 0.0)),
+        ("detailed_route", "_038_", (2, 13300.0, 67.85, 34.51, 70.15, 45.05, False, 0.0, 29.544950, 1.676620, 0.529507)),
+        ("final", "_038_", (2, 13300.0, 67.85, 34.51, 70.15, 45.05, False, 0.0, 29.544950, 1.676620, 0.529507)),
     ]
 )
 def test_specific_net_data(dataset, phase, net_name, expected_values):
@@ -339,7 +347,8 @@ def test_specific_net_data(dataset, phase, net_name, expected_values):
     net = node_data["entity"]
 
     expected_no_of_fanouts, expected_length, expected_x_min, expected_y_min, \
-    expected_x_max, expected_y_max, expected_is_special_net = expected_values
+    expected_x_max, expected_y_max, expected_is_special_net, expected_hpwl, \
+    expected_resistance, expected_capacitance, expected_total_coupling_capacitance = expected_values
 
     assert net.no_of_fanouts == expected_no_of_fanouts, \
             f"Net {net_name} no_of_fanouts changed in {phase}: {net.no_of_fanouts} != {expected_no_of_fanouts}"
@@ -363,6 +372,27 @@ def test_specific_net_data(dataset, phase, net_name, expected_values):
 
     assert net.is_special_net == expected_is_special_net, \
             f"Net {net_name} is_special_net changed in {phase}: {net.is_special_net} != {expected_is_special_net}"
+
+    # Handle NaN/None values for hpwl, resistance, capacitance, and coupling capacitance
+    # Note: 0.0 in expected values means expect None/NaN (not yet available)
+    if not is_nan_or_none(net.hpwl, expected_hpwl):
+        assert abs(net.hpwl - expected_hpwl) < 0.001, \
+                f"Net {net_name} hpwl changed in {phase}: {net.hpwl} != {expected_hpwl}"
+    if not is_nan_or_none(net.resistance, expected_resistance):
+        # Resistance is typically in Ohms, use appropriate tolerance
+        tolerance = max(0.001, abs(expected_resistance) * 0.01) if expected_resistance != 0 else 0.001
+        assert abs(net.resistance - expected_resistance) < tolerance, \
+                f"Net {net_name} resistance changed in {phase}: {net.resistance} != {expected_resistance}"
+    if not is_nan_or_none(net.capacitance, expected_capacitance):
+        # Capacitance is typically in Farads, use appropriate tolerance
+        tolerance = max(1e-18, abs(expected_capacitance) * 0.01) if expected_capacitance != 0 else 1e-18
+        assert abs(net.capacitance - expected_capacitance) < tolerance, \
+                f"Net {net_name} capacitance changed in {phase}: {net.capacitance} != {expected_capacitance}"
+    if not is_nan_or_none(net.total_coupling_capacitance, expected_total_coupling_capacitance):
+        # Coupling capacitance is typically in Farads, use appropriate tolerance
+        tolerance = max(1e-18, abs(expected_total_coupling_capacitance) * 0.01) if expected_total_coupling_capacitance != 0 else 1e-18
+        assert abs(net.total_coupling_capacitance - expected_total_coupling_capacitance) < tolerance, \
+                f"Net {net_name} total_coupling_capacitance changed in {phase}: {net.total_coupling_capacitance} != {expected_total_coupling_capacitance}"
 
 
 @pytest.mark.parametrize(
