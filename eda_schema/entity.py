@@ -209,6 +209,9 @@ class GateEntity(BaseEntity):
     no_of_inputs: int = 0
     no_of_outputs: int = 0
 
+    ir_drop_vdd: Optional[float] = None
+    ir_drop_vss: Optional[float] = None
+
 
 @dataclass(slots=True)
 class StandardCellEntity(BaseEntity):
