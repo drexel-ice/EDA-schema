@@ -173,8 +173,6 @@ class RoutabilityMetricsEntity(BaseEntity):
     rudy_net_long: Optional[Image2D] = None
     rudy_net_short: Optional[Image2D] = None
     rudy_pin: Optional[Image2D] = None
-    rudy_pin_long: Optional[Image2D] = None
-    rudy_pin_short: Optional[Image2D] = None
 
 
 # ============================================================
