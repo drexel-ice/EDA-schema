@@ -679,16 +679,17 @@ def validate_area_metrics(cache: ValidationDataCache, result: ValidationResult) 
     if "sequential_cell_area" in am and am["sequential_cell_area"] < 0:
         result.add_fail(f"{cache.flow_id}/{cache.phase}: Sequential area is negative: {am['sequential_cell_area']}")
 
-    # Validate area relationship: cell_area ≈ total_area + tap_cell_area + filler_area
+    # Validate area relationship: cell_area ≈ total_area + tap_cell_area + filler_area + diode_area
     # total_area is OpenROAD's "Design area" (functional cells only)
     # cell_area includes all placed cells (functional + tap + filler + diode + etc.)
     if all(k in am for k in ["cell_area", "total_area", "tap_cell_area"]):
         filler_area = am.get("filler_area", 0) or 0  # Handle None/NaN
-        expected_cell_area = am["total_area"] + am["tap_cell_area"] + filler_area
+        diode_area = am.get("diode_area", 0) or 0  # Handle None/NaN
+        expected_cell_area = am["total_area"] + am["tap_cell_area"] + filler_area + diode_area
         if abs(am["cell_area"] - expected_cell_area) >= 1.0:
             result.add_fail(
                 f"{cache.flow_id}/{cache.phase}: Cell area ({am['cell_area']}) doesn't match "
-                f"total_area ({am['total_area']}) + tap_cell_area ({am['tap_cell_area']}) + filler_area ({filler_area}) = {expected_cell_area}"
+                f"total_area ({am['total_area']}) + tap_cell_area ({am['tap_cell_area']}) + filler_area ({filler_area}) + diode_area ({diode_area}) = {expected_cell_area}"
             )
 
     # Component areas should sum to cell area
