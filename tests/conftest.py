@@ -229,8 +229,6 @@ def sample_routability_metrics_data():
         'rudy_net_long': None,
         'rudy_net_short': None,
         'rudy_pin': None,
-        'rudy_pin_long': None,
-        'rudy_pin_short': None,
     }
 
 
