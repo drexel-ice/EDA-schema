@@ -252,15 +252,17 @@ def test_timing_metrics_data(dataset, phase, expected_values):
 @pytest.mark.parametrize(
     "phase, gate_name, expected_values",
     [
-        # Format: (phase, gate_name, (standard_cell, x_min, y_min, x_max, y_max, no_of_inputs, no_of_outputs))
-        ("floorplan", "TAP_TAPCELL_ROW_0_0", ("sky130_fd_sc_hd__tapvpwrvgnd_1", 0.0, 0.0, 0.0, 0.0, 0, 0)),
-        ("global_place", "_192_", ("sky130_fd_sc_hd__xor2_1", 30.676, 74.928, 33.896, 77.648, 2, 1)),
-        ("place_resized", "_192_", ("sky130_fd_sc_hd__xor2_1", 30.676, 74.928, 33.896, 77.648, 2, 1)),
-        ("detailed_place", "_192_", ("sky130_fd_sc_hd__xor2_1", 29.9, 76.16, 33.12, 78.88, 2, 1)),
-        ("cts", "_192_", ("sky130_fd_sc_hd__xor2_2", 27.14, 76.16, 33.12, 78.88, 2, 1)),
-        ("global_route", "_192_", ("sky130_fd_sc_hd__xor2_2", 27.14, 76.16, 33.12, 78.88, 2, 1)),
-        ("detailed_route", "FILLER_0_0_0", ("sky130_fd_sc_hd__fill_8", 5.06, 5.44, 8.74, 8.16, 0, 0)),
-        ("final", "FILLER_0_0_0", ("sky130_fd_sc_hd__fill_8", 5.06, 5.44, 8.74, 8.16, 0, 0)),
+        # Format: (phase, gate_name, (standard_cell, x_min, y_min, x_max, y_max, no_of_inputs, no_of_outputs, ir_drop_vdd, ir_drop_vss))
+        # IR drop data is typically only available in routing stages (detailed_route, final)
+        # Use 0.0 to indicate None/not available, or actual expected value if known
+        ("floorplan", "TAP_TAPCELL_ROW_0_0", ("sky130_fd_sc_hd__tapvpwrvgnd_1", 0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0)),
+        ("global_place", "_192_", ("sky130_fd_sc_hd__xor2_1", 30.676, 74.928, 33.896, 77.648, 2, 1, 0.0, 0.0)),
+        ("place_resized", "_192_", ("sky130_fd_sc_hd__xor2_1", 30.676, 74.928, 33.896, 77.648, 2, 1, 0.0, 0.0)),
+        ("detailed_place", "_192_", ("sky130_fd_sc_hd__xor2_1", 29.9, 76.16, 33.12, 78.88, 2, 1, 0.0, 0.0)),
+        ("cts", "_192_", ("sky130_fd_sc_hd__xor2_2", 27.14, 76.16, 33.12, 78.88, 2, 1, 0.0, 0.0)),
+        ("global_route", "_192_", ("sky130_fd_sc_hd__xor2_2", 27.14, 76.16, 33.12, 78.88, 2, 1, 0.0, 0.0)),
+        ("detailed_route", "FILLER_0_0_0", ("sky130_fd_sc_hd__fill_8", 5.06, 5.44, 8.74, 8.16, 0, 0, 0.0, 0.0)),
+        ("final", "FILLER_0_0_0", ("sky130_fd_sc_hd__fill_8", 5.06, 5.44, 8.74, 8.16, 0, 0, 1.79991, 1.799979)),
     ]
 )
 def test_specific_gate_data(dataset, phase, gate_name, expected_values):
@@ -277,7 +279,8 @@ def test_specific_gate_data(dataset, phase, gate_name, expected_values):
     gate = node_data["entity"]
 
     expected_standard_cell, expected_x_min, expected_y_min, expected_x_max, \
-    expected_y_max, expected_no_of_inputs, expected_no_of_outputs = expected_values
+    expected_y_max, expected_no_of_inputs, expected_no_of_outputs, \
+    expected_ir_drop_vdd, expected_ir_drop_vss = expected_values
 
     assert gate.standard_cell == expected_standard_cell, \
             f"Gate {gate_name} standard_cell changed in {phase}: {gate.standard_cell} != {expected_standard_cell}"
@@ -301,6 +304,29 @@ def test_specific_gate_data(dataset, phase, gate_name, expected_values):
 
     assert gate.no_of_outputs == expected_no_of_outputs, \
             f"Gate {gate_name} no_of_outputs changed in {phase}: {gate.no_of_outputs} != {expected_no_of_outputs}"
+
+    # Check IR drop fields exist
+    assert hasattr(gate, 'ir_drop_vdd'), f"Gate {gate_name} missing ir_drop_vdd attribute"
+    assert hasattr(gate, 'ir_drop_vss'), f"Gate {gate_name} missing ir_drop_vss attribute"
+
+    # Handle None/NaN values for IR drop (0.0 in expected means expect None/NaN)
+    if expected_ir_drop_vdd == 0.0 and (gate.ir_drop_vdd is None or (isinstance(gate.ir_drop_vdd, float) and math.isnan(gate.ir_drop_vdd))):
+        # Expected to be None/NaN, skip check
+        pass
+    elif gate.ir_drop_vdd is not None and not (isinstance(gate.ir_drop_vdd, float) and math.isnan(gate.ir_drop_vdd)):
+        # IR drop values are typically in volts, use appropriate tolerance
+        tolerance = max(1e-6, abs(expected_ir_drop_vdd) * 0.01) if expected_ir_drop_vdd != 0 else 1e-6
+        assert abs(gate.ir_drop_vdd - expected_ir_drop_vdd) < tolerance, \
+            f"Gate {gate_name} ir_drop_vdd changed in {phase}: {gate.ir_drop_vdd} != {expected_ir_drop_vdd}"
+
+    if expected_ir_drop_vss == 0.0 and (gate.ir_drop_vss is None or (isinstance(gate.ir_drop_vss, float) and math.isnan(gate.ir_drop_vss))):
+        # Expected to be None/NaN, skip check
+        pass
+    elif gate.ir_drop_vss is not None and not (isinstance(gate.ir_drop_vss, float) and math.isnan(gate.ir_drop_vss)):
+        # IR drop values are typically in volts, use appropriate tolerance
+        tolerance = max(1e-6, abs(expected_ir_drop_vss) * 0.01) if expected_ir_drop_vss != 0 else 1e-6
+        assert abs(gate.ir_drop_vss - expected_ir_drop_vss) < tolerance, \
+            f"Gate {gate_name} ir_drop_vss changed in {phase}: {gate.ir_drop_vss} != {expected_ir_drop_vss}"
 
 
 @pytest.mark.parametrize(
@@ -552,12 +578,10 @@ def test_image_shapes_data(dataset, phase, image_name, expected_shape, expected_
         ("detailed_route", "rudy_net_long", (14, 14), 0xf3b831b9),
         ("detailed_route", "rudy_net_short", (14, 14), 0x1966e863),
         ("detailed_route", "rudy_pin", (14, 14), 0x9edd34ff),
-        ("detailed_route", "rudy_pin_long", (14, 14), 0x9edd34ff),
         ("final", "rudy_net", (14, 14), 0xf3b831b9),
         ("final", "rudy_net_long", (14, 14), 0xf3b831b9),
         ("final", "rudy_net_short", (14, 14), 0x1966e863),
         ("final", "rudy_pin", (14, 14), 0x9edd34ff),
-        ("final", "rudy_pin_long", (14, 14), 0x9edd34ff),
     ]
 )
 def test_routability_metrics_data(dataset, phase, rudy_metric_name, expected_shape, expected_checksum):

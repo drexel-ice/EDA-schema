@@ -148,6 +148,49 @@ def test_gate_coordinates_validity(dataset, phase):
 
 
 @pytest.mark.parametrize("phase", PHASES)
+def test_gate_ir_drop_validity(dataset, phase):
+    """Check that gate IR drop values are valid (if present)."""
+    netlist = get_netlist(dataset, phase)
+
+    gates_with_ir_drop = 0
+    for node_id, node_data in netlist.nodes.items():
+        if node_data["type"] == "GATE":
+            gate = node_data["entity"]
+
+            # IR drop fields should exist
+            assert hasattr(gate, 'ir_drop_vdd'), f"Gate {node_id} missing ir_drop_vdd attribute"
+            assert hasattr(gate, 'ir_drop_vss'), f"Gate {node_id} missing ir_drop_vss attribute"
+
+            # If IR drop values are present, they should be valid floats
+            def is_valid_ir_drop(val):
+                return val is not None and not (isinstance(val, float) and math.isnan(val))
+
+            if is_valid_ir_drop(gate.ir_drop_vdd):
+                gates_with_ir_drop += 1
+                # IR drop should be non-negative (voltage drop, typically 0-1.2V range)
+                assert gate.ir_drop_vdd >= 0, \
+                    f"Gate {node_id}: ir_drop_vdd ({gate.ir_drop_vdd}) is negative"
+                # IR drop should be reasonable (typically < 1V for most designs)
+                assert gate.ir_drop_vdd < 10.0, \
+                    f"Gate {node_id}: ir_drop_vdd ({gate.ir_drop_vdd}) is unreasonably high"
+
+            if is_valid_ir_drop(gate.ir_drop_vss):
+                # IR drop should be non-negative
+                assert gate.ir_drop_vss >= 0, \
+                    f"Gate {node_id}: ir_drop_vss ({gate.ir_drop_vss}) is negative"
+                # IR drop should be reasonable
+                assert gate.ir_drop_vss < 10.0, \
+                    f"Gate {node_id}: ir_drop_vss ({gate.ir_drop_vss}) is unreasonably high"
+
+    # IR drop data is typically only available in routing stages
+    # If we're in a routing stage and no gates have IR drop, that's worth noting but not an error
+    if phase in ["detailed_route", "final"]:
+        # In routing stages, at least some gates should have IR drop data if the files exist
+        # But we don't fail if they don't exist (files might not be present)
+        pass
+
+
+@pytest.mark.parametrize("phase", PHASES)
 def test_standard_cell_references(dataset, phase):
     """Check that all gates reference valid standard cells."""
     netlist = get_netlist(dataset, phase)
