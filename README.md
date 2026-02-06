@@ -1,18 +1,18 @@
 # EDA-Schema: A Property Graph Data Model for Digital Circuit Design
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI](https://img.shields.io/pypi/v/eda-schema.svg)](https://pypi.org/project/eda-schema/)
+[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey)](LICENCE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+<!-- [![PyPI](https://img.shields.io/pypi/v/eda-schema.svg)](https://pypi.org/project/eda-schema/) -->
 
 EDA-Schema is an open, standardized, and extensible data model and framework for representing, storing, and analyzing digital circuit physical design data across the RTL-to-GDSII flow. It models circuits using property graphs and spatial image modalities, providing standardized representations of circuit structure, performance metrics, and design evolution, and enabling consistent analysis, reproducibility, and machine learning research in electronic design automation.
 
 ## Key Features
 
 - Unified Data Model: Standardized property graph representation of digital circuits
-- High Performance: Optimized columnar storage with predicate pushdown and parallel processing
-- ParquetDB Backend: Efficient Apache Parquet-based storage for large-scale EDA datasets
-- Rich Analytics: Built-in analysis tools for timing, power, area, and routability
-- Open Dataset: 32 benchmark circuits from IWLS'05 suite processed with OpenROAD
+- High Performance ParquetDB Backend: Optimized columnar storage and predicate pushdown/paralell processing on Apache Parquet for large-scale EDA datasets
+- Open Dataset:
+  - 20 benchmark circuits from IWLS'05 suite processed with OpenROAD over 4 different PDKs.
+  - Data and built-in analysis tools for timing, power, area, and routability
 - Research Ready: Extensible framework for ML and optimization research
 
 ## Table of Contents
@@ -21,7 +21,6 @@ EDA-Schema is an open, standardized, and extensible data model and framework for
 - [Open Dataset](#open-dataset)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Usage Examples](#usage-examples)
 - [Testing & Development](#testing--development)
 - [Citation](#citation)
 - [Support & Contact](#support--contact)
@@ -94,7 +93,7 @@ EDA-Schema provides an open and reproducible dataset of digital physical designs
 
 ### Timing Operating Points
 
-V2 does not use fixed global values for clock latency or delays. Instead, constraints are defined relative to the target clock period, and designs are generated near timing closure.
+EDA-Schema uses fixed global values for clock latency and delays that are defined relative to the target clock period, so designs are generated near timing closure.
 
 * **Barely-Fail and Barely-Pass Definition** (using Slack-to-Clock-Period Ratio, SCPR):
 
@@ -135,7 +134,7 @@ To increase diversity and capture realistic design trade-offs, the dataset is ex
 
 ### System Requirements
 
-- Python: 3.10 or higher
+- Python: 3.11 or higher
 - Memory: 8GB+ recommended for large datasets
 
 ### Quick Install
@@ -144,6 +143,10 @@ To increase diversity and capture realistic design trade-offs, the dataset is ex
 # Clone repository
 git clone https://github.com/drexel-ice/eda-schema.git
 cd eda-schema
+
+# Create and activate a virtual environment (Linux/macOS example shown)
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Install with pip
 pip install -e .
@@ -183,12 +186,16 @@ pip install -r dev_requirements.txt
 pytest
 
 # Quick validation
-python -c "import eda_schema; print('EDA-Schema installed successfully!')"
+python -c "import eda_schema; print('EDA-Schema installed successfully.')"
 ```
 
 ---
 
 ## Quick Start
+
+Here is a minimal dataset workflow. The bundled `dataset/test` Parquet store includes flows such as `gcd-000001`, where `flow_id` identifies one RTL-to-GDSII execution (all stages/artifacts from the same OpenROAD run share that ID). Filter queries by `flow_id` and stage as shown below.
+
+`flow_id` is the identifier for a single OpenROAD run; use it whenever you need to tie together the floorplan, placement, clock, routing, and metrics artifacts generated for that flow. It is not a circuit name, stage name, or dataset-wide benchmark identifier but the execution itself.
 
 ### Load and Explore Dataset
 
@@ -197,102 +204,25 @@ from eda_schema.dataset import Dataset
 from eda_schema.db.parquet import ParquetDB
 
 # Connect to ParquetDB dataset
-db = ParquetDB("/path/to/iwls05_dataset")
+db = ParquetDB("dataset/test")
 dataset = Dataset(db)
 
 # Explore structure
-flows = dataset.get_design_flows()
-print(f"Available flows: {len(flows)}")
+dataset.load()
+print(f"Available flows: {len(dataset)}")
 
-# Load timing data
-timing_data = dataset.get_table_data("timing_metrics", stage="detailed_route")
+# Analyze netlist graph (filter by `flow_id`/`stage`)
+netlist = dataset.db.get_entity("netlists", flow_id="gcd-000001", stage="cts")
+print(f"Number of gates: {netlist.no_of_cells}")
+print(f"Number of nets: {netlist.no_of_nets}")
+
+# Load timing data (filtered by `flow_id`, `stage`)
+timing_data = dataset.db.get_table_data("timing_metrics", flow_id="gcd-000001", stage="detailed_route")
 print(f"Worst slack: {timing_data.worst_slack.min():.3f} ns")
-
-# Analyze netlist graph
-netlist = dataset.get_graph_data("netlist", stage="cts")
-print(f"Circuit size: {netlist.number_of_nodes()} nodes, {netlist.number_of_edges()} edges")
 ```
 
-### Performance Analysis
+Once your package and dataset dependencies are installed, expand on it by exploring the `examples/` scripts (entity loading, timing queries, Parquet/Mongo access) and the `notebooks/` directory for analytical/visualization walkthroughs.
 
-```python
-import matplotlib.pyplot as plt
-
-# Compare timing across stages
-stages = ["floorplan", "cts", "detailed_route"]
-slack_values = []
-
-for stage in stages:
-    timing = dataset.get_table_data("timing_metrics", stage=stage)
-    worst_slack = timing.worst_slack.min()
-    slack_values.append(worst_slack)
-    print(f"{stage}: {worst_slack:.3f} ns")
-
-# Visualize timing evolution
-plt.plot(stages, slack_values, 'o-')
-plt.ylabel('Worst Slack (ns)')
-plt.title('Timing Convergence Across Design Flow')
-plt.grid(True, alpha=0.3)
-plt.show()
-```
-
----
-
-## Usage Examples
-
-### Basic Operations
-
-```python
-# 1. Create entities
-from eda_schema import entity
-
-gate = entity.GateEntity(
-    name="NAND2_X1",
-    flow_id="flow_001",
-    stage="cts",
-    x=10.5, y=20.3,
-    width=1.2, height=1.8,
-    standard_cell_name="NAND2_X1"
-)
-
-# 2. Query data with filters
-timing_critical = dataset.get_table_data(
-    "timing_metrics",
-    stage="detailed_route",
-    filters={"worst_slack": lambda x: x < -0.05}
-)
-
-# 3. Graph analysis
-netlist_graph = dataset.get_graph_data("netlist", stage="cts")
-
-# Find high-fanout nets
-fanout_counts = dict(netlist_graph.degree())
-high_fanout = {node: deg for node, deg in fanout_counts.items() if deg > 10}
-```
-
-### Advanced Analytics
-
-```python
-# Timing path analysis
-timing_paths = dataset.get_graph_data("timing_paths", stage="detailed_route")
-
-# Calculate path length distribution
-path_lengths = [len(path) for path in timing_paths.edges()]
-plt.hist(path_lengths, bins=20, alpha=0.7)
-plt.xlabel('Timing Path Length')
-plt.ylabel('Frequency')
-plt.title('Distribution of Timing Path Lengths')
-plt.show()
-
-# Power consumption trends
-power_data = dataset.get_table_data("power_metrics")
-stages = ["floorplan", "global_place", "cts", "detailed_route"]
-
-for stage in stages:
-    stage_power = power_data[power_data.stage == stage]
-    total_power = stage_power.total_power.sum()
-    print(f"{stage}: {total_power:.2f} μW")
-```
 
 ---
 
@@ -346,12 +276,13 @@ cd docs && make html
 If you use EDA-Schema in your research, please cite our work:
 
 ```bibtex
-@inproceedings{shrestha2024eda,
+@inproceedings{shrestha2024edaschema,
   title={EDA-schema: A graph datamodel schema and open dataset for digital design automation},
-  author={Shrestha, Prateek and Aversa, Rocco and Phatharodom, Saranyu and Savidis, Ioannis},
+  author={Shrestha, P. and Aversa, A. and Phatharodom, S. and Savidis, I.},
   booktitle={Proceedings of the ACM Great Lakes Symposium on VLSI (GLSVLSI)},
-  pages={69--77},
-  year={2024}
+  pages={1--8},
+  year={2024},
+  month={Jun.}
 }
 ```
 
@@ -363,21 +294,3 @@ If you use EDA-Schema in your research, please cite our work:
 - **Discussions**: [GitHub Discussions](https://github.com/drexel-ice/eda-schema/discussions)
 - **Email**: Prateek Shrestha (ps937@drexel.edu)
 - **Advisor**: Ioannis Savidis (is338@drexel.edu)
-
-### Troubleshooting
-
-**Common Issues:**
-
-1. **Memory Errors**: Use column selection and batch processing for large datasets
-2. **Import Errors**: Ensure all dependencies are installed with `pip install -e .`
-3. **PyArrow Compatibility**: Use PyArrow 10.0+ for optimal performance
-4. **Graphviz Issues**: Install system graphviz before pygraphviz
-
-**Performance Tips:**
-
-- Use `ParquetDB` for large datasets with frequent queries
-- Enable predicate pushdown for selective data access
-- Use parallel processing for I/O-bound operations
-- Use ParquetDB for optimal performance with large EDA datasets
-
----
