@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from collections.abc import Iterable
 
 import numpy as np
@@ -75,18 +75,52 @@ def build_arrow_schema(entity_name: str) -> pa.Schema:
     return pa.schema(arrow_fields)
 
 
-@lru_cache(maxsize=128)
-def _load_arrow_table(path: Path) -> pa.Table:
+def convert_filters_to_pyarrow(filters: Dict[str, Any]) -> Optional[List[Tuple[str, str, Any]]]:
     """
-    Load an Arrow table from a Parquet file (cached).
+    Convert dict-based filters to PyArrow filter format for predicate pushdown.
+
+    Only converts simple equality filters. Complex filters (IN operations, etc.)
+    are handled by falling back to post-load filtering.
+
+    Args:
+        filters: Dict of filters in format {column: value}
+
+    Returns:
+        List of PyArrow filters [(column, op, value), ...] or None if no convertible filters
+    """
+    pyarrow_filters = []
+
+    for key, value in filters.items():
+        # Only handle simple scalar equality filters for now
+        # Complex filters (IN operations, etc.) will be handled post-load
+        if isinstance(value, (str, int, float, bool)) and not isinstance(value, bool):
+            pyarrow_filters.append((key, '=', value))
+
+    return pyarrow_filters if pyarrow_filters else None
+
+
+@lru_cache(maxsize=128)
+def _load_arrow_table(
+    path: Path,
+    pyarrow_filters_tuple: Optional[Tuple[Tuple[str, str, Any], ...]] = None,
+    columns: Optional[Tuple[str, ...]] = None
+) -> pa.Table:
+    """
+    Load an Arrow table from a Parquet file (cached), with optional predicate pushdown and column selection.
 
     Args:
         path: Path to the Parquet file.
+        pyarrow_filters_tuple: Optional PyArrow filter predicates as tuple of tuples [(column, op, value), ...]
+        columns: Optional tuple of column names to read. If None, reads all columns.
 
     Returns:
-        pa.Table: Loaded Arrow table.
+        pa.Table: Loaded (and optionally filtered) Arrow table with selected columns.
     """
-    return pq.read_table(path)
+    # Convert tuple back to list for PyArrow
+    filters_list = list(pyarrow_filters_tuple) if pyarrow_filters_tuple else None
+    columns_list = list(columns) if columns else None
+
+    return pq.read_table(path, filters=filters_list, columns=columns_list)
 
 
 class ParquetDB(BaseDB):
@@ -261,16 +295,17 @@ class ParquetDB(BaseDB):
         if data:
             self._append_to_table(entity_name, pd.DataFrame(data))
 
-    def get_table_data(self, entity_name: str, **filters) -> pd.DataFrame:
+    def get_table_data(self, entity_name: str, columns: Optional[List[str]] = None, **filters) -> pd.DataFrame:
         """
-        Retrieve table data for an entity, optionally filtered.
+        Retrieve table data for an entity, optionally filtered and with column selection.
 
         Args:
             entity_name (str): Name of the entity.
+            columns (List[str] | None): Optional list of column names to read. If None, reads all columns.
             **filters: Column filters.
 
         Returns:
-            pd.DataFrame: Filtered table data.
+            pd.DataFrame: Filtered table data with selected columns.
 
         Raises:
             FileNotFoundError: If the table file does not exist.
@@ -287,8 +322,13 @@ class ParquetDB(BaseDB):
                        f"Did you call create_dataset_tables() first?"
             )
 
+        # Try to use PyArrow filters for predicate pushdown (simple filters only)
+        pyarrow_filters = convert_filters_to_pyarrow(filters) if filters else None
+
         try:
-            table = _load_arrow_table(table_path)
+            filters_tuple = tuple(pyarrow_filters) if pyarrow_filters else None
+            columns_tuple = tuple(columns) if columns else None
+            table = _load_arrow_table(table_path, filters_tuple, columns_tuple)
         except Exception as e:
             raise DataNotFoundError(
                 entity_name=entity_name,
@@ -297,7 +337,17 @@ class ParquetDB(BaseDB):
                        f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
             ) from e
 
-        if filters:
+        # Apply remaining complex filters in memory (if any filters weren't converted to PyArrow)
+        remaining_filters = {}
+        if filters and pyarrow_filters:
+            # Find which filters were NOT converted to PyArrow (complex ones)
+            pyarrow_filter_cols = {col for col, _, _ in pyarrow_filters}
+            remaining_filters = {k: v for k, v in filters.items() if k not in pyarrow_filter_cols}
+        elif filters and not pyarrow_filters:
+            # No filters were converted, apply all in memory
+            remaining_filters = filters
+
+        if remaining_filters:
             mask = None
 
             for key, value in filters.items():
@@ -548,8 +598,15 @@ class ParquetDB(BaseDB):
                 f"Required: {pk_cols}. Provided: {list(key_fields.keys())}"
             )
 
+        # Use PyArrow filters for primary key filtering (predicate pushdown)
+        pyarrow_filters = [(pk, '=', str(key_fields[pk])) for pk in pk_cols]
+        filters_tuple = tuple(pyarrow_filters)
+
+        # Only read necessary columns: primary keys + graph_json
+        columns_tuple = tuple(pk_cols + ['graph_json'])
+
         try:
-            table = _load_arrow_table(graph_path)
+            filtered = _load_arrow_table(graph_path, filters_tuple, columns_tuple)
         except Exception as e:
             raise DataNotFoundError(
                 entity_name=entity_name,
@@ -557,13 +614,6 @@ class ParquetDB(BaseDB):
                        f"This may occur if writers weren't closed before reading. "
                        f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
             ) from e
-
-        mask = None
-        for pk in pk_cols:
-            cond = pc.equal(table[pk], pa.scalar(str(key_fields[pk])))
-            mask = cond if mask is None else pc.and_(mask, cond)
-
-        filtered = table.filter(mask)
 
         if filtered.num_rows == 0:
             key_str = ", ".join(f"{k}={v!r}" for k, v in key_fields.items())
