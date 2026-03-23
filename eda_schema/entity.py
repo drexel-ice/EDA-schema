@@ -209,6 +209,11 @@ class GateEntity(BaseEntity):
     no_of_inputs: int = 0
     no_of_outputs: int = 0
 
+    internal_power: Optional[float] = None
+    switching_power: Optional[float] = None
+    leakage_power: Optional[float] = None
+    total_power: Optional[float] = None
+
     ir_drop_vdd: Optional[float] = None
     ir_drop_vss: Optional[float] = None
 
@@ -359,6 +364,8 @@ class NetlistEntity(GraphEntity):
 
     width: Optional[float] = None
     height: Optional[float] = None
+    total_wirelength: Optional[float] = None
+    total_hpwl: Optional[float] = None
 
     cell_placement: Optional[Image2D] = None
     cell_placement_combinational: Optional[Image2D] = None
@@ -387,6 +394,7 @@ class PDNEntity(BaseEntity):
 
     routing_vdd: Optional[Image2D] = None
     routing_vss: Optional[Image2D] = None
+    power_source: Optional[Image2D] = None
     ir_drop_vdd: Optional[Image2D] = None
     ir_drop_vss: Optional[Image2D] = None
     em_vdd: Optional[Image2D] = None
