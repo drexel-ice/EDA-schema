@@ -151,15 +151,14 @@ def main():
             print("No stages available")
             return
  
-        stage = stages_df.iloc[0]['stage']
+        stage = stages_df.iloc[-1]['stage']
  
         # Create routing density from nets
         routing_image = create_routing_density_from_nets(dataset, flow_id, stage)
  
-        if routing_image:
-            output_path = output_dir / "routing_density.png"
-            routing_image.plot(str(output_path), cmap='hot')
-            print(f"Saved routing density: {output_path}")
+        output_path = output_dir / "routing_density.png"
+        routing_image.plot(str(output_path), cmap='hot')
+        print(f"Saved routing density: {output_path}")
  
         # Try to get routing from netlist
         try:
