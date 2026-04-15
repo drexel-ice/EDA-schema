@@ -6,24 +6,42 @@ Description: Demonstrates advanced dataset loading and inspection techniques,
 including loading specific flows, stages, and analyzing dataset structure.
 
 Prerequisites:
-- EDA-schema installed
-- A dataset directory
+ - EDA-schema installed
 
 Key Concepts:
-- Loading strategies
-- Dataset structure inspection
-- Flow and stage navigation
-- Entity access patterns
+ - Loading strategies
+ - Dataset structure inspection
+ - Flow and stage navigation
+ - Entity access patterns
 
 Usage:
-    python examples/03_datasets/01_load_and_inspect.py [dataset_path]
+    python examples/03_datasets/01_load_and_inspect.py --dataset /path/to/parquet/root
+    python examples/03_datasets/01_load_and_inspect.py --dataset /path/to/parquet/root --flow-id aes_core-000001 --stage detailed_route
 """
 
-import sys
+from argparse import ArgumentParser
 from pathlib import Path
 
 from eda_schema.dataset import Dataset
 from eda_schema.db import ParquetDB
+
+
+def parse_args():
+    parser = ArgumentParser(description="Load and inspect an EDA-schema dataset.")
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        help="Path to the Parquet dataset root. Falls back to `examples/test_dataset` if not provided.",
+    )
+    parser.add_argument(
+        "--flow-id",
+        help="Inspect a specific flow ID instead of the first available flow.",
+    )
+    parser.add_argument(
+        "--stage",
+        help="After loading the flow, inspect this specific stage if provided.",
+    )
+    return parser.parse_args()
 
 
 def load_complete_dataset(dataset_path: str):
@@ -161,32 +179,39 @@ def analyze_dataset_statistics(dataset: Dataset):
 
 def main():
     """Main function."""
-    if len(sys.argv) > 1:
-        dataset_path = sys.argv[1]
-    else:
-        dataset_path = Path(__file__).parent.parent.parent / "dataset" / "test"
-        if not dataset_path.exists():
-            print("Usage: python 02_load_and_inspect.py <dataset_path>")
-            sys.exit(1)
-        print(f"Using dataset: {dataset_path}\n")
+    args = parse_args()
 
+    default_dataset = Path(__file__).parent.parent.parent / "dataset" / "test"
+    dataset_path = args.dataset or (default_dataset if default_dataset.exists() else None)
+    if dataset_path is None:
+        raise SystemExit("Provide --dataset or ensure examples/dataset/test exists.")
+    if not dataset_path.exists():
+        raise SystemExit(f"Dataset path not found: {dataset_path}")
+
+    print(f"\nUsing dataset: {dataset_path}\n")
     print("\n" + "=" * 60)
     print("EDA-Schema: Loading and Inspecting Dataset")
     print("=" * 60 + "\n")
 
-    # Load dataset
     dataset = load_complete_dataset(str(dataset_path))
 
     # Inspect first flow
     if dataset:
-        first_flow_id = list(dataset.keys())[0]
-        inspect_flow_structure(dataset, first_flow_id)
+        flow_id_list = list(dataset.keys())
+        if args.flow_id:
+            target_flow_id = args.flow_id
+        else:
+            target_flow_id = flow_id_list[0] if flow_id_list else None
 
-        # Load specific stage
-        design_flow = dataset[first_flow_id]
-        if design_flow.stages:
-            first_stage = list(design_flow.stages.keys())[0]
-            load_specific_stage(dataset, first_flow_id, first_stage)
+        if target_flow_id:
+            inspect_flow_structure(dataset, target_flow_id)
+            if args.stage:
+                load_specific_stage(dataset, target_flow_id, args.stage)
+            else:
+                design_flow = dataset[target_flow_id]
+                if design_flow.stages:
+                    first_stage = list(design_flow.stages.keys())[0]
+                    load_specific_stage(dataset, target_flow_id, first_stage)
 
     # Analyze statistics
     analyze_dataset_statistics(dataset)

@@ -1,5 +1,86 @@
 # EDA-Schema Examples
 
+Short, runnable Python scripts grouped by topic. Each module explains its purpose (look at the docstring) and, when it needs a dataset, accepts `--dataset /path/to/parquet/root` (or reads `EDA_DATASET`). For quick verification, drop a small Parquet tree under `examples/dataset/test`.
+
+## Table of Contents
+
+- [Directory layout](#directory-layout)
+- [Getting started paths](#getting-started-paths)
+- [Running examples](#running-examples)
+- [Dataset-aware utilities](#dataset-aware-utilities)
+- [Quick verification](#quick-verification)
+
+## Directory layout
+
+```
+examples
+├── 01_basics/
+│   ├── 01_create_entities.py
+│   ├── 02_create_dataset.py
+│   ├── 03_load_dataset.py
+│   └── 04_query_data.py
+├── 02_entities/
+│   ├── 01_tabular_entities.py
+│   ├── 02_graph_entities.py
+│   └── 03_standard_cells.py
+├── 03_datasets/
+│   ├── 01_load_and_inspect.py
+│   ├── 02_filter_and_query.py
+│   └── 03_batch_operations.py
+├── 04_graphs/
+│   ├── 01_netlist_traversal.py
+│   ├── 02_timing_paths.py
+│   ├── 03_clock_trees.py
+│   └── 04_graph_analysis.py
+├── 05_images/
+│   ├── 01_create_images.py
+│   ├── 02_plot_images.py
+│   ├── 03_placement_visualization.py
+│   └── 04_routing_visualization.py
+├── 06_analysis/
+│   ├── 01_compare_stages.py
+│   ├── 02_power_analysis.py
+│   ├── 03_timing_analysis.py
+│   └── 04_area_analysis.py
+└── 07_database_backends/
+    ├── 01_parquetdb.py
+    ├── 02_filedb.py
+    ├── 03_sqlitepkldb.py
+    └── 04_mongodb.py
+
+```
+
+## Getting started paths
+
+1. `01_basics/` for entity creation and querying  
+2. `02_entities/` for deeper entity relationships  
+3. `03_datasets/` for dataset workflows  
+4. `04_graphs/`, `05_images/`, `06_analysis/` for intermediate workflows  
+5. `07_database_backends/` for advanced integrations
+
+## Running examples
+
+```bash
+python examples/01_basics/01_create_entities.py
+python examples/03_datasets/01_load_and_inspect.py --dataset ~/datasets/nangate45
+```
+
+If a script requires data, pass `--dataset` or set `EDA_DATASET`. The documentation in each script notes dataset expectations.
+
+## Dataset-aware utilities
+
+Scripts like `scripts/print_netlists.py`, `scripts/list_net_pin_positions.py`, and `examples/05_images/04_routing_visualization.py` now validate the dataset path before running. Point them at any Parquet root (including `examples/dataset/test`) for consistent results.
+
+## Quick verification
+
+To keep the suite runnable on minimal machines, drop a small Parquet tree under `examples/dataset/test` and run:
+
+```bash
+python examples/03_datasets/01_load_and_inspect.py --dataset examples/dataset/test
+python scripts/print_netlists.py --dataset examples/dataset/test
+```
+# EDA-Schema Examples
+
 **Executable Python scripts for learning and automation.**
 
 This directory contains **29+ executable Python scripts** organized by topic. These scripts are designed to be:
@@ -43,6 +124,17 @@ Use these examples when:
 * You are building scripts or tooling around EDA-schema
 * You need reusable, minimal Python examples
 * You want code that works without additional interactive environments
+
+---
+
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Example Categories](#example-categories)
+- [Getting Started](#getting-started)
+- [Running Examples](#running-examples)
+- [Quick Verification](#quick-verification)
+- [Dataset-aware utilities](#dataset-aware-utilities)
 
 ---
 
@@ -206,15 +298,45 @@ Each example explains when and why to use the backend, along with performance an
 
 ---
 
-### 08_integration/ — External Integration
 
-**3 examples** for integrating with external tools and formats.
+## Directory Layout
 
-* Importing OpenROAD designs
-* Exporting to Protocol Buffers
-* Writing custom data loaders
-
----
+```
+examples
+├── 01_basics/
+│   ├── 01_create_entities.py
+│   ├── 02_create_dataset.py
+│   ├── 03_load_dataset.py
+│   └── 04_query_data.py
+├── 02_entities/
+│   ├── 01_tabular_entities.py
+│   ├── 02_graph_entities.py
+│   └── 03_standard_cells.py
+├── 03_datasets/
+│   ├── 01_load_and_inspect.py
+│   ├── 02_filter_and_query.py
+│   └── 03_batch_operations.py
+├── 04_graphs/
+│   ├── 01_netlist_traversal.py
+│   ├── 02_timing_paths.py
+│   ├── 03_clock_trees.py
+│   └── 04_graph_analysis.py
+├── 05_images/
+│   ├── 01_create_images.py
+│   ├── 02_plot_images.py
+│   ├── 03_placement_visualization.py
+│   └── 04_routing_visualization.py
+├── 06_analysis/
+│   ├── 01_compare_stages.py
+│   ├── 02_power_analysis.py
+│   ├── 03_timing_analysis.py
+│   └── 04_area_analysis.py
+├── 07_database_backends/
+│   ├── 01_parquetdb.py
+│   ├── 02_filedb.py
+│   ├── 03_sqlitepkldb.py
+│   └── 04_mongodb.py
+```
 
 ## Getting Started
 
@@ -233,7 +355,6 @@ Each example explains when and why to use the backend, along with performance an
 ### Advanced Path
 
 7. `07_database_backends/`
-8. `08_integration/`
 
 ---
 
@@ -243,6 +364,20 @@ Most examples can be run directly:
 
 ```bash
 python examples/01_basics/01_create_entities.py
+python examples/03_datasets/01_load_and_inspect.py --dataset ~/datasets/nangate45
 ```
 
-Some examples require a dataset, which you can either create or point to an existing directory.
+Some examples require a dataset. Use the `--dataset` flag (or set `EDA_DATASET`) to point to a Parquet root, or drop a small test dataset under `examples/dataset/test`. Scripts will validate that the provided path exists before continuing.
+
+## Quick Verification
+
+To verify the example suite without the full Nangate/sky130 data, place a lightweight Parquet dataset under `examples/dataset/test`, or create a tiny dataset with the scripts in `examples/03_datasets`. Then run:
+
+```bash
+python examples/03_datasets/01_load_and_inspect.py --dataset examples/dataset/test
+python scripts/print_netlists.py --dataset examples/dataset/test
+```
+
+This workflow keeps the examples runnable in CI or on machines without the large reference datasets. Adjust `--dataset` paths as needed to point to your preferred dataset root.
+
+
