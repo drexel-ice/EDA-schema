@@ -352,7 +352,7 @@ class Dataset(dict):
         Returns:
             NetlistEntity: Fully reconstructed netlist entity.
         """
-        netlist_entity = self.db.get_entity("netlists", flow_id=flow_id, stage=stage)
+        netlist_entity = self.db.get_entity("netlists", load_sub_entities=False, flow_id=flow_id, stage=stage)
 
         port_df = self.db.get_table_data("ports", flow_id=flow_id, stage=stage)
         port_dict = port_df.set_index("name").to_dict('index')
@@ -419,6 +419,7 @@ class Dataset(dict):
                 startpoint=row.startpoint,
                 endpoint=row.endpoint,
                 path_type=row.path_type,
+                load_sub_entities=True,
             )
 
             for node in timing_path_entity.nodes:
@@ -457,7 +458,7 @@ class Dataset(dict):
         clock_tree_entities = {}
         df = self.db.get_table_data("clock_trees", flow_id=flow_id, stage=stage)
         for row in df.itertuples(index=False):
-            clock_tree_entity = self.db.get_entity("clock_trees", flow_id=flow_id, stage=stage, clock_source=row.clock_source)
+            clock_tree_entity = self.db.get_entity("clock_trees", load_sub_entities=True, flow_id=flow_id, stage=stage, clock_source=row.clock_source)
             for node in clock_tree_entity.nodes:
                 node_type = clock_tree_entity.nodes[node]["type"]
                 clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
