@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Optional
 import warnings
+
 import pandas as pd
 
 from eda_schema import entity
@@ -8,7 +9,7 @@ from eda_schema.base import Image2D
 from eda_schema.errors import DataNotFoundError
 
 
-class BaseDB(ABC):
+class BaseDB(metaclass=ABCMeta):
     """
     Abstract base class for all database backends used to store
     EDA-schema data tables and graph-structured data.
@@ -217,7 +218,7 @@ class BaseDB(ABC):
                 )
             # Construct key from sorted key_fields for consistency
             return "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
-        elif key_fields:
+        if key_fields:
             # If both provided, key_fields takes precedence
             warnings.warn(
                 "Both 'key' and 'key_fields' provided. Using 'key_fields'. "
@@ -226,7 +227,7 @@ class BaseDB(ABC):
                 stacklevel=3
             )
             return "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
-        elif not key:
+        if not key:
             raise ValueError(
                 "Either 'key' (legacy) or 'key_fields' (primary keys) must be provided. "
                 "Use **key_fields for consistency with other backends."

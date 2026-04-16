@@ -18,7 +18,7 @@ setup(
     name="eda-schema",
     description="Datamodel Schema for Electronic Design Automation.",
     version="1.0.0",
-    #py_modules=["eda_schema"],
+    py_modules=["eda_schema"],
     install_requires=INSTALL_REQUIRES,
     packages=find_packages(),
     include_package_data=True,
