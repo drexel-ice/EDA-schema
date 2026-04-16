@@ -256,7 +256,7 @@ class ParquetDB(BaseDB):
         Args:
             entity_name (str): Name of the entity.
             df (pd.DataFrame): Rows to append.
-        
+
         Returns:
             None
         """

@@ -1,6 +1,7 @@
-import dill
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Dict, Tuple
+
+import dill
 
 from eda_schema import entity
 from eda_schema.db.base import BaseDB
@@ -419,7 +420,7 @@ class Dataset(dict):
                 startpoint=row.startpoint,
                 endpoint=row.endpoint,
                 path_type=row.path_type,
-                load_sub_entities=True,
+                load_sub_entities=False,
             )
 
             for node in timing_path_entity.nodes:
@@ -458,7 +459,7 @@ class Dataset(dict):
         clock_tree_entities = {}
         df = self.db.get_table_data("clock_trees", flow_id=flow_id, stage=stage)
         for row in df.itertuples(index=False):
-            clock_tree_entity = self.db.get_entity("clock_trees", load_sub_entities=True, flow_id=flow_id, stage=stage, clock_source=row.clock_source)
+            clock_tree_entity = self.db.get_entity("clock_trees", load_sub_entities=False, flow_id=flow_id, stage=stage, clock_source=row.clock_source)
             for node in clock_tree_entity.nodes:
                 node_type = clock_tree_entity.nodes[node]["type"]
                 clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]

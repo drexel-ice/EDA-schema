@@ -251,7 +251,7 @@ class Image2D(np.ndarray):
         Args:
             obj: Source object if array was created from another array.
         """
-        pass
+        return None
 
     def validate(self) -> None:
         """Validate Image2D invariants."""
@@ -375,7 +375,7 @@ class BaseEntity:
 
     def _post_init_hook(self) -> None:
         """Optional hook for subclasses."""
-        pass
+        return None
 
     @classmethod
     def load(cls, data: Dict[str, Any]) -> "BaseEntity":
@@ -395,7 +395,7 @@ class BaseEntity:
         """Perform shallow runtime type checking."""
         # Get resolved type hints (handles string annotations from __future__ import annotations)
         type_hints = _get_type_hints_cached(type(self))
-        
+
         for f in fields(self):
             value = getattr(self, f.name)
             # Use resolved type hint if available, otherwise fall back to field.type
