@@ -280,6 +280,8 @@ class Image2D(np.ndarray):
             rgb[mask == 1] = [255, 255, 255]
         else:
             norm = (self - self.min()) / (self.max() - self.min() + 1e-12)
+            if invert_mask:
+                norm = 1.0 - norm
             rgba = plt.cm.get_cmap(cmap)(norm)
             rgb = (rgba[:, :, :3] * 255).astype(np.uint8)
 
