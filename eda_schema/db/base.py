@@ -311,12 +311,13 @@ class BaseDB(metaclass=ABCMeta):
         # --------------------------------------------------------------
         # Load Image2D fields for this entity (if any exist)
         # --------------------------------------------------------------
-        for image_field in obj._image_keys:
-            try:
-                image = self.get_image(entity_name, image_field, **key_fields)
-                setattr(obj, image_field, image)
-            except DataNotFoundError:
-                setattr(obj, image_field, None)
+        if load_sub_entities:
+            for image_field in obj._image_keys:
+                try:
+                    image = self.get_image(entity_name, image_field, **key_fields)
+                    setattr(obj, image_field, image)
+                except DataNotFoundError:
+                    setattr(obj, image_field, None)
 
         # --------------------------------------------------------------
         # Load Dict[str, Image2D] fields for this entity (if any exist)
