@@ -10,7 +10,7 @@ EDA-Schema is an open, standardized, and extensible **multimodal datamodel and f
 - **Unified Multimodal Datamodel**
   - Heterogeneous graph representations of circuit structure
   - Spatial image representations of placement and routing
-  - Scalar heatmaps for IR drop, electromigration, and routability
+  - Scalar heatmaps for IR drop, electromagnetic radiation, and routability
   - Structured QoR metric entities
 
 - **High Performance ParquetDB Backend**
