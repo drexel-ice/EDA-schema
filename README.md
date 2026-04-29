@@ -65,7 +65,7 @@ Each circuit is represented using multiple complementary modalities:
 
 - **Scalar spatial maps**
   - IR drop heatmaps
-  - Electromigration heatmaps
+  - Electromagnetic radiation heatmaps
   - Routability (RUDY) maps
 
 - **Structured metric entities**
@@ -84,7 +84,7 @@ Together, these modalities provide a complete representation of digital circuit 
 | **Netlist** | Primary heterogeneous graph representing gates, pins, nets, and I/O ports together with placement and routing modalities |
 | **Clock Network** | Netlist subgraph modeling clock propagation, clock routing, and sequential sinks |
 | **Timing Path** | Directed timing graph extracted from STA representing signal propagation through cell arcs and net arcs |
-| **Power Delivery Network** | Spatial representation of VDD/VSS routing, power sources, IR drop, and electromigration |
+| **Power Delivery Network** | Spatial representation of VDD/VSS routing, power sources, IR drop, and electromagnetic radiation |
 | **Quality Metrics** | Structured and spatial QoR entities capturing area, power, timing, and routability |
 
 ### Supporting Entities
@@ -119,7 +119,9 @@ EDA-Schema provides a large scale open and reproducible dataset of digital physi
 ### Dataset Specifications
 
 **Benchmark Suite**
-- 18 IWLS'05 benchmark circuits
+- 16 IWLS'05 benchmark circuits
+- 1 OpenCore circuit
+- 1 Ibex Core
 
 **Physical Design Toolchain**
 - OpenROAD
@@ -139,7 +141,7 @@ EDA-Schema provides a large scale open and reproducible dataset of digital physi
 - Routing maps
 - PDN maps
 - IR drop heatmaps
-- Electromigration heatmaps
+- Electromagnetic radiation heatmaps
 - RUDY congestion maps
 - QoR metric entities
 
