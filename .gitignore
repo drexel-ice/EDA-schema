@@ -1,11 +1,34 @@
 venv/
-*.egg-info
-*__pycache__*
+env/
+.venv/
+*.egg-info/
+
+# Python caches/artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.mypy_cache/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.whl
+pip-wheel-metadata/
+
+# IDE and editor configs
+.idea/
+.vscode/
 *.code-workspace
 .DS_Store
-temp_requirements.txt
-.backup_requirements.txt/
-*.out
-.vscode/*
-out/*
-out/id-000001_netlist.pb
+
+# Environment files
+.env
+.env.*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
