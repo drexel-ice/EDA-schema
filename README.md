@@ -19,7 +19,7 @@ EDA-Schema is an open, standardized, and extensible **multimodal datamodel and f
   - Parallel processing for large scale EDA datasets
 
 - **Large Scale Open Dataset**
-  - 18 benchmark circuits from the IWLS'05 suite
+  - 18 benchmark circuits: 16 from the IWLS'05 suite, 1 from OpenCores, and 1 from IBEX
   - 4 open source PDKs
   - 7,800+ design instances
   - Stage resolved multimodal snapshots across the OpenROAD flow
