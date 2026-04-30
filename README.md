@@ -211,7 +211,7 @@ pip install -e .
 Install additional development and notebook dependencies:
 
 ```bash
-pip install -r dev_requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 For graph visualization support:
@@ -233,6 +233,19 @@ python -c "import eda_schema; print('EDA-Schema installed successfully.')"
 EDA-Schema stores multimodal circuit data in ParquetDB, where each **flow_id** corresponds to a single RTL to GDSII execution. All artifacts generated during that OpenROAD run (netlist, placement, routing, clock network, timing paths, PDN, and QoR metrics) share the same `flow_id`.
 
 Each `flow_id` contains stage resolved snapshots: `floorplan`, `global_place`, `place_resize`, `detailed_place`, `cts`, `global_route`, `detailed_route`, `final`
+
+### Install the package
+
+```bash
+# Install the latest published release
+pip install eda-schema
+
+# For development, install from source
+python3 -m pip install -e .
+
+# Install development extras (linting, docs, notebooks)
+python3 -m pip install -e .[dev]
+```
 
 ### Load Dataset
 

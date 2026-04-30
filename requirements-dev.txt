@@ -6,4 +6,6 @@ grpcio-tools>=1.71
 jupyter>=1.0
 scipy>=1.17
 seaborn>=0.11
-Sphinx>=4.5
+myst-parser==0.16.1
+recommonmark==0.7.1
+Sphinx==4.5.0
