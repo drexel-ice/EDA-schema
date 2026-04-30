@@ -15,24 +15,24 @@ The contributions of this work include:
 #. **Open tooling and workflows** to query, analyze, visualize, and benchmark graph, image, heatmap, and metric based design representations
 #. A **benchmarking framework for machine learning in EDA**, including standardized prediction tasks across timing, power, area, parasitics, routing, and physical design quality metrics
 
-NOTE: This GitHub repository is still in the development phase. We are actively working on adding new features, fixing bugs, and enhancing the overall functionality. We appreciate your patience and understanding as we work to finalize the project.
+.. note::
 
-.. mdinclude:: datamodel.md
+   This repository is under active development. New features, bug fixes,
+   and documentation improvements are being added continuously.
 
-.. mdinclude:: open_dataset.md
-
-.. mdinclude:: getting_started.md
-
-.. mdinclude:: cite.md
-
+Contents
+========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Documentation
 
-   eda_schema
+   datamodel
+   open_dataset
+   getting_started
+   cite
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`

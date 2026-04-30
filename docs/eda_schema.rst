@@ -44,13 +44,6 @@ eda\_schema.errors module
    :undoc-members:
    :show-inheritance:
 
-eda\_schema.json\_utils module
-------------------------------
-
-.. automodule:: eda_schema.json_utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------
