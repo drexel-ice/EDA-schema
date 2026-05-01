@@ -1,5 +1,8 @@
 # EDA-Schema: A Multimodal Datamodel for Digital Circuit Design
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Build&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
+[![Docs Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Docs&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
+[![Tests Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Tests&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey)](LICENCE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -33,10 +36,10 @@ EDA-Schema is an open, standardized, and extensible **multimodal datamodel and f
 ## Table of Contents
 
 - [Data Model Overview](#data-model-overview)
-- [Open Dataset](#open-dataset)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Testing & Development](#testing--development)
+- [Open Dataset](#open-dataset)
 - [Citation](#citation)
 - [Support & Contact](#support--contact)
 
@@ -101,7 +104,7 @@ Together, these modalities provide a complete representation of digital circuit 
 
 - `floorplan`
 - `global_place`
-- `place_resize`
+- `place_resized`
 - `detailed_place`
 - `cts`
 - `global_route`
@@ -112,77 +115,6 @@ Together, these modalities provide a complete representation of digital circuit 
 
 ---
 
-## Open Dataset
-
-EDA-Schema provides a large scale open and reproducible dataset of digital physical designs generated using open source tools, public benchmark circuits, and multiple open source PDKs.
-
-### Dataset Specifications
-
-**Benchmark Suite**
-- 16 IWLS'05 benchmark circuits
-- 1 OpenCore circuit
-- 1 Ibex Core
-
-**Physical Design Toolchain**
-- OpenROAD
-
-**PDKs**
-- Nangate 45 nm
-- SkyWater 130 nm
-- ASAP 7 nm
-- IHP SG13G2 130 nm
-
-
-**Captured Modalities**
-- Netlist graphs
-- Clock network graphs
-- Timing path graphs
-- Placement maps
-- Routing maps
-- PDN maps
-- IR drop heatmaps
-- Electromigration heatmaps
-- RUDY congestion maps
-- QoR metric entities
-
-### Timing Operating Points
-
-Designs are generated around standardized timing operating regions:
-
-- **Barely Pass (BP)**: SCPR ∈ (0%, +10%)
-- **Barely Fail (BF)**: SCPR ∈ (−10%, 0%)
-
-Baseline operating points are identified per circuit across all PDKs and serve as anchors for dataset generation.
-
-### Dataset Expansion
-
-To increase diversity and capture realistic design trade-offs, the dataset is expanded using parameter sweeps:
-
-- **Target clock periods**: `{0.8 × BF, BF, BP, 1.2 × BP}`
-- **Aspect ratio**: `{0.5, 1.0, 1.5}`
-- **Core utilization**: PDK dependent ranges
-- **Placement density**: `{uniform, 1.25× uniform, 1.5× uniform}`
-
-These sweeps generate both timing clean and timing violating implementations across multiple physical design operating regions.
-
-### Dataset Scale
-
-The resulting released dataset contains:
-
-- **7,800+ design instances**
-- **18 benchmark circuits**
-- **4 open source PDKs**
-- **~275 million gates**
-- **~75 million nets**
-- **>36 million extracted timing paths**
-
-This provides a large scale multimodal benchmark for machine learning research in digital physical design.
-
-### Download
-
-**Dataset**: [Google Drive](https://drive.google.com/drive/folders/1B3rBvbnviBrKw1aLRpv7e1pEXSCy_vLQ?usp=sharing)
-
----
 ## Installation
 
 ### System Requirements
@@ -211,14 +143,9 @@ pip install -e .
 Install additional development and notebook dependencies:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e .[dev]
 ```
 
-For graph visualization support:
-
-```bash
-pip install pygraphviz
-```
 
 ### Verify Installation
 
@@ -232,7 +159,7 @@ python -c "import eda_schema; print('EDA-Schema installed successfully.')"
 
 EDA-Schema stores multimodal circuit data in ParquetDB, where each **flow_id** corresponds to a single RTL to GDSII execution. All artifacts generated during that OpenROAD run (netlist, placement, routing, clock network, timing paths, PDN, and QoR metrics) share the same `flow_id`.
 
-Each `flow_id` contains stage resolved snapshots: `floorplan`, `global_place`, `place_resize`, `detailed_place`, `cts`, `global_route`, `detailed_route`, `final`
+Each `flow_id` contains stage resolved snapshots: `floorplan`, `global_place`, `place_resized`, `detailed_place`, `cts`, `global_route`, `detailed_route`, `final`
 
 ### Install the package
 
@@ -313,9 +240,18 @@ Additional examples are available in:
 - [`research/notebooks/tutorials`](research/notebooks/tutorials) → analysis and visualization workflows
 - [`docs/`](docs/) → schema documentation
 
+For the canonical narrative and figures, see `docs/README.md` and the included rst files (`docs/datamodel.rst`, `docs/open_dataset.rst`, `docs/getting_started.rst`, etc.). The site is built with Sphinx via:
+
+```bash
+cd docs
+make html
+```
+
 ---
 
 ## Testing & Development
+
+Use the commands below to validate the codebase and rebuild assets.
 
 Run tests:
 
@@ -330,12 +266,15 @@ pytest tests/unit/
 pytest tests/integration/
 ```
 
-Build documentation:
+---
 
-```bash
-cd docs
-make html
-```
+## Open Dataset
+
+EDA-Schema publishes a large-scale OpenROAD dataset with the operating points, sweeps, and QoR metrics described in the papers. The full dataset specification, tables, and diagrams live in `docs/open_dataset.rst`.
+
+### Download
+
+**Dataset**: [Google Drive](https://drive.google.com/drive/folders/1B3rBvbnviBrKw1aLRpv7e1pEXSCy_vLQ?usp=sharing)
 
 ---
 
@@ -362,3 +301,7 @@ If you use EDA-Schema in your research, please cite:
 - **Discussions**: https://github.com/drexel-ice/eda-schema/discussions
 - **Email**: Pratik Shrestha (ps937@drexel.edu), Alec Aversa (aja367@drexel.edu)
 - **Advisor**: Ioannis Savidis (is338@drexel.edu)
+
+## License
+
+EDA-Schema is published under the [CC BY-NC-SA 4.0](LICENCE) license. See **LICENCE** for the full terms.
