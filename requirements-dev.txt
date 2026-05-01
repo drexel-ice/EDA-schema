@@ -6,6 +6,5 @@ grpcio-tools>=1.71
 jupyter>=1.0
 scipy>=1.17
 seaborn>=0.11
-myst-parser==0.16.1
-recommonmark==0.7.1
-Sphinx==4.5.0
+Sphinx==9.0.4
+sphinx_rtd_theme==3.1.0
