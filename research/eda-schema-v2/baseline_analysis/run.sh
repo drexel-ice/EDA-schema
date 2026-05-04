@@ -3,7 +3,6 @@ mkdir -p $SCRIPT_DIR/results
 
 pdks=("NG45" "SKY130" "IHP130" "ASAP7")
 stages=("floorplan" "global_place" "detailed_place" "cts" "global_route")
-stages=("global_route")
 problems=(
   "cell_arc_slew_prediction"
   "cell_arc_delay_prediction"
@@ -39,7 +38,7 @@ for pdk in "${pdks[@]}"; do
       /usr/bin/time -v python $SCRIPT_DIR/compute_baseline_vs_actual.py \
         --problem "$problem" \
         --pdk "$pdk" \
-        --initial-stage "$stage" 2>> $SCRIPT_DIR/run_global_route.log | tee -a $SCRIPT_DIR/run_global_route.log
+        --initial-stage "$stage" 2>> $SCRIPT_DIR/run.log | tee -a $SCRIPT_DIR/run.log
       echo "Finished PDK: $pdk, Stage: $stage, Problem: $problem, Time: $time"
     done
   done
@@ -49,13 +48,13 @@ echo "All baseline analyses vs actual completed."
 
 echo "Computing error metrics..."
 time=$(date +%Y%m%d_%H%M%S)
-/usr/bin/time -v python $SCRIPT_DIR/compute_error_metrics.py 2>> $SCRIPT_DIR/run_global_route.log | tee -a $SCRIPT_DIR/run_global_route.log
+/usr/bin/time -v python $SCRIPT_DIR/compute_error_metrics.py 2>> $SCRIPT_DIR/run.log | tee -a $SCRIPT_DIR/run.log
 echo "Finished error metrics, Time: $time"
 echo "All error metrics completed."
 
 echo "Plotting results..."
 time=$(date +%Y%m%d_%H%M%S)
-python $SCRIPT_DIR/plot.py 2>> $SCRIPT_DIR/run_global_route.log | tee -a $SCRIPT_DIR/run_global_route.log
+python $SCRIPT_DIR/plot.py 2>> $SCRIPT_DIR/run.log | tee -a $SCRIPT_DIR/run.log
 echo "Finished plotting results, Time: $time"
 echo "All plotting results completed."
 
