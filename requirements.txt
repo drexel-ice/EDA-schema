@@ -7,6 +7,5 @@ pymongo>=4.0
 grpcio>=1.71
 protobuf>=5.0
 PyYAML>=6.0
-pytest>=7.0
 dill>=0.3
 pygraphviz>=1.14
