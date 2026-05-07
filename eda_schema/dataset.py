@@ -188,8 +188,7 @@ class Dataset(dict):
         self.db.add_entity_images("netlists", netlist)
 
         # Dump node entities (PORT / GATE / PIN / NET)
-        port_data, gate_data, pin_data, net_data, metal_segment_data = (
-            [],
+        port_data, gate_data, pin_data, net_data = (
             [],
             [],
             [],
@@ -206,18 +205,11 @@ class Dataset(dict):
                 pin_data.append(node_entity.get_tabular_data())
             elif node_type == "NET":
                 net_data.append(node_entity.get_tabular_data())
-                net = netlist.nodes[node]["entity"]
-                # for metal_segment in net.nodes:
-                #     metal_segment_data.append(net.nodes[metal_segment]["entity"].get_tabular_data())
-                # self.db.add_graph_data("nets", net.get_graph_data(), flow_id=flow_id, stage=stage, name=net.name)
-                # self.db.add_entity_images("nets", node_entity)
 
         self.db.add_table_data("ports", port_data)
         self.db.add_table_data("gates", gate_data)
         self.db.add_table_data("pins", pin_data)
         self.db.add_table_data("nets", net_data)
-        # if metal_segment_data:
-        #     self.db.add_table_data("metal_segments", metal_segment_data)
 
         # Dump timing paths + their graphs
         timing_path_data = []
@@ -561,7 +553,6 @@ class Dataset(dict):
                 clock_source=row.clock_source,
             )
             for node in clock_tree_entity.nodes:
-                node_type = clock_tree_entity.nodes[node]["type"]
                 clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node][
                     "entity"
                 ]
