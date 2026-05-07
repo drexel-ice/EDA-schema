@@ -24,6 +24,8 @@ jobs:
           pip install -r requirements.txt
       - name: Install dev extras
         run: pip install -r requirements-dev.txt
+      - name: Run Ruff (lint)
+        run: ruff check eda_schema tests
       - name: Run tests
         run: pytest
   docs:
