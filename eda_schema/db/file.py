@@ -89,7 +89,9 @@ class FileDB(BaseDB):
     # ------------------------------------------------------------------
     # Table creation
     # ------------------------------------------------------------------
-    def _create_table(self, entity_name: str, columns: List[str], is_graph_entity: bool):
+    def _create_table(
+        self, entity_name: str, columns: List[str], is_graph_entity: bool
+    ):
         """
         Create the directory + table for an entity.
 
@@ -125,7 +127,9 @@ class FileDB(BaseDB):
     # ------------------------------------------------------------------
     # Graph Operations
     # ------------------------------------------------------------------
-    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
+    def add_graph_data(
+        self, entity_name: str, graph: Any, key: str = None, **key_fields
+    ) -> None:
         """
         Add graph data to the database.
 
@@ -151,7 +155,7 @@ class FileDB(BaseDB):
         # Handle both dict and object with graph_dict() method
         if isinstance(graph, dict):
             graph_data = graph
-        elif hasattr(graph, 'graph_dict'):
+        elif hasattr(graph, "graph_dict"):
             graph_data = graph.graph_dict()
         else:
             raise TypeError(
@@ -161,7 +165,9 @@ class FileDB(BaseDB):
         with out_path.open("w") as f:
             json.dump(graph_data, f)
 
-    def get_graph_data(self, entity_name: str, key: str = None, **key_fields) -> Dict[str, Any]:
+    def get_graph_data(
+        self, entity_name: str, key: str = None, **key_fields
+    ) -> Dict[str, Any]:
         """
         Retrieve graph data from the database.
 
@@ -184,10 +190,14 @@ class FileDB(BaseDB):
         resolved_key = self._resolve_graph_key(key, key_fields).replace("/", "_")
         graph_file = self._graph_dir(entity_name) / f"{resolved_key}.json"
         if not graph_file.exists():
-            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            key_str = (
+                ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items()))
+                if key_fields
+                else resolved_key
+            )
             raise DataNotFoundError(
                 entity_name=entity_name,
-                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}",
             )
 
         with graph_file.open() as f:
@@ -286,7 +296,9 @@ class FileDB(BaseDB):
     # ------------------------------------------------------------------
     # Image Storage
     # ------------------------------------------------------------------
-    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+    def add_image(
+        self, entity_name: str, image_name: str, image: Image2D, **key_fields
+    ) -> None:
         """
         Store an Image2D associated with an entity row.
 
@@ -337,5 +349,5 @@ class FileDB(BaseDB):
 
         # Load and return wrapped Image2D
         data = np.load(path)
-        arr = data['arr_0']  # np.savez_compressed saves as 'arr_0'
+        arr = data["arr_0"]  # np.savez_compressed saves as 'arr_0'
         return Image2D(arr)

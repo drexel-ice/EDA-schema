@@ -9,6 +9,7 @@ class NetlistCellMapper(dict):
 
     Acts as a dictionary mapping node names to their cell type strings.
     """
+
     def __init__(self, netlist):
         """
         Extract node information from a netlist.
@@ -118,7 +119,11 @@ class NetlistCellMapper(dict):
         Returns:
             bool: True if the cell is non-functional, False otherwise.
         """
-        return self.cell_is_filler(cell) or self.cell_is_tapcell(cell) or self.cell_is_antenna(cell)
+        return (
+            self.cell_is_filler(cell)
+            or self.cell_is_tapcell(cell)
+            or self.cell_is_antenna(cell)
+        )
 
 
 def compare_netlists_by_cells(phase1_netlist, phase2_netlist):
@@ -141,8 +146,12 @@ def compare_netlists_by_cells(phase1_netlist, phase2_netlist):
     phase2_cells = NetlistCellMapper(phase2_netlist)
 
     result_summary = {
-        "init_stage_count": len([c for c in phase1_cells if not phase1_cells.is_non_functional_cell(c)]),
-        "final_stage_count": len([c for c in phase2_cells if not phase2_cells.is_non_functional_cell(c)]),
+        "init_stage_count": len(
+            [c for c in phase1_cells if not phase1_cells.is_non_functional_cell(c)]
+        ),
+        "final_stage_count": len(
+            [c for c in phase2_cells if not phase2_cells.is_non_functional_cell(c)]
+        ),
     }
 
     data = []
@@ -173,9 +182,13 @@ def compare_netlists_by_cells(phase1_netlist, phase2_netlist):
                 row["names_match_stdcell_match"] = True
             else:
                 row["names_match_stdcell_not_match"] = True
-                if phase1_cells.strip_sizing_info(cell) == phase2_cells.strip_sizing_info(cell):
+                if phase1_cells.strip_sizing_info(
+                    cell
+                ) == phase2_cells.strip_sizing_info(cell):
                     row["names_match_stdcell_not_match_resized"] = True
-                elif phase1_cells.cell_is_delay(cell) and phase2_cells.cell_is_delay(cell):
+                elif phase1_cells.cell_is_delay(cell) and phase2_cells.cell_is_delay(
+                    cell
+                ):
                     row["names_match_stdcell_not_match_resized"] = True
                     row["names_match_stdcell_not_match_delay"] = True
                 else:
@@ -226,6 +239,7 @@ class NetlistNetMapper(dict):
 
     Acts as a dictionary mapping net/port nodes to sorted lists of connected nodes.
     """
+
     def __init__(self, netlist):
         """
         Initialize the net mapper from a netlist.
@@ -239,8 +253,10 @@ class NetlistNetMapper(dict):
 
         for node, node_info in netlist.nodes.items():
             if node_info.get("type") in ["NET", "IO_PORT"]:
-                self[node] = sorted(self._get_connected_node_info(netlist.predecessors(node)) +
-                                    self._get_connected_node_info(netlist.successors(node)))
+                self[node] = sorted(
+                    self._get_connected_node_info(netlist.predecessors(node))
+                    + self._get_connected_node_info(netlist.successors(node))
+                )
 
     def _get_connected_node_info(self, connected_nodes):
         """
@@ -255,8 +271,12 @@ class NetlistNetMapper(dict):
         node_info = []
         for node in connected_nodes:
             node_type = self._netlist.nodes[node]["type"]
-            if node_type == "GATE" and not self._phase_cells.is_non_functional_cell(node):
-                if self._phase_cells.cell_is_cloned(node) or self._phase_cells.cell_is_constant_logic(node):
+            if node_type == "GATE" and not self._phase_cells.is_non_functional_cell(
+                node
+            ):
+                if self._phase_cells.cell_is_cloned(
+                    node
+                ) or self._phase_cells.cell_is_constant_logic(node):
                     continue
                 node_info.append((node, self._phase_cells[node]))
             else:
@@ -273,8 +293,17 @@ class NetlistNetMapper(dict):
         Returns:
             list: List of (node, stripped_cell_type) tuples.
         """
-        return [(node, self._phase_cells.strip_sizing_info(node) if node in self._phase_cells else node_type)
-                for node, node_type in self.get(net)]
+        return [
+            (
+                node,
+                (
+                    self._phase_cells.strip_sizing_info(node)
+                    if node in self._phase_cells
+                    else node_type
+                ),
+            )
+            for node, node_type in self.get(net)
+        ]
 
     def strip_neighbor_delay(self, net):
         """
@@ -286,17 +315,29 @@ class NetlistNetMapper(dict):
         Returns:
             list: List of (node, normalized_type) tuples where delay cells are marked as "delay".
         """
-        return [(node, "delay" if node in self._phase_cells and self._phase_cells.cell_is_delay(node) else node_type)
-                for node, node_type in self.get(net)]
+        return [
+            (
+                node,
+                (
+                    "delay"
+                    if node in self._phase_cells
+                    and self._phase_cells.cell_is_delay(node)
+                    else node_type
+                ),
+            )
+            for node, node_type in self.get(net)
+        ]
+
 
 class NetlistBufferChecker:
     """
     Analyzes buffering in netlists between two phases.
-    
+
     Args:
         netlist1 (eda_schema.entity.NetlistEntity): The netlist of the first phase.
         netlist2 (eda_schema.entity.NetlistEntity): The netlist of the second phase.
     """
+
     def __init__(self, netlist1, netlist2):
         """
         Initialize the buffer checker with two netlists.
@@ -313,10 +354,10 @@ class NetlistBufferChecker:
     def net_is_buffered(self, net):
         """
         Determines if a given net was buffered between two netlist phases.
-        
+
         Args:
             net (str): Name of the net to check.
-        
+
         Returns:
             tuple:
                 - bool: True if buffering was added, False otherwise.
@@ -350,16 +391,16 @@ class NetlistBufferChecker:
 
         return self._compare_for_buffer_insertion(
             self._get_node_data(phase1_nodes, self.netlist1, self.phase1_cells),
-            self._get_node_data(phase2_nodes, self.netlist2, self.phase2_cells)
+            self._get_node_data(phase2_nodes, self.netlist2, self.phase2_cells),
         )
 
     def net_is_buffered_at_output(self, net):
         """
         Checks if a net is buffered specifically at its output.
-        
+
         Args:
             net (str): Name of the net to check.
-        
+
         Returns:
             tuple:
                 - bool: True if buffering was added at the output, False otherwise.
@@ -379,8 +420,12 @@ class NetlistBufferChecker:
             net_driving_gate_fanout_gates1 += list(self.netlist1.successors(fanout_net))
         net_driving_gate_fanout_gates1 = sorted(net_driving_gate_fanout_gates1)
 
-        phase1_data = self._get_node_data(net_driving_gate_fanout_gates1, self.netlist1, self.phase1_cells)
-        phase2_data = self._get_node_data(net_driving_gate_fanout_gates2, self.netlist2, self.phase2_cells)
+        phase1_data = self._get_node_data(
+            net_driving_gate_fanout_gates1, self.netlist1, self.phase1_cells
+        )
+        phase2_data = self._get_node_data(
+            net_driving_gate_fanout_gates2, self.netlist2, self.phase2_cells
+        )
 
         is_buffered, _ = self._compare_for_buffer_insertion(phase1_data, phase2_data)
         if is_buffered:
@@ -393,12 +438,12 @@ class NetlistBufferChecker:
     def _get_node_data(nodes, netlist, phase_cells):
         """
         Extracts relevant node data for comparison.
-        
+
         Args:
             nodes (list): List of nodes to extract data from.
             netlist (eda_schema.entity.NetlistEntity): The netlist containing the nodes.
             phase_cells (NetlistCellMapper): Mapper to extract cell information.
-        
+
         Returns:
             set: A set containing tuples of (node, stripped cell information).
         """
@@ -414,11 +459,11 @@ class NetlistBufferChecker:
     def _compare_for_buffer_insertion(self, phase1_data, phase2_data):
         """
         Compares two sets of node data to detect buffer insertions.
-        
+
         Args:
             phase1_data (set): Data from the first phase.
             phase2_data (set): Data from the second phase.
-        
+
         Returns:
             tuple:
                 - bool: True if buffering was detected, False otherwise.
@@ -445,14 +490,16 @@ def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
     Args:
         phase1_netlist (eda_schema.entity.NetlistEntity): The netlist of the first phase.
         phase2_netlist (eda_schema.entity.NetlistEntity): The netlist of the second phase.
-    
+
     Returns:
         tuple:
             - phase1_df (DataFrame): DataFrame of removed nets from phase 1.
             - phase2_df (DataFrame): DataFrame of new or modified nets in phase 2.
             - result_summary (dict): Summary dictionary of categorized changes.
     """
-    phase1_nets, phase2_nets = NetlistNetMapper(phase1_netlist), NetlistNetMapper(phase2_netlist)
+    phase1_nets, phase2_nets = NetlistNetMapper(phase1_netlist), NetlistNetMapper(
+        phase2_netlist
+    )
     phase2_cells = NetlistCellMapper(phase2_netlist)
     buffer_checker = NetlistBufferChecker(phase1_netlist, phase2_netlist)
 
@@ -461,7 +508,11 @@ def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
         "final_stage_count": len(phase2_nets),
     }
 
-    buffer_added_nets, nets_name_matched_not_resolved, nets_name_not_matched = [], [], []
+    buffer_added_nets, nets_name_matched_not_resolved, nets_name_not_matched = (
+        [],
+        [],
+        [],
+    )
     data = []
     for net, phase2_neighbors in phase2_nets.items():
         row = {
@@ -487,9 +538,13 @@ def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
                 row["names_match_neighbors_match"] = True
             else:
                 row["names_match_neighbors_not_match"] = True
-                if phase1_nets.strip_neighbor_sizing_info(net) == phase2_nets.strip_neighbor_sizing_info(net):
+                if phase1_nets.strip_neighbor_sizing_info(
+                    net
+                ) == phase2_nets.strip_neighbor_sizing_info(net):
                     row["names_match_neighbors_not_match_resized"] = True
-                elif phase1_nets.strip_neighbor_delay(net) == phase2_nets.strip_neighbor_delay(net):
+                elif phase1_nets.strip_neighbor_delay(
+                    net
+                ) == phase2_nets.strip_neighbor_delay(net):
                     row["names_match_neighbors_not_match_delay"] = True
                 elif buffer_checker.net_is_buffered(net)[0]:
                     row["names_match_neighbors_not_match_buffered"] = True
@@ -509,15 +564,23 @@ def compare_netlists_by_nets(phase1_netlist, phase2_netlist):
         if net in buffer_added_nets:
             phase2_df.loc[net, "names_not_match_buffer_added"] = True
             phase2_df.loc[net, "names_match_neighbors_not_match_remaining"] = False
-        elif phase2_netlist.nodes[list(phase2_netlist.predecessors(net))[0]]["type"] == "GATE" and phase2_cells.cell_is_constant_logic(list(phase2_netlist.predecessors(net))[0]):
+        elif phase2_netlist.nodes[list(phase2_netlist.predecessors(net))[0]][
+            "type"
+        ] == "GATE" and phase2_cells.cell_is_constant_logic(
+            list(phase2_netlist.predecessors(net))[0]
+        ):
             phase2_df.loc[net, "names_not_match_conb"] = True
         elif buffer_checker.net_is_buffered_at_output(net)[0]:
             phase2_df.loc[net, "names_not_match_buffer_added_output"] = True
             buffered_net = buffer_checker.net_is_buffered_at_output(net)[1]
             if buffered_net in nets_name_matched_not_resolved:
                 nets_name_matched_not_resolved.remove(buffered_net)
-            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_buffered"] = True
-            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_remaining"] = False
+            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_buffered"] = (
+                True
+            )
+            phase2_df.loc[buffered_net, "names_match_neighbors_not_match_remaining"] = (
+                False
+            )
         else:
             phase2_df.loc[net, "names_not_match_remaining"] = True
 

@@ -48,6 +48,7 @@ class Dataset(dict):
         standard_cells (dict): Dictionary to store standard cell data.
         db (FileDB): File-based database for storing EDA-related data.
     """
+
     standard_cells = {}
 
     def __init__(self, db_obj: BaseDB) -> None:
@@ -73,7 +74,6 @@ class Dataset(dict):
         with open(filepath, "wb") as f:
             dill.dump(self, f)
         self.db = temp
-
 
     @classmethod
     def load_from_pickle(cls, filepath: str | Path, db_obj: BaseDB) -> "Dataset":
@@ -115,12 +115,16 @@ class Dataset(dict):
         flow_ids = list(self.keys())
 
         if not flow_ids:
-            raise ValueError("Dataset.dump_dataset() called but dataset contains no flows.")
+            raise ValueError(
+                "Dataset.dump_dataset() called but dataset contains no flows."
+            )
 
         # Dump each flow entry
         for flow_id in flow_ids:
             if self[flow_id] is None:
-                raise ValueError(f"Dataset contains empty design flow entry: '{flow_id}'")
+                raise ValueError(
+                    f"Dataset contains empty design flow entry: '{flow_id}'"
+                )
             self.dump_design_flow(flow_id)
 
     def dump_design_flow(self, flow_id: str) -> None:
@@ -139,8 +143,9 @@ class Dataset(dict):
             stage = stage_enum.value
             self.dump_design_stage(design_flow.stages[stage], flow_id, stage)
 
-    def dump_design_stage(self, design_stage: entity.DesignStageEntity,
-                     flow_id: str, stage: str) -> None:
+    def dump_design_stage(
+        self, design_stage: entity.DesignStageEntity, flow_id: str, stage: str
+    ) -> None:
         """
         Persist a design-stage and associated netlist and all metrics.
 
@@ -156,20 +161,40 @@ class Dataset(dict):
             return
         # Persist stage-level metadata + metrics tables
         self.db.add_table_row("netlists", netlist.get_tabular_data())
-        self.db.add_table_row("cell_metrics", design_stage.cell_metrics.get_tabular_data())
-        self.db.add_table_row("area_metrics", design_stage.area_metrics.get_tabular_data())
-        self.db.add_table_row("power_metrics", design_stage.power_metrics.get_tabular_data())
-        self.db.add_table_row("routability_metrics", design_stage.routability_metrics.get_tabular_data())
-        self.db.add_table_row("timing_metrics", design_stage.timing_metrics.get_tabular_data())
+        self.db.add_table_row(
+            "cell_metrics", design_stage.cell_metrics.get_tabular_data()
+        )
+        self.db.add_table_row(
+            "area_metrics", design_stage.area_metrics.get_tabular_data()
+        )
+        self.db.add_table_row(
+            "power_metrics", design_stage.power_metrics.get_tabular_data()
+        )
+        self.db.add_table_row(
+            "routability_metrics", design_stage.routability_metrics.get_tabular_data()
+        )
+        self.db.add_table_row(
+            "timing_metrics", design_stage.timing_metrics.get_tabular_data()
+        )
 
-        self.db.add_entity_images("routability_metrics", design_stage.routability_metrics)
+        self.db.add_entity_images(
+            "routability_metrics", design_stage.routability_metrics
+        )
 
         # Dump netlist graph
-        self.db.add_graph_data("netlists", netlist.get_graph_data(), flow_id=flow_id, stage=stage)
+        self.db.add_graph_data(
+            "netlists", netlist.get_graph_data(), flow_id=flow_id, stage=stage
+        )
         self.db.add_entity_images("netlists", netlist)
 
         # Dump node entities (PORT / GATE / PIN / NET)
-        port_data, gate_data, pin_data, net_data, metal_segment_data = [], [], [], [], []
+        port_data, gate_data, pin_data, net_data, metal_segment_data = (
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
         for node in netlist.nodes:
             node_entity = netlist.nodes[node]["entity"]
             node_type = netlist.nodes[node]["type"]
@@ -209,15 +234,16 @@ class Dataset(dict):
                     net_arc_data.append(tp_node_entity.get_tabular_data())
                 elif tp_node_type == "CELL_ARC":
                     cell_arc_data.append(tp_node_entity.get_tabular_data())
-            timing_path_graphs.append({
-                "data": timing_path.get_graph_data(),
-                "flow_id": flow_id,
-                "stage": stage,
-                "startpoint": timing_path.startpoint,
-                "endpoint": timing_path.endpoint,
-                "path_type": timing_path.path_type,
-            })
-
+            timing_path_graphs.append(
+                {
+                    "data": timing_path.get_graph_data(),
+                    "flow_id": flow_id,
+                    "stage": stage,
+                    "startpoint": timing_path.startpoint,
+                    "endpoint": timing_path.endpoint,
+                    "path_type": timing_path.path_type,
+                }
+            )
 
         self.db.add_table_data("net_arcs", net_arc_data)
         self.db.add_table_data("cell_arcs", cell_arc_data)
@@ -239,8 +265,12 @@ class Dataset(dict):
         self.db.add_table_data("clock_trees", clock_tree_data)
 
         # Dump power delivery network
-        self.db.add_entity_images("power_delivery_networks", netlist.power_delivery_network)
-        self.db.add_table_row("power_delivery_networks", netlist.power_delivery_network.get_tabular_data())
+        self.db.add_entity_images(
+            "power_delivery_networks", netlist.power_delivery_network
+        )
+        self.db.add_table_row(
+            "power_delivery_networks", netlist.power_delivery_network.get_tabular_data()
+        )
 
     def load_standard_cells(self) -> None:
         """
@@ -280,7 +310,9 @@ class Dataset(dict):
             design_flow = self.load_design_flow(_flow_id, stage)
             self[_flow_id] = design_flow
 
-    def load_design_flow(self, flow_id: str, stage: str | None = None) -> entity.DesignFlowEntity:
+    def load_design_flow(
+        self, flow_id: str, stage: str | None = None
+    ) -> entity.DesignFlowEntity:
         """
         Load a full design flow (or a specific stage of it).
 
@@ -294,9 +326,11 @@ class Dataset(dict):
         design_flow_entity = self.db.get_entity("design_flows", flow_id=flow_id)
         for stage_enum in entity.DesignStages:
             _stage = stage_enum.value
-            if stage and stage!=_stage:
+            if stage and stage != _stage:
                 continue
-            design_flow_entity.stages[_stage] = self.load_design_stage(flow_id=flow_id, stage=_stage)
+            design_flow_entity.stages[_stage] = self.load_design_stage(
+                flow_id=flow_id, stage=_stage
+            )
         return design_flow_entity
 
     def load_design_stage(self, flow_id: str, stage: str) -> entity.DesignStageEntity:
@@ -310,35 +344,62 @@ class Dataset(dict):
         Returns:
             DesignStageEntity: The reconstructed stage entity.
         """
-        design_stage_entity = self.db.get_entity("design_stages", flow_id=flow_id, stage=stage)
+        design_stage_entity = self.db.get_entity(
+            "design_stages", flow_id=flow_id, stage=stage
+        )
         design_stage_entity.netlist = self.load_netlist(flow_id=flow_id, stage=stage)
-        design_stage_entity.cell_metrics = self.db.get_entity("cell_metrics", flow_id=flow_id, stage=stage)
-        design_stage_entity.area_metrics = self.db.get_entity("area_metrics", flow_id=flow_id, stage=stage)
+        design_stage_entity.cell_metrics = self.db.get_entity(
+            "cell_metrics", flow_id=flow_id, stage=stage
+        )
+        design_stage_entity.area_metrics = self.db.get_entity(
+            "area_metrics", flow_id=flow_id, stage=stage
+        )
 
         # Load power metrics and apply migration (Watts -> μW) if needed
-        power_metrics = self.db.get_entity("power_metrics", flow_id=flow_id, stage=stage)
+        power_metrics = self.db.get_entity(
+            "power_metrics", flow_id=flow_id, stage=stage
+        )
         if power_metrics:
             # Migration: Convert from Watts to μW if values are in old format (< 1.0)
             # New parser outputs values in μW (typically > 100), old database has Watts (< 1.0)
-            if power_metrics.total_power is not None and power_metrics.total_power < 1.0:
+            if (
+                power_metrics.total_power is not None
+                and power_metrics.total_power < 1.0
+            ):
                 # Convert all power values from Watts to μW (multiply by 1e6) and round
                 power_metrics.total_power = round(power_metrics.total_power * 1e6, 6)
                 if power_metrics.combinational_power is not None:
-                    power_metrics.combinational_power = round(power_metrics.combinational_power * 1e6, 6)
+                    power_metrics.combinational_power = round(
+                        power_metrics.combinational_power * 1e6, 6
+                    )
                 if power_metrics.sequential_power is not None:
-                    power_metrics.sequential_power = round(power_metrics.sequential_power * 1e6, 6)
+                    power_metrics.sequential_power = round(
+                        power_metrics.sequential_power * 1e6, 6
+                    )
                 if power_metrics.macro_power is not None:
-                    power_metrics.macro_power = round(power_metrics.macro_power * 1e6, 6)
+                    power_metrics.macro_power = round(
+                        power_metrics.macro_power * 1e6, 6
+                    )
                 if power_metrics.internal_power is not None:
-                    power_metrics.internal_power = round(power_metrics.internal_power * 1e6, 6)
+                    power_metrics.internal_power = round(
+                        power_metrics.internal_power * 1e6, 6
+                    )
                 if power_metrics.switching_power is not None:
-                    power_metrics.switching_power = round(power_metrics.switching_power * 1e6, 6)
+                    power_metrics.switching_power = round(
+                        power_metrics.switching_power * 1e6, 6
+                    )
                 if power_metrics.leakage_power is not None:
-                    power_metrics.leakage_power = round(power_metrics.leakage_power * 1e6, 6)
+                    power_metrics.leakage_power = round(
+                        power_metrics.leakage_power * 1e6, 6
+                    )
         design_stage_entity.power_metrics = power_metrics
 
-        design_stage_entity.routability_metrics = self.db.get_entity("routability_metrics", flow_id=flow_id, stage=stage)
-        design_stage_entity.timing_metrics = self.db.get_entity("timing_metrics", flow_id=flow_id, stage=stage)
+        design_stage_entity.routability_metrics = self.db.get_entity(
+            "routability_metrics", flow_id=flow_id, stage=stage
+        )
+        design_stage_entity.timing_metrics = self.db.get_entity(
+            "timing_metrics", flow_id=flow_id, stage=stage
+        )
         return design_stage_entity
 
     def load_netlist(self, flow_id: str, stage: str) -> entity.NetlistEntity:
@@ -353,35 +414,56 @@ class Dataset(dict):
         Returns:
             NetlistEntity: Fully reconstructed netlist entity.
         """
-        netlist_entity = self.db.get_entity("netlists", load_sub_entities=False, flow_id=flow_id, stage=stage)
+        netlist_entity = self.db.get_entity(
+            "netlists", load_sub_entities=False, flow_id=flow_id, stage=stage
+        )
 
         port_df = self.db.get_table_data("ports", flow_id=flow_id, stage=stage)
-        port_dict = port_df.set_index("name").to_dict('index')
+        port_dict = port_df.set_index("name").to_dict("index")
         pin_df = self.db.get_table_data("pins", flow_id=flow_id, stage=stage)
-        pin_dict = pin_df.set_index("name").to_dict('index')
+        pin_dict = pin_df.set_index("name").to_dict("index")
         gate_df = self.db.get_table_data("gates", flow_id=flow_id, stage=stage)
-        gate_dict = gate_df.set_index("name").to_dict('index')
+        gate_dict = gate_df.set_index("name").to_dict("index")
         net_df = self.db.get_table_data("nets", flow_id=flow_id, stage=stage)
-        net_dict = net_df.set_index("name").to_dict('index')
+        net_dict = net_df.set_index("name").to_dict("index")
 
         for node in netlist_entity.nodes:
             node_type = netlist_entity.nodes[node]["type"]
             if node_type == "PORT":
-                netlist_entity.nodes[node]["entity"] = entity.PortEntity(name=node, **port_dict[node])
+                netlist_entity.nodes[node]["entity"] = entity.PortEntity(
+                    name=node, **port_dict[node]
+                )
             elif node_type == "PIN":
-                netlist_entity.nodes[node]["entity"] = entity.PinEntity(name=node, **pin_dict[node])
+                netlist_entity.nodes[node]["entity"] = entity.PinEntity(
+                    name=node, **pin_dict[node]
+                )
             elif node_type == "GATE":
-                netlist_entity.nodes[node]["entity"] = entity.GateEntity(name=node, **gate_dict[node])
+                netlist_entity.nodes[node]["entity"] = entity.GateEntity(
+                    name=node, **gate_dict[node]
+                )
             elif node_type == "NET":
-                netlist_entity.nodes[node]["entity"] = entity.NetEntity(name=node, **net_dict[node])
+                netlist_entity.nodes[node]["entity"] = entity.NetEntity(
+                    name=node, **net_dict[node]
+                )
 
-        netlist_entity.timing_paths = self.load_timing_paths(flow_id, stage, netlist_entity)
-        netlist_entity.clock_trees = self.load_clock_trees(flow_id, stage, netlist_entity)
-        netlist_entity.power_delivery_network = self.db.get_entity("power_delivery_networks", flow_id=flow_id, stage=stage)
+        netlist_entity.timing_paths = self.load_timing_paths(
+            flow_id, stage, netlist_entity
+        )
+        netlist_entity.clock_trees = self.load_clock_trees(
+            flow_id, stage, netlist_entity
+        )
+        netlist_entity.power_delivery_network = self.db.get_entity(
+            "power_delivery_networks", flow_id=flow_id, stage=stage
+        )
 
         return netlist_entity
 
-    def load_timing_paths(self, flow_id: str, stage: str, netlist_entity: entity.NetlistEntity,) -> Dict[Tuple[str, str, str], entity.TimingPathEntity]:
+    def load_timing_paths(
+        self,
+        flow_id: str,
+        stage: str,
+        netlist_entity: entity.NetlistEntity,
+    ) -> Dict[Tuple[str, str, str], entity.TimingPathEntity]:
         """
         Load and reconstruct all timing paths for a given flow and stage.
 
@@ -426,23 +508,35 @@ class Dataset(dict):
             for node in timing_path_entity.nodes:
                 node_type = timing_path_entity.nodes[node]["type"]
                 if node_type == "PORT":
-                    timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
+                    timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[
+                        node
+                    ]["entity"]
                 elif node_type == "PIN":
-                    timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
+                    timing_path_entity.nodes[node]["entity"] = netlist_entity.nodes[
+                        node
+                    ]["entity"]
                 elif node_type == "NET_ARC":
                     arc_key = (row.startpoint, row.endpoint, row.path_type, node)
                     if arc_key in net_arc_dict:
-                        timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(**net_arc_dict[arc_key])
+                        timing_path_entity.nodes[node]["entity"] = entity.NetArcEntity(
+                            **net_arc_dict[arc_key]
+                        )
                 elif node_type == "CELL_ARC":
                     arc_key = (row.startpoint, row.endpoint, row.path_type, node)
                     if arc_key in cell_arc_dict:
-                        timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(**cell_arc_dict[arc_key])
+                        timing_path_entity.nodes[node]["entity"] = entity.CellArcEntity(
+                            **cell_arc_dict[arc_key]
+                        )
 
-            timing_paths[(row.startpoint, row.endpoint, row.path_type)] = timing_path_entity
+            timing_paths[(row.startpoint, row.endpoint, row.path_type)] = (
+                timing_path_entity
+            )
 
         return timing_paths
 
-    def load_clock_trees(self, flow_id: str, stage: str, netlist_entity: entity.NetlistEntity) -> dict[str, entity.ClockTreeEntity]:
+    def load_clock_trees(
+        self, flow_id: str, stage: str, netlist_entity: entity.NetlistEntity
+    ) -> dict[str, entity.ClockTreeEntity]:
         """
         Load and reconstruct all clock trees for the given design stage.
 
@@ -459,10 +553,18 @@ class Dataset(dict):
         clock_tree_entities = {}
         df = self.db.get_table_data("clock_trees", flow_id=flow_id, stage=stage)
         for row in df.itertuples(index=False):
-            clock_tree_entity = self.db.get_entity("clock_trees", load_sub_entities=False, flow_id=flow_id, stage=stage, clock_source=row.clock_source)
+            clock_tree_entity = self.db.get_entity(
+                "clock_trees",
+                load_sub_entities=False,
+                flow_id=flow_id,
+                stage=stage,
+                clock_source=row.clock_source,
+            )
             for node in clock_tree_entity.nodes:
                 node_type = clock_tree_entity.nodes[node]["type"]
-                clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node]["entity"]
+                clock_tree_entity.nodes[node]["entity"] = netlist_entity.nodes[node][
+                    "entity"
+                ]
 
             clock_tree_entities[row.clock_source] = clock_tree_entity
 

@@ -13,10 +13,11 @@ Methods:
 """
 
 from eda_schema.proto.eda_schema_pb2 import (  # pylint: disable=no-name-in-module
-    ExportResponse, ImportResponse)
+    ExportResponse,
+    ImportResponse,
+)
 from eda_schema.proto.eda_schema_pb2_grpc import EdaSchemaServiceServicer
-from eda_schema.serialization.protobuf_io import (load_protobuf_file,
-                                                  protobuf_to_dataset)
+from eda_schema.serialization.protobuf_io import load_protobuf_file, protobuf_to_dataset
 
 
 class EDAService(EdaSchemaServiceServicer):
@@ -31,7 +32,9 @@ class EDAService(EdaSchemaServiceServicer):
         """
         self.dataset = dataset
 
-    def ImportFromProtobufFile(self, request, context):  # pylint: disable=invalid-name,unused-argument
+    def ImportFromProtobufFile(
+        self, request, context
+    ):  # pylint: disable=invalid-name,unused-argument
         """
         Handles import request for a given Protobuf file.
 
@@ -62,7 +65,9 @@ class EDAService(EdaSchemaServiceServicer):
             # Catch-all for unexpected errors
             return ImportResponse(success=False, message=f"Failed: {str(e)}")
 
-    def ExportToProtobufFile(self, request, context):  # pylint: disable=invalid-name,unused-argument
+    def ExportToProtobufFile(
+        self, request, context
+    ):  # pylint: disable=invalid-name,unused-argument
         """
         Handles export request for an entity ID.
 

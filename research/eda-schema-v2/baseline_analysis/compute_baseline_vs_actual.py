@@ -22,23 +22,97 @@ from eda_schema.db import ParquetDB
 FINAL_STAGE = "detailed_route"
 
 PROBLEM_DICT = {
-    "total_area_prediction": {"baseline": "total_area", "target": "total_area", "entity": "area_metrics", "join_columns": ["flow_id"]},
-    "total_power_prediction": {"baseline": "total_power", "target": "total_power", "entity": "power_metrics", "join_columns": ["flow_id"]},
-    "total_wirelength_prediction": {"baseline": "total_hpwl", "target": "total_wirelength", "entity": "netlists", "join_columns": ["flow_id"]},
-    "interconnect_length_prediction": {"baseline": "hpwl", "target": "length", "entity": "nets", "join_columns": ["flow_id", "name"]},
-    "worst_arrival_time_prediction": {"baseline": "worst_arrival_time", "target": "worst_arrival_time", "entity": "timing_metrics", "join_columns": ["flow_id"]},
-    "worst_slack_prediction": {"baseline": "worst_slack", "target": "worst_slack", "entity": "timing_metrics", "join_columns": ["flow_id"]},
-    "total_negative_slack_prediction": {"baseline": "total_negative_slack", "target": "total_negative_slack", "entity": "timing_metrics", "join_columns": ["flow_id"]},
-    "timing_path_arrival_time_prediction": {"baseline": "arrival_time", "target": "arrival_time", "entity": "timing_paths", "join_columns": ["flow_id", "startpoint", "endpoint", "path_type"]},
-    "timing_path_slack_prediction": {"baseline": "slack", "target": "slack", "entity": "timing_paths", "join_columns": ["flow_id", "startpoint", "endpoint", "path_type"]},
-    "net_arc_delay_prediction": {"baseline": "delay", "target": "delay", "entity": "net_arcs", "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "net_name"]},
-    "cell_arc_delay_prediction": {"baseline": "delay", "target": "delay", "entity": "cell_arcs", "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "gate_name"]},
-    "cell_arc_slew_prediction": {"baseline": "slew", "target": "slew", "entity": "cell_arcs", "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "gate_name"]},
+    "total_area_prediction": {
+        "baseline": "total_area",
+        "target": "total_area",
+        "entity": "area_metrics",
+        "join_columns": ["flow_id"],
+    },
+    "total_power_prediction": {
+        "baseline": "total_power",
+        "target": "total_power",
+        "entity": "power_metrics",
+        "join_columns": ["flow_id"],
+    },
+    "total_wirelength_prediction": {
+        "baseline": "total_hpwl",
+        "target": "total_wirelength",
+        "entity": "netlists",
+        "join_columns": ["flow_id"],
+    },
+    "interconnect_length_prediction": {
+        "baseline": "hpwl",
+        "target": "length",
+        "entity": "nets",
+        "join_columns": ["flow_id", "name"],
+    },
+    "worst_arrival_time_prediction": {
+        "baseline": "worst_arrival_time",
+        "target": "worst_arrival_time",
+        "entity": "timing_metrics",
+        "join_columns": ["flow_id"],
+    },
+    "worst_slack_prediction": {
+        "baseline": "worst_slack",
+        "target": "worst_slack",
+        "entity": "timing_metrics",
+        "join_columns": ["flow_id"],
+    },
+    "total_negative_slack_prediction": {
+        "baseline": "total_negative_slack",
+        "target": "total_negative_slack",
+        "entity": "timing_metrics",
+        "join_columns": ["flow_id"],
+    },
+    "timing_path_arrival_time_prediction": {
+        "baseline": "arrival_time",
+        "target": "arrival_time",
+        "entity": "timing_paths",
+        "join_columns": ["flow_id", "startpoint", "endpoint", "path_type"],
+    },
+    "timing_path_slack_prediction": {
+        "baseline": "slack",
+        "target": "slack",
+        "entity": "timing_paths",
+        "join_columns": ["flow_id", "startpoint", "endpoint", "path_type"],
+    },
+    "net_arc_delay_prediction": {
+        "baseline": "delay",
+        "target": "delay",
+        "entity": "net_arcs",
+        "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "net_name"],
+    },
+    "cell_arc_delay_prediction": {
+        "baseline": "delay",
+        "target": "delay",
+        "entity": "cell_arcs",
+        "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "gate_name"],
+    },
+    "cell_arc_slew_prediction": {
+        "baseline": "slew",
+        "target": "slew",
+        "entity": "cell_arcs",
+        "join_columns": ["flow_id", "startpoint", "endpoint", "path_type", "gate_name"],
+    },
 }
 
-NETLIST_LEVEL_PROBLEMS = ["total_area_prediction", "total_power_prediction", "total_wirelength_prediction", "worst_arrival_time_prediction", "worst_slack_prediction", "total_negative_slack_prediction"]
-TIMING_PATH_LEVEL_PROBLEMS = ["timing_path_arrival_time_prediction", "timing_path_slack_prediction"]
-ARC_LEVEL_PROBLEMS = ["net_arc_delay_prediction", "cell_arc_delay_prediction", "cell_arc_slew_prediction"]
+NETLIST_LEVEL_PROBLEMS = [
+    "total_area_prediction",
+    "total_power_prediction",
+    "total_wirelength_prediction",
+    "worst_arrival_time_prediction",
+    "worst_slack_prediction",
+    "total_negative_slack_prediction",
+]
+TIMING_PATH_LEVEL_PROBLEMS = [
+    "timing_path_arrival_time_prediction",
+    "timing_path_slack_prediction",
+]
+ARC_LEVEL_PROBLEMS = [
+    "net_arc_delay_prediction",
+    "cell_arc_delay_prediction",
+    "cell_arc_slew_prediction",
+]
 INTERCONNECT_LENGTH_LEVEL_PROBLEMS = ["interconnect_length_prediction"]
 
 DATASET_DIR = os.environ.get("EDA_SCHEMA_V2_DATASET")
@@ -72,7 +146,9 @@ CIRCUITS = [
 
 
 class BaselineAnalyzer:
-    def __init__(self, problem_dict, pdk_datasets, final_stage, flow_ids: List[str] | None = None):
+    def __init__(
+        self, problem_dict, pdk_datasets, final_stage, flow_ids: List[str] | None = None
+    ):
         self.problem_dict = problem_dict
         self.pdk_datasets = pdk_datasets
         self.final_stage = final_stage
@@ -82,31 +158,49 @@ class BaselineAnalyzer:
         print(f"[DB] Initializing DB for PDK={pdk} at {self.pdk_datasets[pdk]}")
         return Dataset(ParquetDB(self.pdk_datasets[pdk])).db
 
-    def load_dataframe(self, problem: str, pdk: str, initial_stage: str, flow_id: str | None = None) -> pd.DataFrame:
+    def load_dataframe(
+        self, problem: str, pdk: str, initial_stage: str, flow_id: str | None = None
+    ) -> pd.DataFrame:
         print(f"\n[LOAD] problem={problem} | pdk={pdk} | initial_stage={initial_stage}")
         db = self._get_db(pdk)
         config = self.problem_dict[problem]
         target = config["target"]
         baseline = config["baseline"]
 
-        print(f"[CONFIG] entity={config['entity']} | join_cols={config['join_columns']}")
+        print(
+            f"[CONFIG] entity={config['entity']} | join_cols={config['join_columns']}"
+        )
         print(f"[CONFIG] baseline={baseline} | target={target}")
 
         join_cols = config["join_columns"]
 
         print("[QUERY] Fetching initial stage data...")
         if flow_id is not None:
-            initial_df = db.get_table_data(config["entity"], stage=initial_stage, flow_id=flow_id, columns=join_cols + [baseline])
+            initial_df = db.get_table_data(
+                config["entity"],
+                stage=initial_stage,
+                flow_id=flow_id,
+                columns=join_cols + [baseline],
+            )
         else:
-            initial_df = db.get_table_data(config["entity"], stage=initial_stage, columns=join_cols + [baseline])
+            initial_df = db.get_table_data(
+                config["entity"], stage=initial_stage, columns=join_cols + [baseline]
+            )
         initial_df = initial_df.rename(columns={baseline: "baseline"})
         print(f"[DATA] initial_df shape={initial_df.shape}")
 
         print("[QUERY] Fetching final stage data...")
         if flow_id is not None:
-            final_df = db.get_table_data(config["entity"], stage=self.final_stage, flow_id=flow_id, columns=join_cols + [target])
+            final_df = db.get_table_data(
+                config["entity"],
+                stage=self.final_stage,
+                flow_id=flow_id,
+                columns=join_cols + [target],
+            )
         else:
-            final_df = db.get_table_data(config["entity"], stage=self.final_stage, columns=join_cols + [target])
+            final_df = db.get_table_data(
+                config["entity"], stage=self.final_stage, columns=join_cols + [target]
+            )
         final_df = final_df.rename(columns={target: "target"})
         print(f"[DATA] final_df shape={final_df.shape}")
 
@@ -147,8 +241,12 @@ class BaselineAnalyzer:
         baseline_vals = df[baseline].to_numpy(dtype=np.float64)
 
         print(f"[ARRAYS] count={len(actual_vals)}")
-        print(f"[STATS] actual min/max=({actual_vals.min():.4f}, {actual_vals.max():.4f})")
-        print(f"[STATS] baseline min/max=({baseline_vals.min():.4f}, {baseline_vals.max():.4f})")
+        print(
+            f"[STATS] actual min/max=({actual_vals.min():.4f}, {actual_vals.max():.4f})"
+        )
+        print(
+            f"[STATS] baseline min/max=({baseline_vals.min():.4f}, {baseline_vals.max():.4f})"
+        )
 
         return actual_vals, baseline_vals
 
@@ -208,7 +306,9 @@ class BaselineAnalyzer:
         circuit: str | None = None,
         circuit_index: int | None = None,
     ) -> None:
-        print(f"\n========== BASELINE ANALYSIS START (problem={problem}, pdk={pdk}, initial_stage={initial_stage}) ==========")
+        print(
+            f"\n========== BASELINE ANALYSIS START (problem={problem}, pdk={pdk}, initial_stage={initial_stage}) =========="
+        )
         print(f"\n[OUTPUT] Ensuring directory exists: {output.parent}")
         output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -226,7 +326,9 @@ class BaselineAnalyzer:
             if circuit is not None and circuit_index is not None:
                 flow_ids = [f"{circuit}-{i:06d}" for i in [circuit_index]]
             else:
-                flow_ids = [f"{circuit}-{i:06d}" for circuit in CIRCUITS for i in range(1, 109)]
+                flow_ids = [
+                    f"{circuit}-{i:06d}" for circuit in CIRCUITS for i in range(1, 109)
+                ]
             for flow_id in flow_ids:
                 df = self.load_dataframe(problem, pdk, initial_stage, flow_id=flow_id)
                 if df.empty:
@@ -238,7 +340,9 @@ class BaselineAnalyzer:
                 gc.collect()
 
         print(f"\n[DONE] Outputs written to {output} (+ CSV)")
-        print(f"========== BASELINE ANALYSIS END (problem={problem}, pdk={pdk}, initial_stage={initial_stage}) ==========\n")
+        print(
+            f"========== BASELINE ANALYSIS END (problem={problem}, pdk={pdk}, initial_stage={initial_stage}) ==========\n"
+        )
 
 
 @click.command()
@@ -276,7 +380,14 @@ class BaselineAnalyzer:
     default=None,
     help="Circuit index to use for the flow IDs (1-108).",
 )
-def main(problem: str, pdk: str, initial_stage: str, bf_bf_flag: bool, circuit: str | None = None, circuit_index: int | None = None) -> None:
+def main(
+    problem: str,
+    pdk: str,
+    initial_stage: str,
+    bf_bf_flag: bool,
+    circuit: str | None = None,
+    circuit_index: int | None = None,
+) -> None:
     """HPWL vs denormalized actual wirelength baseline grid (matches mlp_v3 evaluate baseline plot)."""
     output = Path(f"baseline_analysis/results")
     output.mkdir(parents=True, exist_ok=True)
@@ -287,8 +398,18 @@ def main(problem: str, pdk: str, initial_stage: str, bf_bf_flag: bool, circuit: 
         flow_ids = [f"{circuit}-{i:06d}" for circuit in CIRCUITS for i in [14, 23]]
     else:
         flow_ids = None
-    baseline_analyzer = BaselineAnalyzer(PROBLEM_DICT, PDK_DATASETS, FINAL_STAGE, flow_ids=flow_ids)
-    baseline_analyzer.analyze(problem, pdk, initial_stage, output, circuit=circuit, circuit_index=circuit_index)
+    baseline_analyzer = BaselineAnalyzer(
+        PROBLEM_DICT, PDK_DATASETS, FINAL_STAGE, flow_ids=flow_ids
+    )
+    baseline_analyzer.analyze(
+        problem,
+        pdk,
+        initial_stage,
+        output,
+        circuit=circuit,
+        circuit_index=circuit_index,
+    )
+
 
 if __name__ == "__main__":
     main()

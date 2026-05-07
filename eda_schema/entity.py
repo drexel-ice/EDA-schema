@@ -10,10 +10,12 @@ from eda_schema.base import BaseEntity, GraphEntity, Image2D
 # Design stages
 # ============================================================
 
+
 class DesignStages(str, Enum):
     """
     Enumeration of all major stages in a physical design flow.
     """
+
     FLOORPLAN = "floorplan"
     GLOBAL_PLACE = "global_place"
     PLACE_RESIZED = "place_resized"
@@ -33,9 +35,11 @@ class DesignStages(str, Enum):
         """
         return [stage.value for stage in cls]
 
+
 # ============================================================
 # Flow / constraint entities
 # ============================================================
+
 
 @dataclass(slots=True)
 class DesignFlowEntity(BaseEntity):
@@ -87,6 +91,7 @@ class DesignStageEntity(BaseEntity):
 # ============================================================
 # Metrics entities
 # ============================================================
+
 
 @dataclass(slots=True)
 class CellMetricsEntity(BaseEntity):
@@ -177,6 +182,7 @@ class RoutabilityMetricsEntity(BaseEntity):
 # ============================================================
 # Physical entities
 # ============================================================
+
 
 @dataclass(slots=True)
 class PortEntity(BaseEntity):
@@ -340,6 +346,7 @@ class CellArcEntity(BaseEntity):
 # Graph-backed entities
 # ============================================================
 
+
 @dataclass(slots=True)
 class NetlistEntity(GraphEntity):
     """Complete design netlist."""
@@ -379,7 +386,9 @@ class NetlistEntity(GraphEntity):
     power_metrics: Optional["PowerMetricsEntity"] = None
     timing_metrics: Optional["TimingMetricsEntity"] = None
 
-    timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = field(default_factory=dict)
+    timing_paths: Dict[Tuple[str, str, str], "TimingPathEntity"] = field(
+        default_factory=dict
+    )
     clock_trees: Dict[str, "ClockTreeEntity"] = field(default_factory=dict)
     power_delivery_network: Optional["PDNEntity"] = None
 
@@ -431,7 +440,9 @@ class ClockTreeEntity(GraphEntity):
 
     routing_by_metal: Dict[str, Image2D] = field(default_factory=dict)
 
-    def load_from_netlist(self, netlist: GraphEntity, clock_source: str, dff_cells: List[str]) -> None:
+    def load_from_netlist(
+        self, netlist: GraphEntity, clock_source: str, dff_cells: List[str]
+    ) -> None:
         """
         Extract a clock tree subgraph from a full netlist.
 
@@ -449,7 +460,9 @@ class ClockTreeEntity(GraphEntity):
         cts_nodes = self._traverse_cts(netlist, clock_source, dff_cells)
         self._graph = netlist.subgraph(cts_nodes).copy()
 
-    def _traverse_cts(self, netlist: GraphEntity, node: str, dff_cells: List[str]) -> List[str]:
+    def _traverse_cts(
+        self, netlist: GraphEntity, node: str, dff_cells: List[str]
+    ) -> List[str]:
         """
         Traverse reachable clock-distribution nodes.
 
@@ -522,6 +535,7 @@ class TimingPathEntity(GraphEntity):
 # Schema metadata (dataclass-based)
 # ============================================================
 
+
 class SchemaMetadata:
     """
     Central registry of all entity classes.
@@ -552,9 +566,7 @@ class SchemaMetadata:
     }
 
     _GRAPH_ENTITIES: ClassVar[List[str]] = [
-        name
-        for name, cls in _ENTITY_MODELS.items()
-        if issubclass(cls, GraphEntity)
+        name for name, cls in _ENTITY_MODELS.items() if issubclass(cls, GraphEntity)
     ]
 
     @classmethod
@@ -581,10 +593,7 @@ class SchemaMetadata:
         model = cls._ENTITY_MODELS.get(entity_name)
         if model is None:
             return []
-        return [
-            f.name
-            for f in fields(model)
-        ]
+        return [f.name for f in fields(model)]
 
     @classmethod
     def get_pk_columns(cls, entity_name: str) -> List[str]:
@@ -600,11 +609,7 @@ class SchemaMetadata:
         model = cls._ENTITY_MODELS.get(entity_name)
         if model is None:
             return []
-        return [
-            f.name
-            for f in fields(model)
-            if f.metadata.get("pk") is True
-        ]
+        return [f.name for f in fields(model) if f.metadata.get("pk") is True]
 
     @classmethod
     def is_graph_entity(cls, entity_name: str) -> bool:

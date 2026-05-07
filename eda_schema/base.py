@@ -1,8 +1,18 @@
 import re
 from dataclasses import Field, InitVar, dataclass, field, fields
 from functools import lru_cache
-from typing import (Any, Dict, List, Optional, Tuple, Type, Union, get_args,
-                    get_origin, get_type_hints)
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -12,6 +22,7 @@ from networkx.drawing.nx_agraph import graphviz_layout
 # ============================================================
 # Type helpers
 # ============================================================
+
 
 def _is_optional_type(tp: Any) -> bool:
     """
@@ -25,6 +36,7 @@ def _is_optional_type(tp: Any) -> bool:
     """
     return get_origin(tp) is Union and type(None) in get_args(tp)
 
+
 def _unwrap_optional_type(tp: Any) -> Any:
     """
     Extract the non-None type from an Optional type.
@@ -36,6 +48,7 @@ def _unwrap_optional_type(tp: Any) -> Any:
         The non-None type from the Optional.
     """
     return next(t for t in get_args(tp) if t is not type(None))
+
 
 @lru_cache(maxsize=None)
 def _get_type_hints_cached(cls) -> Dict[str, Any]:
@@ -51,6 +64,7 @@ def _get_type_hints_cached(cls) -> Dict[str, Any]:
         dict: Dictionary mapping field names to their types.
     """
     return get_type_hints(cls, include_extras=True)
+
 
 def _is_image_type(tp: Any) -> bool:
     """
@@ -210,6 +224,7 @@ def _is_dict_image_field(model_cls: Type, f: Field) -> bool:
 # Image2D (runtime-only, NumPy-native)
 # ============================================================
 
+
 class Image2D(np.ndarray):
     """
     2D NumPy array with lightweight runtime validation and plotting support.
@@ -301,6 +316,7 @@ class Image2D(np.ndarray):
 # BaseEntity (dataclass + shallow validation)
 # ============================================================
 
+
 @lru_cache(maxsize=None)
 def _class_schema_metadata(
     cls: Type,
@@ -361,7 +377,12 @@ class BaseEntity:
         self._image_keys = []
         self._dict_image_keys = []
 
-        self._tabular_keys, self._primary_keys, self._image_keys, self._dict_image_keys = _class_schema_metadata(type(self))
+        (
+            self._tabular_keys,
+            self._primary_keys,
+            self._image_keys,
+            self._dict_image_keys,
+        ) = _class_schema_metadata(type(self))
         self._post_init_hook()
 
     def _post_init_hook(self) -> None:
@@ -405,9 +426,7 @@ class BaseEntity:
                 # For generic types, validate the outer structure
                 if origin is dict or origin is Dict:
                     if not isinstance(value, dict):
-                        raise TypeError(
-                            f"{f.name} expected dict, got {type(value)}"
-                        )
+                        raise TypeError(f"{f.name} expected dict, got {type(value)}")
                     # Skip deep validation of key/value types for complex generics
                     # (e.g., Dict[str, Image2D] - we can't easily validate Image2D values)
                 elif origin is list or origin is List:
@@ -419,9 +438,7 @@ class BaseEntity:
                     # Skip deep validation of item types for complex generics
                 elif origin is tuple or origin is Tuple:
                     if not isinstance(value, tuple):
-                        raise TypeError(
-                            f"{f.name} expected tuple, got {type(value)}"
-                        )
+                        raise TypeError(f"{f.name} expected tuple, got {type(value)}")
                 # For other generic types, skip validation to avoid errors
                 # (e.g., Union types, complex nested generics)
                 continue
@@ -437,9 +454,7 @@ class BaseEntity:
                 raise TypeError(f"{f.name} expected int, got bool")
 
             if not isinstance(value, expected):
-                raise TypeError(
-                    f"{f.name} expected {expected}, got {type(value)}"
-                )
+                raise TypeError(f"{f.name} expected {expected}, got {type(value)}")
 
     def validate(self) -> None:
         """Override in subclasses for domain-specific validation."""
@@ -492,6 +507,7 @@ class BaseEntity:
 # ============================================================
 # GraphEntity (pure NetworkX, runtime-only)
 # ============================================================
+
 
 class GraphEntity(BaseEntity):
     """
@@ -742,19 +758,23 @@ class GraphEntity(BaseEntity):
         )
 
         base_colors = [
-            "#2CA02C", "#FF7F0E", "#9467BD", "#8C564B",
-            "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF",
+            "#2CA02C",
+            "#FF7F0E",
+            "#9467BD",
+            "#8C564B",
+            "#E377C2",
+            "#7F7F7F",
+            "#BCBD22",
+            "#17BECF",
         ]
 
         type_list = list(self.NODE_TYPES.keys())
         color_map = {
-            t: base_colors[i % len(base_colors)]
-            for i, t in enumerate(type_list)
+            t: base_colors[i % len(base_colors)] for i, t in enumerate(type_list)
         }
 
         node_colors = [
-            color_map.get(graph.nodes[n].get("type"), "#7F7F7F")
-            for n in graph.nodes
+            color_map.get(graph.nodes[n].get("type"), "#7F7F7F") for n in graph.nodes
         ]
 
         try:

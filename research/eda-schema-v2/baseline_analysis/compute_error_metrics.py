@@ -50,24 +50,27 @@ PROBLEM_METRICS = {
     "total_area_prediction": ["MAE", "MAPE", "R2"],
     "total_power_prediction": ["MAE", "MAPE", "R2"],
     "total_wirelength_prediction": ["MAE", "MAPE", "R2"],
-
     "interconnect_length_prediction": [
-        "MAE", "MAPE", "R2",
-        "MAE_P95", "MAPE_P95",
-        "MAE_TOP5", "MAPE_TOP5"
+        "MAE",
+        "MAPE",
+        "R2",
+        "MAE_P95",
+        "MAPE_P95",
+        "MAE_TOP5",
+        "MAPE_TOP5",
     ],
-
     "worst_arrival_time_prediction": ["MAE", "MAPE"],
     "worst_slack_prediction": ["MAE", "MPE", "MNE", "TPR", "TNR"],
     "total_negative_slack_prediction": ["MAE", "MPE", "MNE"],
-
     "timing_path_arrival_time_prediction": [
-        "MAE", "MAPE",
-        "MAE_P95", "MAPE_P95",
-        "MAE_TOP5", "MAPE_TOP5"
+        "MAE",
+        "MAPE",
+        "MAE_P95",
+        "MAPE_P95",
+        "MAE_TOP5",
+        "MAPE_TOP5",
     ],
     "timing_path_slack_prediction": ["MAE", "MPE", "MNE", "TPR", "TNR"],
-
     "net_arc_delay_prediction": ["MAE", "MAPE", "R2"],
     "cell_arc_delay_prediction": ["MAE", "MAPE", "R2"],
     "cell_arc_slew_prediction": ["MAE", "MAPE", "R2"],
@@ -86,6 +89,7 @@ def _maybe_round(problem: str, stat: str, value: float) -> float:
     if problem in ROUND_RULES and stat in ROUND_RULES[problem] and np.isfinite(value):
         return round(value, 4)
     return value
+
 
 NETLIST_LEVEL_PROBLEMS = {
     "total_area_prediction",
@@ -136,7 +140,9 @@ def _parse_stage_dir(stage_dir: Path) -> tuple[str, str, str] | None:
     return match.group("problem"), match.group("pdk"), match.group("stage")
 
 
-def _collect_stage_xy(stage_dir: Path, problem: str) -> tuple[np.ndarray, np.ndarray] | None:
+def _collect_stage_xy(
+    stage_dir: Path, problem: str
+) -> tuple[np.ndarray, np.ndarray] | None:
     if not stage_dir.exists():
         return None
 
@@ -186,7 +192,9 @@ def _compute_error_metrics(x: np.ndarray, y: np.ndarray) -> dict[str, float]:
     threshold = np.percentile(y, 95)
     mask_top5 = y >= threshold
     stats["MAE_TOP5"] = np.mean(abs_err[mask_top5]) if np.any(mask_top5) else np.nan
-    stats["MAPE_TOP5"] = safe_mape(y[mask_top5], x[mask_top5]) if np.any(mask_top5) else np.nan
+    stats["MAPE_TOP5"] = (
+        safe_mape(y[mask_top5], x[mask_top5]) if np.any(mask_top5) else np.nan
+    )
 
     pos = err[err > 0]
     neg = err[err < 0]
@@ -220,6 +228,7 @@ def _process_stage(stage_dir: Path, problem: str) -> dict[str, float]:
     print(stats)
     return stats
 
+
 records = []
 
 for stage_dir in RESULTS_DIR.iterdir():
@@ -240,13 +249,15 @@ for stage_dir in RESULTS_DIR.iterdir():
     for stat in allowed_stats:
         value = stats.get(stat, np.nan)
         # value = _maybe_round(problem, stat, value)
-        records.append({
-            "Metric": PROBLEM_LABELS.get(problem, problem),
-            "Stat": stat,
-            "Transition": TRANSITION_LABELS[stage],
-            "PDK": pdk,
-            "Value": value,
-        })
+        records.append(
+            {
+                "Metric": PROBLEM_LABELS.get(problem, problem),
+                "Stat": stat,
+                "Transition": TRANSITION_LABELS[stage],
+                "PDK": pdk,
+                "Value": value,
+            }
+        )
 
 # Pivot
 table = pd.DataFrame(records).pivot_table(
@@ -276,17 +287,14 @@ table = table.reindex(
 
 # Row ordering (problem-specific)
 
+
 # Formatting
 def format_cell(val, stat, metric):
     if pd.isna(val):
         return ""
 
     problem = METRIC_TO_PROBLEM.get(metric)
-    if (
-        problem in ROUND_RULES
-        and stat in ROUND_RULES[problem]
-        and np.isfinite(val)
-    ):
+    if problem in ROUND_RULES and stat in ROUND_RULES[problem] and np.isfinite(val):
         val = round(val, 4)
 
     if stat.startswith("MAPE") or stat.startswith("TPR") or stat.startswith("TNR"):
@@ -300,11 +308,7 @@ def format_cell(val, stat, metric):
             return "<-1"
         return f"{val:.3f}"
 
-    if (
-        problem in ROUND_RULES
-        and stat in ROUND_RULES[problem]
-        and np.isfinite(val)
-    ):
+    if problem in ROUND_RULES and stat in ROUND_RULES[problem] and np.isfinite(val):
         return f"{val:.4f}"
     return f"{val:,.2f}"
 
@@ -313,9 +317,7 @@ table_fmt = table.copy()
 
 for idx in table_fmt.index:
     metric, stat = idx
-    table_fmt.loc[idx] = table_fmt.loc[idx].map(
-        lambda v: format_cell(v, stat, metric)
-    )
+    table_fmt.loc[idx] = table_fmt.loc[idx].map(lambda v: format_cell(v, stat, metric))
 
 print(table_fmt)
 

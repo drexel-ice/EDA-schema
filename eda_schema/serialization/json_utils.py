@@ -34,7 +34,7 @@ def load_json(home: str, schema_class: Type[BaseEntity]) -> BaseEntity:
         json_data = json.load(openfile)
 
     # Filter out internal fields (those starting with _)
-    filtered_data = {k: v for k, v in json_data.items() if not k.startswith('_')}
+    filtered_data = {k: v for k, v in json_data.items() if not k.startswith("_")}
 
     # Use the load classmethod to create instance from data
     schema_object = schema_class.load(filtered_data)
@@ -55,7 +55,9 @@ def dump_json(home: str, schema_object: BaseEntity, suffix: str) -> None:
 
     data_dict = asdict(schema_object)
     # Use entity name or title as fallback
-    entity_name = getattr(schema_object, 'title', None) or type(schema_object).__name__.lower()
+    entity_name = (
+        getattr(schema_object, "title", None) or type(schema_object).__name__.lower()
+    )
     json_path = f"{home}/{entity_name}/{suffix}.json"
 
     with open(json_path, "w", encoding="utf-8") as outfile:

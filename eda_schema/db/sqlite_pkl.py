@@ -64,7 +64,9 @@ class SQLitePickleDB(BaseDB):
         for entity_name, model_cls in entity.SchemaMetadata.items():
             columns = []
             for field in entity.SchemaMetadata.get_fields(entity_name):
-                type_name, is_nullable, _ = resolve_field_type_and_nullable(model_cls, field)
+                type_name, is_nullable, _ = resolve_field_type_and_nullable(
+                    model_cls, field
+                )
                 sqlite_type = sqlite_type_from_type(type_name)
                 if sqlite_type is None:
                     continue
@@ -81,7 +83,9 @@ class SQLitePickleDB(BaseDB):
 
         self.conn.commit()
 
-    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
+    def add_graph_data(
+        self, entity_name: str, graph: Any, key: str = None, **key_fields
+    ) -> None:
         """
         Store graph data as a pickle file.
 
@@ -127,10 +131,14 @@ class SQLitePickleDB(BaseDB):
         resolved_key = self._resolve_graph_key(key, key_fields)
         filepath = self.graph_dir / f"{entity_name}_{resolved_key}.pkl"
         if not filepath.exists():
-            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            key_str = (
+                ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items()))
+                if key_fields
+                else resolved_key
+            )
             raise DataNotFoundError(
                 entity_name=entity_name,
-                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}",
             )
 
         with filepath.open("rb") as f:
@@ -257,7 +265,9 @@ class SQLitePickleDB(BaseDB):
 
         netlist.timing_paths = timing_paths
 
-    def load_netlist(self, circuit: str, netlist_id: str, phase: str, load_timing_paths: bool = True):
+    def load_netlist(
+        self, circuit: str, netlist_id: str, phase: str, load_timing_paths: bool = True
+    ):
         """
         Load a stored netlist and optionally load its timing paths.
 
@@ -303,7 +313,9 @@ class SQLitePickleDB(BaseDB):
         """
         return self.data_dir / "images" / entity_name
 
-    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+    def add_image(
+        self, entity_name: str, image_name: str, image: Image2D, **key_fields
+    ) -> None:
         """
         Store an Image2D associated with an entity row.
 
@@ -354,5 +366,5 @@ class SQLitePickleDB(BaseDB):
 
         # Load and return wrapped Image2D
         data = np.load(path)
-        arr = data['arr_0']  # np.savez_compressed saves as 'arr_0'
+        arr = data["arr_0"]  # np.savez_compressed saves as 'arr_0'
         return Image2D(arr)
