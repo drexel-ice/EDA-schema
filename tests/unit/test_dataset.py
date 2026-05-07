@@ -76,7 +76,6 @@ class TestDataset:
         pickle_path = Path(temp_dir) / "dataset.pkl"
 
         # Add some data
-        netlist = entity.NetlistEntity(**sample_netlist_data)
         design_flow = entity.DesignFlowEntity(
             flow_id='test_flow',
             design='test_design',
