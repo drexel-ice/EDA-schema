@@ -272,7 +272,7 @@ EDA-Schema publishes a large-scale OpenROAD dataset with the operating points, s
 
 ### Download
 
-**Dataset**: [Google Drive](https://drive.google.com/drive/folders/1B3rBvbnviBrKw1aLRpv7e1pEXSCy_vLQ?usp=sharing)
+**Dataset**: [One Drive](https://drexel0-my.sharepoint.com/:f:/g/personal/ps937_drexel_edu/IgDSNDP4cARmQIbi2bweaNZKAcbC5cYWopZ6A9jAN_lDdng?e=hOsfsp)
 
 ---
 
