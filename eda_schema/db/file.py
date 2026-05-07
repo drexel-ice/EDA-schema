@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from eda_schema.db.base import BaseDB
 from eda_schema import entity
 from eda_schema.base import Image2D
+from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
 
 

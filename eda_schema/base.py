@@ -1,24 +1,13 @@
 import re
+from dataclasses import Field, InitVar, dataclass, field, fields
 from functools import lru_cache
-from dataclasses import dataclass, field, fields, Field, InitVar
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-    get_type_hints
-)
+from typing import (Any, Dict, List, Optional, Tuple, Type, Union, get_args,
+                    get_origin, get_type_hints)
 
-import numpy as np
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
-
+import networkx as nx
+import numpy as np
+from networkx.drawing.nx_agraph import graphviz_layout
 
 # ============================================================
 # Type helpers

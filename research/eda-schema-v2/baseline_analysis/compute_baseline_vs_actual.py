@@ -1,23 +1,23 @@
 """Plot baseline (total_hpwl) vs final wirelength for total_wirelength_prediction."""
 
+import gc
 import os
 import sys
 from pathlib import Path
-import gc
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+from typing import List, Optional, Tuple
 
 import click
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
-from typing import List, Optional, Tuple
 
 from eda_schema.dataset import Dataset
 from eda_schema.db import ParquetDB
-
 
 FINAL_STAGE = "detailed_route"
 

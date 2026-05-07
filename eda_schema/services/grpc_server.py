@@ -12,12 +12,11 @@ Methods:
     ExportToProtobufFile: Handles export request for an entity ID.
 """
 
-from eda_schema.proto.eda_schema_pb2 import ImportResponse, ExportResponse  # pylint: disable=no-name-in-module
+from eda_schema.proto.eda_schema_pb2 import (  # pylint: disable=no-name-in-module
+    ExportResponse, ImportResponse)
 from eda_schema.proto.eda_schema_pb2_grpc import EdaSchemaServiceServicer
-from eda_schema.serialization.protobuf_io import (
-    load_protobuf_file,
-    protobuf_to_dataset,
-)
+from eda_schema.serialization.protobuf_io import (load_protobuf_file,
+                                                  protobuf_to_dataset)
 
 
 class EDAService(EdaSchemaServiceServicer):

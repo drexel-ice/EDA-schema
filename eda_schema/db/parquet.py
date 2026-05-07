@@ -1,14 +1,14 @@
 import json
-from pathlib import Path
-from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
 from collections.abc import Iterable
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 import pyarrow.compute as pc
+import pyarrow.parquet as pq
 
 from eda_schema import entity
 from eda_schema.base import Image2D, resolve_field_type_and_nullable
