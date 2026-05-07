@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, fields
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
+from typing import ClassVar, Dict, List, Optional, Tuple, Type
 
 from eda_schema.base import BaseEntity, GraphEntity, Image2D
 
