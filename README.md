@@ -1,10 +1,8 @@
 # EDA-Schema: A Multimodal Datamodel for Digital Circuit Design
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Build&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
-[![Docs Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Docs&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
-[![Tests Status](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema-internal/ci.yml?label=Tests&logo=github&style=flat)](https://github.com/drexel-ice/eda-schema-internal/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey)](LICENCE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://img.shields.io/github/actions/workflow/status/drexel-ice/eda-schema/ci.yml?style=flat&logo=github)](https://github.com/drexel-ice/eda-schema/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=flat)](https://www.python.org/downloads/)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey?style=flat)](LICENCE)
 
 EDA-Schema is an open, standardized, and extensible **multimodal datamodel and framework** for representing, storing, and analyzing digital circuit physical design data across the RTL to GDSII flow. It models circuits using **heterogeneous graphs**, **spatial image modalities**, **scalar heatmaps**, and **structured metric entities**, providing unified representations of circuit structure, electrical behavior, quality-of-results metrics, and stage-wise design evolution for reproducible analysis and machine learning research in electronic design automation.
 
