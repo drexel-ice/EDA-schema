@@ -121,7 +121,9 @@ class BaseDB(metaclass=ABCMeta):
     # Image Storage
     # ------------------------------------------------------------------
     @abstractmethod
-    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields) -> None:
+    def add_image(
+        self, entity_name: str, image_name: str, image: Image2D, **key_fields
+    ) -> None:
         """
         Store an Image2D associated with an entity row.
 
@@ -224,7 +226,7 @@ class BaseDB(metaclass=ABCMeta):
                 "Both 'key' and 'key_fields' provided. Using 'key_fields'. "
                 "The 'key' parameter is deprecated.",
                 DeprecationWarning,
-                stacklevel=3
+                stacklevel=3,
             )
             return "__".join(f"{k}={v}" for k, v in sorted(key_fields.items()))
         if not key:
@@ -237,7 +239,9 @@ class BaseDB(metaclass=ABCMeta):
     # ------------------------------------------------------------------
     # Combined entity
     # ------------------------------------------------------------------
-    def get_entity(self, entity_name: str, load_sub_entities: bool = True, **key_fields) -> Any:
+    def get_entity(
+        self, entity_name: str, load_sub_entities: bool = True, **key_fields
+    ) -> Any:
         """
         Retrieve a fully constructed entity instance, including its graph if applicable.
         Requires all primary-key fields to be supplied via key_fields.
@@ -266,7 +270,9 @@ class BaseDB(metaclass=ABCMeta):
         # --------------------------------------------------------------
         pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
         if not pk_cols:
-            raise ValueError(f"Entity '{entity_name}' has no defined primary-key fields")
+            raise ValueError(
+                f"Entity '{entity_name}' has no defined primary-key fields"
+            )
 
         missing = [pk for pk in pk_cols if pk not in key_fields]
         if missing:
@@ -280,7 +286,7 @@ class BaseDB(metaclass=ABCMeta):
         # --------------------------------------------------------------
         row = self.get_table_row(entity_name, **key_fields)
         # Filter out internal metadata columns (start with _)
-        row_dict = {k: v for k, v in row.to_dict().items() if not k.startswith('_')}
+        row_dict = {k: v for k, v in row.to_dict().items() if not k.startswith("_")}
         obj = model_cls(**row_dict)
 
         # --------------------------------------------------------------
@@ -292,9 +298,23 @@ class BaseDB(metaclass=ABCMeta):
             if load_sub_entities:
                 for node_type, node_cls in obj.NODE_TYPES.items():
                     node_entity_name = node_type.lower() + "s"
-                    node_fields = {k: v for k, v in key_fields.items() if k in entity.SchemaMetadata.get_columns(node_entity_name)}
-                    if entity_name == "timing_paths" and node_type in ["PIN", "PORT"] or entity_name == "clock_trees":
-                        pins = [tp_node for tp_node, tp_node_type in zip(graph_data["nodes"], graph_data["node_types"]) if tp_node_type == node_type]
+                    node_fields = {
+                        k: v
+                        for k, v in key_fields.items()
+                        if k in entity.SchemaMetadata.get_columns(node_entity_name)
+                    }
+                    if (
+                        entity_name == "timing_paths"
+                        and node_type in ["PIN", "PORT"]
+                        or entity_name == "clock_trees"
+                    ):
+                        pins = [
+                            tp_node
+                            for tp_node, tp_node_type in zip(
+                                graph_data["nodes"], graph_data["node_types"]
+                            )
+                            if tp_node_type == node_type
+                        ]
                         node_fields["name"] = pins
 
                     node_data_id = "name"
@@ -306,7 +326,9 @@ class BaseDB(metaclass=ABCMeta):
                     node_data = self.get_table_data(node_entity_name, **node_fields)
                     for row in node_data.itertuples(index=False):
                         row_dict = row._asdict()
-                        obj.nodes[row_dict[node_data_id]]["entity"] = node_cls(**row_dict)
+                        obj.nodes[row_dict[node_data_id]]["entity"] = node_cls(
+                            **row_dict
+                        )
 
         # --------------------------------------------------------------
         # Load Image2D fields for this entity (if any exist)
@@ -327,10 +349,23 @@ class BaseDB(metaclass=ABCMeta):
             # Try to discover images by attempting to load with common patterns
             # For now, we'll try a few common metal layer names
             # A more robust solution would store a manifest, but this works for routing_by_metal
-            common_keys = ['met1', 'met2', 'met3', 'met4', 'met5', 'metal1', 'metal2', 'metal3', 'metal4', 'metal5']
+            common_keys = [
+                "met1",
+                "met2",
+                "met3",
+                "met4",
+                "met5",
+                "metal1",
+                "metal2",
+                "metal3",
+                "metal4",
+                "metal5",
+            ]
             for dict_key in common_keys:
                 try:
-                    image = self.get_image(entity_name, f"{dict_image_field}__{dict_key}", **key_fields)
+                    image = self.get_image(
+                        entity_name, f"{dict_image_field}__{dict_key}", **key_fields
+                    )
                     dict_value[dict_key] = image
                 except DataNotFoundError:
                     pass

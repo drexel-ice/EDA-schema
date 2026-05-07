@@ -26,7 +26,6 @@ class MongoDB(BaseDB, MongoClient):
         super().__init__(self.db_uri)
         self.db = self[self.db_name]
 
-
     def create_dataset_tables(self):
         """
         Initialize collections for all entities and store metadata.
@@ -38,14 +37,13 @@ class MongoDB(BaseDB, MongoClient):
 
         metadata = []
         for entity_name, schema in entity.SchemaMetadata.items():
-            metadata.append({
-                "entity": entity_name,
-                "columns": list(schema.keys())
-            })
+            metadata.append({"entity": entity_name, "columns": list(schema.keys())})
 
         self.db["metadata"].insert_many(metadata)
 
-    def add_graph_data(self, entity_name: str, graph: Any, key: str = None, **key_fields) -> None:
+    def add_graph_data(
+        self, entity_name: str, graph: Any, key: str = None, **key_fields
+    ) -> None:
         """
         Store graph data for an entity.
 
@@ -68,7 +66,7 @@ class MongoDB(BaseDB, MongoClient):
         # Handle both dict and object with graph_dict() method
         if isinstance(graph, dict):
             graph_data = graph
-        elif hasattr(graph, 'graph_dict'):
+        elif hasattr(graph, "graph_dict"):
             graph_data = graph.graph_dict()
         else:
             raise TypeError(
@@ -76,12 +74,11 @@ class MongoDB(BaseDB, MongoClient):
                 f"got {type(graph)}"
             )
 
-        self.db[f"{entity_name}_graph"].insert_one({
-            "key": resolved_key,
-            **graph_data
-        })
+        self.db[f"{entity_name}_graph"].insert_one({"key": resolved_key, **graph_data})
 
-    def get_graph_data(self, entity_name: str, key: str = None, **key_fields) -> Dict[str, Any]:
+    def get_graph_data(
+        self, entity_name: str, key: str = None, **key_fields
+    ) -> Dict[str, Any]:
         """
         Retrieve graph data for an entity.
 
@@ -104,10 +101,14 @@ class MongoDB(BaseDB, MongoClient):
         resolved_key = self._resolve_graph_key(key, key_fields)
         result = self.db[f"{entity_name}_graph"].find_one({"key": resolved_key})
         if result is None:
-            key_str = ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items())) if key_fields else resolved_key
+            key_str = (
+                ", ".join(f"{k}={v!r}" for k, v in sorted(key_fields.items()))
+                if key_fields
+                else resolved_key
+            )
             raise DataNotFoundError(
                 entity_name=entity_name,
-                message=f"Graph data not found for '{entity_name}' with keys: {key_str}"
+                message=f"Graph data not found for '{entity_name}' with keys: {key_str}",
             )
         return result
 

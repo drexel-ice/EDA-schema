@@ -75,7 +75,9 @@ def build_arrow_schema(entity_name: str) -> pa.Schema:
     return pa.schema(arrow_fields)
 
 
-def convert_filters_to_pyarrow(filters: Dict[str, Any]) -> Optional[List[Tuple[str, str, Any]]]:
+def convert_filters_to_pyarrow(
+    filters: Dict[str, Any],
+) -> Optional[List[Tuple[str, str, Any]]]:
     """
     Convert dict-based filters to PyArrow filter format for predicate pushdown.
 
@@ -94,7 +96,7 @@ def convert_filters_to_pyarrow(filters: Dict[str, Any]) -> Optional[List[Tuple[s
         # Only handle simple scalar equality filters for now
         # Complex filters (IN operations, etc.) will be handled post-load
         if isinstance(value, (str, int, float, bool)) and not isinstance(value, bool):
-            pyarrow_filters.append((key, '=', value))
+            pyarrow_filters.append((key, "=", value))
 
     return pyarrow_filters if pyarrow_filters else None
 
@@ -103,7 +105,7 @@ def convert_filters_to_pyarrow(filters: Dict[str, Any]) -> Optional[List[Tuple[s
 def _load_arrow_table(
     path: Path,
     pyarrow_filters_tuple: Optional[Tuple[Tuple[str, str, Any], ...]] = None,
-    columns: Optional[Tuple[str, ...]] = None
+    columns: Optional[Tuple[str, ...]] = None,
 ) -> pa.Table:
     """
     Load an Arrow table from a Parquet file (cached), with optional predicate pushdown and column selection.
@@ -207,7 +209,9 @@ class ParquetDB(BaseDB):
         if is_graph_entity:
             pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
             if not pk_cols:
-                raise ValueError(f"Entity '{entity_name}' must define at least one primary key")
+                raise ValueError(
+                    f"Entity '{entity_name}' must define at least one primary key"
+                )
 
             model_cls = entity.SchemaMetadata.get_model(entity_name)
             model_fields = entity.SchemaMetadata.get_fields(entity_name)
@@ -232,7 +236,6 @@ class ParquetDB(BaseDB):
             empty_graph_table = pa.Table.from_arrays(empty_arrays, schema=gschema)
 
             pq.write_table(empty_graph_table, self._graph_path(entity_name))
-
 
     def create_dataset_tables(self):
         """
@@ -295,7 +298,9 @@ class ParquetDB(BaseDB):
         if data:
             self._append_to_table(entity_name, pd.DataFrame(data))
 
-    def get_table_data(self, entity_name: str, columns: Optional[List[str]] = None, **filters) -> pd.DataFrame:
+    def get_table_data(
+        self, entity_name: str, columns: Optional[List[str]] = None, **filters
+    ) -> pd.DataFrame:
         """
         Retrieve table data for an entity, optionally filtered and with column selection.
 
@@ -319,7 +324,7 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(
                 entity_name=entity_name,
                 message=f"Table file not found: {table_path}. "
-                       f"Did you call create_dataset_tables() first?"
+                f"Did you call create_dataset_tables() first?",
             )
 
         # Try to use PyArrow filters for predicate pushdown (simple filters only)
@@ -333,8 +338,8 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(
                 entity_name=entity_name,
                 message=f"Failed to read table from {table_path}: {e}. "
-                       f"This may occur if writers weren't closed before reading. "
-                       f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
+                f"This may occur if writers weren't closed before reading. "
+                f"Use 'with ParquetDB(...) as db:' or call db.close() after writes.",
             ) from e
 
         # Apply remaining complex filters in memory (if any filters weren't converted to PyArrow)
@@ -342,7 +347,9 @@ class ParquetDB(BaseDB):
         if filters and pyarrow_filters:
             # Find which filters were NOT converted to PyArrow (complex ones)
             pyarrow_filter_cols = {col for col, _, _ in pyarrow_filters}
-            remaining_filters = {k: v for k, v in filters.items() if k not in pyarrow_filter_cols}
+            remaining_filters = {
+                k: v for k, v in filters.items() if k not in pyarrow_filter_cols
+            }
         elif filters and not pyarrow_filters:
             # No filters were converted, apply all in memory
             remaining_filters = filters
@@ -357,10 +364,7 @@ class ParquetDB(BaseDB):
                 # -------------------------
                 # Iterable (IN filter)
                 # -------------------------
-                if (
-                    isinstance(value, Iterable)
-                    and not isinstance(value, (str, bytes))
-                ):
+                if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
                     values = list(value)
 
                     # Empty IN → no rows
@@ -402,7 +406,7 @@ class ParquetDB(BaseDB):
             filter_str = ", ".join(f"{k}={v!r}" for k, v in filters.items())
             raise DataNotFoundError(
                 entity_name=entity_name,
-                message=f"No row found matching filters: {filter_str}"
+                message=f"No row found matching filters: {filter_str}",
             )
         return df.iloc[0]
 
@@ -581,7 +585,7 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(
                 entity_name=entity_name,
                 message=f"Graph file not found: {graph_path}. "
-                       f"Did you call create_dataset_tables() and add graph data?"
+                f"Did you call create_dataset_tables() and add graph data?",
             )
 
         pk_cols = entity.SchemaMetadata.get_pk_columns(entity_name)
@@ -599,11 +603,11 @@ class ParquetDB(BaseDB):
             )
 
         # Use PyArrow filters for primary key filtering (predicate pushdown)
-        pyarrow_filters = [(pk, '=', str(key_fields[pk])) for pk in pk_cols]
+        pyarrow_filters = [(pk, "=", str(key_fields[pk])) for pk in pk_cols]
         filters_tuple = tuple(pyarrow_filters)
 
         # Only read necessary columns: primary keys + graph_json
-        columns_tuple = tuple(pk_cols + ['graph_json'])
+        columns_tuple = tuple(pk_cols + ["graph_json"])
 
         try:
             filtered = _load_arrow_table(graph_path, filters_tuple, columns_tuple)
@@ -611,20 +615,22 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(
                 entity_name=entity_name,
                 message=f"Failed to read graph data from {graph_path}: {e}. "
-                       f"This may occur if writers weren't closed before reading. "
-                       f"Use 'with ParquetDB(...) as db:' or call db.close() after writes."
+                f"This may occur if writers weren't closed before reading. "
+                f"Use 'with ParquetDB(...) as db:' or call db.close() after writes.",
             ) from e
 
         if filtered.num_rows == 0:
             key_str = ", ".join(f"{k}={v!r}" for k, v in key_fields.items())
             raise DataNotFoundError(
                 entity_name=entity_name,
-                message=f"No graph data found for '{entity_name}' with keys: {key_str}"
+                message=f"No graph data found for '{entity_name}' with keys: {key_str}",
             )
 
         return json.loads(filtered["graph_json"][0].as_py())
 
-    def add_image(self, entity_name: str, image_name: str, image: Image2D, **key_fields):
+    def add_image(
+        self, entity_name: str, image_name: str, image: Image2D, **key_fields
+    ):
         """
         Store an image (NumPy array) associated with an entity row.
 
@@ -681,14 +687,14 @@ class ParquetDB(BaseDB):
             raise DataNotFoundError(
                 entity_name=f"{entity_name}:{image_name}",
                 message=f"Image '{image_name}' not found for entity '{entity_name}' "
-                       f"with keys: {key_str}. Expected path: {path}"
+                f"with keys: {key_str}. Expected path: {path}",
             )
 
         # --------------------------------------------------------------
         # Load and return wrapped Image2D
         # --------------------------------------------------------------
         data = np.load(path)
-        arr = data['arr_0']
+        arr = data["arr_0"]
         return entity.Image2D(arr)
 
     def close(self):
@@ -710,9 +716,10 @@ class ParquetDB(BaseDB):
             except Exception as e:
                 # Log but don't fail - try to close remaining writers
                 import warnings
+
                 warnings.warn(
                     f"Error closing writer for entity '{entity_name}': {e}",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
 
         for entity_name, writer in list(self._graph_writers.items()):
@@ -720,9 +727,10 @@ class ParquetDB(BaseDB):
                 writer.close()
             except Exception as e:
                 import warnings
+
                 warnings.warn(
                     f"Error closing graph writer for entity '{entity_name}': {e}",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
 
         self._writers.clear()

@@ -19,25 +19,26 @@ from eda_schema.errors import ValidationError
 from eda_schema.proto import eda_schema_pb2 as pb2
 
 FIELD_TYPE_MAP = {
-    1: "float",   # TYPE_DOUBLE
-    2: "float",   # TYPE_FLOAT
-    3: "int",     # TYPE_INT64
-    4: "int",     # TYPE_UINT64
-    5: "int",     # TYPE_INT32
-    6: "int",     # TYPE_FIXED64
-    7: "int",     # TYPE_FIXED32
-    8: "bool",    # TYPE_BOOL
+    1: "float",  # TYPE_DOUBLE
+    2: "float",  # TYPE_FLOAT
+    3: "int",  # TYPE_INT64
+    4: "int",  # TYPE_UINT64
+    5: "int",  # TYPE_INT32
+    6: "int",  # TYPE_FIXED64
+    7: "int",  # TYPE_FIXED32
+    8: "bool",  # TYPE_BOOL
     9: "string",  # TYPE_STRING
     # 10: "group",   # TYPE_GROUP (deprecated, rarely used)
     # 11: "message", # TYPE_MESSAGE
     # 12: "bytes",   # TYPE_BYTES
-    13: "int",     # TYPE_UINT32
+    13: "int",  # TYPE_UINT32
     # 14: "enum",    # TYPE_ENUM
-    15: "int",     # TYPE_SFIXED32
-    16: "int",     # TYPE_SFIXED64
-    17: "int",     # TYPE_SINT32
-    18: "int",     # TYPE_SINT64
+    15: "int",  # TYPE_SFIXED32
+    16: "int",  # TYPE_SFIXED64
+    17: "int",  # TYPE_SINT32
+    18: "int",  # TYPE_SINT64
 }
+
 
 # Type conversion utility functions - moved from inside dataset_to_protobuf to module level
 # for reusability and better code organization. These can be used by other functions
@@ -59,6 +60,7 @@ def safe_float(value, default=0.0):
     except (ValueError, TypeError):
         return default
 
+
 def safe_int(value, default=0):
     """Convert a value to int with error handling.
 
@@ -76,6 +78,7 @@ def safe_int(value, default=0):
     except (ValueError, TypeError):
         return default
 
+
 def safe_str(value, default=""):
     """Convert a value to string with error handling.
 
@@ -89,6 +92,7 @@ def safe_str(value, default=""):
     if value is None:
         return default
     return str(value)
+
 
 def safe_bool(value, default=False):
     """Convert a value to bool with error handling.
@@ -107,13 +111,15 @@ def safe_bool(value, default=False):
     except (ValueError, TypeError):
         return default
 
+
 # Mapping of field types to conversion functions
 CONVERTER = {
-    'float': safe_float,
-    'int': safe_int,
-    'string': safe_str,
-    'bool': safe_bool
+    "float": safe_float,
+    "int": safe_int,
+    "string": safe_str,
+    "bool": safe_bool,
 }
+
 
 def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
     """
@@ -143,6 +149,7 @@ def eda_schema_to_protobuf(pb2_entity, edaschema_entity):
         if value is not None:
             converter = CONVERTER[field_type]
             setattr(pb2_entity, field.name, converter(value))
+
 
 def dataset_to_protobuf(_dataset, stage_entity):  # pylint: disable=too-many-branches
     """
@@ -187,17 +194,17 @@ def dataset_to_protobuf(_dataset, stage_entity):  # pylint: disable=too-many-bra
     # Convert nodes
     if stage_entity.netlist:
         for node in stage_entity.netlist.nodes:
-            node_type = stage_entity.netlist.nodes[node]['type']
-            node_entity = stage_entity.netlist.nodes[node]['entity']
-            if node_type == 'PORT':
+            node_type = stage_entity.netlist.nodes[node]["type"]
+            node_entity = stage_entity.netlist.nodes[node]["entity"]
+            if node_type == "PORT":
                 node_proto = stage_proto.netlist.ports.add()
                 eda_schema_to_protobuf(node_proto, node_entity)
-            elif node_type == 'GATE':
+            elif node_type == "GATE":
                 node_proto = stage_proto.netlist.gates.add()
                 # standard_cell is now a string in proto, not nested
                 node_proto.standard_cell = node_entity.standard_cell
                 eda_schema_to_protobuf(node_proto, node_entity)
-            elif node_type == 'NET':
+            elif node_type == "NET":
                 node_proto = stage_proto.netlist.nets.add()
                 eda_schema_to_protobuf(node_proto, node_entity)
 
@@ -209,6 +216,7 @@ def dataset_to_protobuf(_dataset, stage_entity):  # pylint: disable=too-many-bra
             edge_proto.target = edge2
 
     return stage_proto
+
 
 def _extract_proto_fields(pb2_entity):
     """
@@ -229,12 +237,13 @@ def _extract_proto_fields(pb2_entity):
         value = getattr(pb2_entity, field.name, None)
         # Include all values (including 0, False, empty string, None) for numeric/bool types
         # For strings, only include non-empty values
-        if field_type in ('int', 'float', 'bool'):
+        if field_type in ("int", "float", "bool"):
             # Always include numeric and bool values, even if 0 or False
             data_dict[field.name] = value
         elif value:  # For strings and other types, only include if truthy
             data_dict[field.name] = value
     return data_dict
+
 
 def protobuf_to_eda_schema(edaschema_entity, pb2_entity):
     """
@@ -255,6 +264,7 @@ def protobuf_to_eda_schema(edaschema_entity, pb2_entity):
     for key, value in filtered_dict.items():
         if hasattr(edaschema_entity, key):
             setattr(edaschema_entity, key, value)
+
 
 def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
     """
@@ -290,27 +300,35 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
     if stage_proto.cell_metrics:
         cell_data = _extract_proto_fields(stage_proto.cell_metrics)
         # Ensure flow_id and stage are set
-        cell_data.setdefault('flow_id', flow_id or "")
-        cell_data.setdefault('stage', stage or "")
-        netlist_entity.cell_metrics = eda_schema_entity.CellMetricsEntity.load(cell_data)
+        cell_data.setdefault("flow_id", flow_id or "")
+        cell_data.setdefault("stage", stage or "")
+        netlist_entity.cell_metrics = eda_schema_entity.CellMetricsEntity.load(
+            cell_data
+        )
 
     if stage_proto.area_metrics:
         area_data = _extract_proto_fields(stage_proto.area_metrics)
-        area_data.setdefault('flow_id', flow_id or "")
-        area_data.setdefault('stage', stage or "")
-        netlist_entity.area_metrics = eda_schema_entity.AreaMetricsEntity.load(area_data)
+        area_data.setdefault("flow_id", flow_id or "")
+        area_data.setdefault("stage", stage or "")
+        netlist_entity.area_metrics = eda_schema_entity.AreaMetricsEntity.load(
+            area_data
+        )
 
     if stage_proto.power_metrics:
         power_data = _extract_proto_fields(stage_proto.power_metrics)
-        power_data.setdefault('flow_id', flow_id or "")
-        power_data.setdefault('stage', stage or "")
-        netlist_entity.power_metrics = eda_schema_entity.PowerMetricsEntity.load(power_data)
+        power_data.setdefault("flow_id", flow_id or "")
+        power_data.setdefault("stage", stage or "")
+        netlist_entity.power_metrics = eda_schema_entity.PowerMetricsEntity.load(
+            power_data
+        )
 
     if stage_proto.timing_metrics:
         timing_data = _extract_proto_fields(stage_proto.timing_metrics)
-        timing_data.setdefault('flow_id', flow_id or "")
-        timing_data.setdefault('stage', stage or "")
-        netlist_entity.timing_metrics = eda_schema_entity.TimingMetricsEntity.load(timing_data)
+        timing_data.setdefault("flow_id", flow_id or "")
+        timing_data.setdefault("stage", stage or "")
+        netlist_entity.timing_metrics = eda_schema_entity.TimingMetricsEntity.load(
+            timing_data
+        )
 
     # Convert timing paths
     if stage_proto.netlist:
@@ -330,7 +348,7 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
             path_key = (
                 timing_path_proto.startpoint,
                 timing_path_proto.endpoint,
-                timing_path_proto.path_type
+                timing_path_proto.path_type,
             )
             netlist_entity.timing_paths[path_key] = timing_path
             protobuf_to_eda_schema(timing_path, timing_path_proto)
@@ -345,7 +363,7 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
                 direction=port_proto.direction,
             )
             protobuf_to_eda_schema(port_entity, port_proto)
-            netlist_entity.add_node(port_entity.name, type='PORT', entity=port_entity)
+            netlist_entity.add_node(port_entity.name, type="PORT", entity=port_entity)
 
     # Convert gates
     if stage_proto.netlist:
@@ -359,7 +377,7 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
                 no_of_outputs=gate_proto.no_of_outputs,
             )
             protobuf_to_eda_schema(gate_entity, gate_proto)
-            netlist_entity.add_node(gate_entity.name, type='GATE', entity=gate_entity)
+            netlist_entity.add_node(gate_entity.name, type="GATE", entity=gate_entity)
 
     # Convert nets
     if stage_proto.netlist:
@@ -372,7 +390,7 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
                 no_of_fanouts=net_proto.no_of_fanouts,
             )
             protobuf_to_eda_schema(net_entity, net_proto)
-            netlist_entity.add_node(net_entity.name, type='NET', entity=net_entity)
+            netlist_entity.add_node(net_entity.name, type="NET", entity=net_entity)
 
     # Convert edges
     if stage_proto.netlist:
@@ -392,6 +410,7 @@ def protobuf_to_dataset(stage_proto):  # pylint: disable=too-many-branches
 
     return stage_entity
 
+
 def load_protobuf_file(file_path):
     """
     Loads a StageEntity Protobuf message from a binary file.
@@ -409,6 +428,7 @@ def load_protobuf_file(file_path):
 
     return stage_proto
 
+
 def save_protobuf_file(proto_entity, file_path):
     """
     Serializes a Protobuf object and saves it to a binary file.
@@ -420,7 +440,7 @@ def save_protobuf_file(proto_entity, file_path):
     if proto_entity is None:
         raise ValueError("Entity cannot be None.")
 
-    if not hasattr(proto_entity, 'SerializeToString'):
+    if not hasattr(proto_entity, "SerializeToString"):
         raise TypeError("Provided entity is not a valid Protobuf message.")
 
     with open(file_path, "wb") as f:
