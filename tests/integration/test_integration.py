@@ -72,7 +72,6 @@ class TestIntegration:
         db_path = Path(temp_dir) / "integration_db"
         db = ParquetDB(str(db_path))
         db.create_dataset_tables()
-        dataset = Dataset(db)
 
         # Add netlist (graph entity - needs both table and graph data)
         netlist = entity.NetlistEntity(**sample_netlist_data)
@@ -206,7 +205,6 @@ class TestMultiEntityWorkflow:
         db_path = Path(temp_dir) / "complete_flow_db"
         db = ParquetDB(str(db_path))
         db.create_dataset_tables()
-        dataset = Dataset(db)
 
         # Add netlist
         netlist = entity.NetlistEntity(**sample_netlist_data)
