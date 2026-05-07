@@ -33,7 +33,7 @@ before review.
 
 This project adheres to the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md).
 By participating, you agree to uphold this code. Report unacceptable behavior
-to **ps937@drexel.edu** or **is338@drexel.edu**.
+to **ps937@drexel.edu**, **aja367@drexel.edu** or **is338@drexel.edu**.
 
 ---
 
@@ -338,8 +338,8 @@ Follow the disclosure process in [`SECURITY.md`](SECURITY.md).
 
 | Role | Name | Email |
 |---|---|---|
-| Lead author | Pratik Shrestha | ps937@drexel.edu |
-| Co-author | Alec Aversa | aja367@drexel.edu |
+| Author | Pratik Shrestha | ps937@drexel.edu |
+| Author | Alec Aversa | aja367@drexel.edu |
 | Faculty advisor | Ioannis Savidis | is338@drexel.edu |
 | Lab | Drexel ICE Laboratory | https://github.com/drexel-ice |
 

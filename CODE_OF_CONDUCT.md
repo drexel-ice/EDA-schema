@@ -69,7 +69,8 @@ reported to the project maintainers responsible for enforcement at:
 
 | Role | Name | Email |
 |---|---|---|
-| Lead author | Pratik Shrestha | ps937@drexel.edu |
+| Author | Pratik Shrestha | ps937@drexel.edu |
+| Author | Alec Aversa | aja367@drexel.edu |
 | Faculty advisor | Ioannis Savidis | is338@drexel.edu |
 
 All complaints will be reviewed and investigated promptly and fairly.
