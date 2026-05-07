@@ -4,8 +4,7 @@
 //
 // Project : EDA-Schema
 // File    : ${filename}
-// Authors : Pratik Shrestha <ps937@drexel.edu>, Alec Aversa <aja367@drexel.edu>
-// Advisor : Ioannis Savidis <is338@drexel.edu>
+// Authors : ${author_list}
 //
 // Licensed under CC BY-NC-SA 4.0. See LICENCE for full terms.
 // Non-commercial use only; ShareAlike required for derivative works.

@@ -1,3 +1,14 @@
+# SPDX-License-Identifier: CC-BY-NC-SA-4.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Drexel University,
+#                         Integrated Circuits and Electronics (ICE) Laboratory
+#
+# Project : EDA-Schema -- Multimodal datamodel for digital circuit design
+# Script  : generate_proto.sh
+# Authors : Pratik Shrestha <ps937@drexel.edu>, Amit Varde <avv39@drexel.edu>
+#
+# Licensed under CC BY-NC-SA 4.0. See LICENCE for full terms.
+# Non-commercial use only; ShareAlike required for derivative works.
+
 #!/bin/bash
 
 # =============================================================================
