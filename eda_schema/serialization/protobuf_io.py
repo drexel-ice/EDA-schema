@@ -14,10 +14,9 @@ Changes:
 
 from dataclasses import fields as dataclass_fields
 
-from eda_schema.proto import eda_schema_pb2 as pb2
 import eda_schema.entity as eda_schema_entity
 from eda_schema.errors import ValidationError
-
+from eda_schema.proto import eda_schema_pb2 as pb2
 
 FIELD_TYPE_MAP = {
     1: "float",   # TYPE_DOUBLE

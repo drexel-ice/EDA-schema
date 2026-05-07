@@ -1,5 +1,6 @@
-import pandas as pd
 from dataclasses import asdict
+
+import pandas as pd
 
 
 class NetlistCellMapper(dict):

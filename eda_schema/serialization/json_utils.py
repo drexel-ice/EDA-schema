@@ -7,8 +7,10 @@ This module provides functions to load and save EDA-schema entities to/from JSON
 import json
 from dataclasses import asdict
 from typing import Type
+
 from eda_schema.base import BaseEntity
 from eda_schema.errors import EDASchemaError
+
 
 def load_json(home: str, schema_class: Type[BaseEntity]) -> BaseEntity:
     """

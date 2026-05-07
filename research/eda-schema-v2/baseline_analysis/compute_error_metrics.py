@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.metrics import r2_score
 
 RESULTS_DIR = Path("research/eda-schema-v2/baseline_analysis/results")

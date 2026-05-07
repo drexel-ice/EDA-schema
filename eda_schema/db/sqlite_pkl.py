@@ -1,15 +1,15 @@
-from pathlib import Path
 import sqlite3
-import dill
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import dill
 import numpy as np
 import pandas as pd
 
 from eda_schema import entity
+from eda_schema.base import Image2D, resolve_field_type_and_nullable
 from eda_schema.db.base import BaseDB
 from eda_schema.errors import DataNotFoundError
-from eda_schema.base import resolve_field_type_and_nullable, Image2D
 
 
 def sqlite_type_from_type(type_name: Optional[str]) -> Optional[str]:
