@@ -28,7 +28,7 @@ Requirements:
 Download the Open Dataset
 -------------------------
 
-Download the latest EDA-Schema dataset release from the Google Drive link in
+Download the latest EDA-Schema dataset release from the [One Drive link](https://drexel0-my.sharepoint.com/:f:/g/personal/ps937_drexel_edu/IgDSNDP4cARmQIbi2bweaNZKAcbC5cYWopZ6A9jAN_lDdng?e=hOsfsp) in
 the main README. You can continue using the legacy SQLite/Pickle snapshot,
 or point to the newer Parquet based V2 dataset that powers the
 ``research/eda-schema-v2/`` workflows.
