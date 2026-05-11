@@ -3,6 +3,14 @@ Cite This Work
 
 If you use EDA-Schema in your research, please cite:
 
+
+.. note::
+
+   P. Shrestha, A. Aversa, and I. Savidis,
+   "**EDA-Schema-V2: A Multimodal Schema, Open Datasets, and Benchmarks for Machine Learning in Digital Physical Design**",
+   *arXiv preprint arXiv:2605.06952*,
+   pp. 1 to 39, May. 2026.
+
 .. note::
 
    P. Shrestha, A. Aversa, S. Phatharodom, and I. Savidis,
