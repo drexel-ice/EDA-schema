@@ -9,7 +9,7 @@
 project = 'EDA-Schema'
 copyright = '2024, Pratik Shrestha'
 author = 'Pratik Shrestha'
-release = '1.0.0'
+release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

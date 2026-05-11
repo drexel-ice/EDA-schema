@@ -18,7 +18,7 @@ DEV_REQUIRES = [
 
 setup(
     name="eda-schema",
-    version="1.0.0",
+    version="2.0.0",
     description="Multimodal property graph schema and dataset tooling for EDA.",
     long_description=README.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
