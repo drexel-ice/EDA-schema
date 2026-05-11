@@ -281,6 +281,15 @@ EDA-Schema publishes a large-scale OpenROAD dataset with the operating points, s
 If you use EDA-Schema in your research, please cite:
 
 ```bibtex
+@article{shrestha2026edaschemav2,
+  title={EDA-Schema-V2: A Multimodal Schema, Open Datasets, and Benchmarks for Machine Learning in Digital Physical Design},
+  author={Shrestha, P. and Aversa, A. and and Savidis, I.},
+  journal={arXiv preprint arXiv:2605.06952},
+  pages={1--39},
+  year={2026},
+  month={May.}
+}
+
 @inproceedings{shrestha2024edaschema,
   title={EDA-schema: A graph datamodel schema and open dataset for digital design automation},
   author={Shrestha, P. and Aversa, A. and Phatharodom, S. and Savidis, I.},
