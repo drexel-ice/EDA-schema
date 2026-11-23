@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "eda-sky130": {
+      "command": "eda-schema-mcp",
+      "args": ["--dataset", "/data/eda-schema-v2/sky130hd"]
+    },
+    "eda-sky130-docker": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-v", "/data/eda-schema-v2/sky130hd:/data:ro",
+        "eda-schema-mcp:dev",
+        "eda-schema-mcp", "--dataset", "/data"
+      ]
+    }
+  }
+}

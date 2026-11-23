@@ -30,6 +30,7 @@ Contents
    datamodel
    open_dataset
    getting_started
+   mcp
    cite
 
 Indices and Tables

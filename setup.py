@@ -16,6 +16,11 @@ DEV_REQUIRES = [
     if line.strip()
 ]
 
+MCP_REQUIRES = [
+    "mcp>=2.3,<3",
+    "pillow>=10.0",
+]
+
 setup(
     name="eda-schema",
     version="2.0.0",
@@ -44,6 +49,12 @@ setup(
     install_requires=INSTALL_REQUIRES,
     extras_require={
         "dev": DEV_REQUIRES,
+        "mcp": MCP_REQUIRES,
+    },
+    entry_points={
+        "console_scripts": [
+            "eda-schema-mcp=eda_schema.mcp.server:main",
+        ],
     },
     include_package_data=True,
     zip_safe=False,

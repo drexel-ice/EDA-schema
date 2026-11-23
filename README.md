@@ -36,6 +36,7 @@ EDA-Schema is an open, standardized, and extensible **multimodal datamodel and f
 - [Data Model Overview](#data-model-overview)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [MCP Server](#mcp-server)
 - [Testing & Development](#testing--development)
 - [Open Dataset](#open-dataset)
 - [Citation](#citation)
@@ -244,6 +245,19 @@ For the canonical narrative and figures, see `docs/README.md` and the included r
 cd docs
 make html
 ```
+
+---
+
+## MCP Server
+
+EDA-Schema includes an optional [Model Context Protocol](https://modelcontextprotocol.io) server, so LLM agents such as Claude Code can query a dataset: QoR across stages, timing paths, netlist summaries and rendered layout images. One server serves one per-PDK dataset, and cross-PDK comparison is not supported.
+
+```bash
+pip install -e ".[mcp]"
+claude mcp add eda-sky130 -- eda-schema-mcp --dataset /path/to/eda-schema-v2/sky130hd
+```
+
+A Docker image is defined in `docker/mcp/Dockerfile`. See [docs/mcp.rst](docs/mcp.rst) for the guide and [examples/08_mcp](examples/08_mcp) for runnable examples.
 
 ---
 

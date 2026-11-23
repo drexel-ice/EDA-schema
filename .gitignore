@@ -32,3 +32,9 @@ pip-wheel-metadata/
 *.log
 *.tmp
 *.bak
+
+# MCP example output
+examples/08_mcp/output/
+eda_mcp_exports/
+.coverage
+htmlcov/

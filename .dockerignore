@@ -1,0 +1,11 @@
+.git
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+docs/_build
+research
+*.egg-info
+eda_mcp_exports
+htmlcov
+.coverage

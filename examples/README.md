@@ -73,11 +73,16 @@ examples
 │   ├── 02_power_analysis.py
 │   ├── 03_timing_analysis.py
 │   └── 04_area_analysis.py
-└── 07_database_backends/
-    ├── 01_parquetdb.py
-    ├── 02_filedb.py
-    ├── 03_sqlitepkldb.py
-    └── 04_mongodb.py
+├── 07_database_backends/
+│   ├── 01_parquetdb.py
+│   ├── 02_filedb.py
+│   ├── 03_sqlitepkldb.py
+│   └── 04_mongodb.py
+└── 08_mcp/
+    ├── 01_inprocess_client.py
+    ├── 02_stdio_client.py
+    ├── 03_render_images.py
+    └── mcp.json
 ```
 
 ## Example Categories
@@ -228,6 +233,19 @@ Examples:
 
 Each backend example explains when to use the backend, why it is useful, and the relevant performance and storage tradeoffs.
 
+### 08_mcp
+
+Using the MCP server, which exposes one per-PDK dataset to LLM agents. These examples need `pip install -e ".[mcp]"` or the `docker/mcp` image.
+
+Examples:
+
+* `01_inprocess_client.py`: call the tools through an in-process MCP client
+* `02_stdio_client.py`: start the server over stdio, as Claude Code would, and save a rendered routing map
+* `03_render_images.py`: save every image of one stage as the PNG an agent receives
+* `mcp.json`: client configuration, for a local install and for Docker
+
+See `docs/mcp.rst` for the full guide.
+
 ## Getting Started
 
 ### Beginner Path
@@ -245,6 +263,7 @@ Each backend example explains when to use the backend, why it is useful, and the
 ### Advanced Path
 
 1. `07_database_backends/`
+2. `08_mcp/`
 
 ## Running Examples
 
